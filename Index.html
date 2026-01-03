@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>أدوات الاختبارات — القواعد والمفردات</title>
+<style>
+:root {
+  --bg:#0b1020; --card:rgba(255,255,255,0.06); --card2:rgba(255,255,255,0.10);
+  --text:#f2f5ff; --muted:rgba(242,245,255,0.75); --border:rgba(255,255,255,0.14);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:18px; min-height:100vh; color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;
+  background: radial-gradient(1200px 700px at 10% 10%, rgba(96,165,250,0.18), transparent 60%),
+              radial-gradient(1000px 600px at 90% 20%, rgba(34,197,94,0.12), transparent 60%),
+              radial-gradient(900px 600px at 60% 90%, rgba(239,68,68,0.10), transparent 60%),
+              var(--bg);
+}
+.wrap{max-width:1200px;margin:0 auto}
+.top{
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  margin-bottom:12px;
+}
+h1{font-size:18px;margin:0}
+.sub{font-size:12px;color:var(--muted);line-height:1.5}
+.bar{display:flex;gap:10px;flex-wrap:wrap}
+button{
+  appearance:none;border:1px solid var(--border);background:var(--card2);color:var(--text);
+  border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:800;font-size:14px;
+}
+button:hover{border-color:rgba(255,255,255,0.25)}
+button.active{background:rgba(96,165,250,0.22); border-color: rgba(96,165,250,0.55);}
+.frameWrap{border:1px solid var(--border); border-radius:16px; overflow:hidden; background:var(--card);}
+iframe{width:100%; height:84vh; border:0; background:white;}
+.note{margin-top:10px;font-size:12px;color:var(--muted)}
+a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>أدوات الاختبارات (زر واحد للطلاب)</h1>
+      <div class="sub">اختر: القواعد أو المفردات. نفس ملفاتك بالضبط، داخل صفحة واحدة.</div>
+    </div>
+    <div class="bar">
+      <button id="btnGrammar" class="active" onclick="showTool('grammar')">اختبار القواعد</button>
+      <button id="btnVocab" onclick="showTool('vocab')">اختبار المفردات</button>
+    </div>
+  </div>
+
+  <div class="frameWrap">
+    <iframe id="toolFrame" sandbox="allow-scripts allow-forms allow-same-origin" referrerpolicy="no-referrer"></iframe>
+  </div>
+
+  <div class="note">ملاحظة: هذه صفحة “تجميعيّة” عشان تقدر تسوي لها Preview/Share برابط واحد.</div>
+</div>
+
+<script>
+const TOOLS = {
+  grammar: `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>أداة اختبار القواعد (نموذج 1 / 2)</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --card: rgba(255,255,255,0.06);
+    --card2: rgba(255,255,255,0.10);
+    --text: #f2f5ff;
+    --muted: rgba(242,245,255,0.75);
+    --good: #22c55e;
+    --bad: #ef4444;
+    --border: rgba(255,255,255,0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+    background: radial-gradient(1200px 700px at 10% 10%, rgba(96,165,250,0.18), transparent 60%),
+                radial-gradient(1000px 600px at 90% 20%, rgba(34,197,94,0.12), transparent 60%),
+                radial-gradient(900px 600px at 60% 90%, rgba(239,68,68,0.10), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header {
+    display:flex; flex-wrap:wrap; gap:12px;
+    align-items:center; justify-content:space-between;
+    margin-bottom: 16px;
+  }
+  .title { display:flex; flex-direction:column; gap:4px; }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { font-size: 13px; color: var(--muted); }
+
+  .stats {
+    display:flex; gap:10px; flex-wrap:wrap;
+    align-items:center; justify-content:flex-end;
+  }
+  .pill {
+    padding: 8px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 13px;
+    color: var(--muted);
+    display:flex; gap:8px; align-items:center;
+  }
+  .pill b { color: var(--text); font-weight: 700; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+  }
+
+  .grid {
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  button {
+    appearance:none;
+    border: 1px solid var(--border);
+    background: var(--card2);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-weight: 650;
+    font-size: 14px;
+    transition: transform .08s ease, border-color .15s ease;
+    text-align: right;
+  }
+  button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.25); }
+  button:active { transform: translateY(0px); }
+  button[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .primary {
+    background: linear-gradient(135deg, rgba(96,165,250,0.28), rgba(96,165,250,0.10));
+    border-color: rgba(96,165,250,0.55);
+  }
+  .mutedbtn { background: rgba(255,255,255,0.06); }
+
+  .qhead {
+    display:flex; gap:10px; align-items:flex-start; justify-content:space-between;
+    margin-bottom: 10px;
+  }
+  .qnum { font-size: 13px; color: var(--muted); }
+  .qtext {
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.35;
+    direction:ltr;
+    text-align:left;
+    unicode-bidi: plaintext;
+    margin-top: 2px;
+  }
+
+  .choices { display:grid; gap:10px; margin-top: 14px; }
+  .choice { display:flex; gap:10px; align-items:flex-start; }
+  .badge {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    display:flex; align-items:center; justify-content:center;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.12);
+    font-weight: 800;
+    flex: 0 0 auto;
+  }
+  .choice button {
+    width: 100%;
+    display:flex;
+    justify-content:space-between;
+    gap: 10px;
+    align-items:center;
+  }
+  .choiceText { direction:ltr; text-align:left; unicode-bidi: plaintext; font-weight: 700; }
+  .choiceMeta { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+  .feedback {
+    margin-top: 14px;
+    padding: 12px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.18);
+  }
+  .feedback.good { border-color: rgba(34,197,94,0.55); background: rgba(34,197,94,0.08); }
+  .feedback.bad  { border-color: rgba(239,68,68,0.60); background: rgba(239,68,68,0.08); }
+  .fbTitle {
+    display:flex; gap:10px; align-items:center; justify-content:space-between;
+    margin-bottom: 6px;
+  }
+  .fbTitle b { font-size: 14px; }
+  .explain {
+    color: var(--text);
+    opacity: 0.96;
+    line-height: 1.6;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+  .nav { display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px; }
+
+  .summaryItem {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    background: rgba(255,255,255,0.05);
+    margin-bottom: 10px;
+  }
+  .summaryTop {
+    display:flex; gap:10px; align-items:flex-start; justify-content:space-between;
+    margin-bottom: 8px;
+  }
+  .tag {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    flex:0 0 auto;
+  }
+  .tag.good { border-color: rgba(34,197,94,0.55); color: rgba(34,197,94,0.95); }
+  .tag.bad  { border-color: rgba(239,68,68,0.60); color: rgba(239,68,68,0.95); }
+  .small { font-size: 13px; color: var(--muted); }
+  .ltr { direction:ltr; text-align:left; unicode-bidi: plaintext; }
+  .notice { margin-top: 10px; font-size: 12px; color: rgba(242,245,255,0.70); }
+  .footer { margin-top: 16px; font-size: 12px; color: rgba(242,245,255,0.55); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <h1>أداة اختبار القواعد</h1>
+      <div class="sub">اختر نموذجًا، ثم أجب سؤالًا واحدًا في كل صفحة — بعد كل إجابة يظهر الشرح كما في الملف.</div>
+    </div>
+    <div class="stats" id="stats" style="display:none;">
+      <div class="pill">الوقت: <b id="time">00:00</b></div>
+      <div class="pill">✅ صحيح: <b id="correctCount">0</b></div>
+      <div class="pill">❌ خطأ: <b id="wrongCount">0</b></div>
+    </div>
+  </header>
+
+  <div class="card" id="screen"></div>
+  <div class="footer">ملاحظة: تم بناء الأسئلة والشرح من الملف المرفوع.</div>
+</div>
+
+<script>
+const DB = {"model1": [{"question": "1. ________ your brother own a car?", "options": [{"key": "A", "text": "Does"}, {"key": "B", "text": "Is"}, {"key": "C", "text": "Do"}, {"key": "D", "text": "Are"}], "correct": "Does", "explanation": "الفعل does يُستخدم لأن الفاعل your brother مفرد في المضارع البسيط عند تكوين سؤال. باقي الاختيارات خطأ لأن الفعل is / are أفعال be، والفعل do يُستخدم مع الجمع."}, {"question": "2. We will cancel the trip if it ________ tonight.", "options": [{"key": "A", "text": "will snow"}, {"key": "B", "text": "snow"}, {"key": "C", "text": "is snowing"}, {"key": "D", "text": "snows"}], "correct": "snows", "explanation": "الفعل snows هو الإجابة الصحيحة لأن هذي الجملة في الحالة الشرطية الأولى وتركيبها if + present simple. نستخدم هذه الحالة عندما نتكلم عن شيء محتمل أو متوقع حدوثه في المستقبل، ونتيجته متوقعة ومنطقية."}, {"question": "3. He enjoys ________ with his classmates.", "options": [{"key": "A", "text": "to study"}, {"key": "B", "text": "study"}, {"key": "C", "text": "studying"}, {"key": "D", "text": "studied"}], "correct": "studying", "explanation": "الفعل studyingصحيح لأن الفعل (enjoy) يأتي بعده gerund. باقي الاختيارات مصادر أو أزمنة غير صحيحة بعد enjoy."}, {"question": "4. How ________ your parents these days?", "options": [{"key": "A", "text": "am"}, {"key": "B", "text": "be"}, {"key": "C", "text": "is"}, {"key": "D", "text": "are"}], "correct": "are", "explanation": "الفعل areصحيح لأن الفاعل (your parents) جمع (am) مع I فقط،  (is) للمفرد، (be) مصدر."}, {"question": "5. She ________ the project two years ago.", "options": [{"key": "A", "text": "finished"}, {"key": "B", "text": "finish"}, {"key": "C", "text": "finishing"}, {"key": "D", "text": "finishes"}], "correct": "finished", "explanation": "الفعل finishedصحيح لأن (two years ago) يدل على الماضي البسيط. باقي الاختيارات مضارع أو اسم فعل."}, {"question": "6. ________ the teacher and the students agreed on the plan.", "options": [{"key": "A", "text": "Not only"}, {"key": "B", "text": "Both"}, {"key": "C", "text": "Either"}, {"key": "D", "text": "Neither"}], "correct": "Both", "explanation": "الكلمة  Both تُستخدم مع شيئين مثبتين (Either / Neither) لا تناسب الإثبات، و*(Not only)* تحتاج تركيب خاص."}, {"question": "7. He ________ born in 2008.", "options": [{"key": "A", "text": "is"}, {"key": "B", "text": "are"}, {"key": "C", "text": "was"}, {"key": "D", "text": "were"}], "correct": "was", "explanation": "الفعل wasصحيح لأن التعبير (be born) في الماضي مع فاعل مفرد (is / are) مضارع، (were) جمع."}, {"question": "8. This exercise is ________ than the previous one.", "options": [{"key": "A", "text": "as easy"}, {"key": "B", "text": "easiest"}, {"key": "C", "text": "easy"}, {"key": "D", "text": "easier"}], "correct": "easier", "explanation": "الصفة easierصحيحة لأنها صيغة المقارنة (easiest) تفضيل، (easy) بدون مقارنة، (as easy) يحتاج as…as."}, {"question": "9. He is good ________ solving math problems.", "options": [{"key": "A", "text": "at"}, {"key": "B", "text": "on"}, {"key": "C", "text": "in"}, {"key": "D", "text": "with"}], "correct": "at", "explanation": "حرف الجر atصحيح لأن الصفة \n(good) تأتي مع (at + gerund) باقي حروف الجر لا تُستخدم مع good"}, {"question": "10. She’d rather ________ at home today.", "options": [{"key": "A", "text": "stays"}, {"key": "B", "text": "stay"}, {"key": "C", "text": "stayed"}, {"key": "D", "text": "staying"}], "correct": "stay", "explanation": "الفعل stayصحيح\n لأن القاعدة (would rather + base verb) باقي الاختيارات أزمنة أو gerund"}, {"question": "11. When ice gets warm, it ________.", "options": [{"key": "A", "text": "melting"}, {"key": "B", "text": "melt"}, {"key": "C", "text": "melts"}, {"key": "D", "text": "melted"}], "correct": "melts", "explanation": "الفعل meltsصحيح لأنه حقيقة علمية (zero conditional) ويُستخدم المضارع البسيط."}, {"question": "12. She stopped ________ coffee because of her health.", "options": [{"key": "A", "text": "drank"}, {"key": "B", "text": "drink"}, {"key": "C", "text": "drinks"}, {"key": "D", "text": "drinking"}], "correct": "drinking", "explanation": "الفعل drinkingصحيح لأن (stop + gerund) تعني التوقف عن الفعل."}, {"question": "13. Can I have ________ piece of cake?", "options": [{"key": "A", "text": "another"}, {"key": "B", "text": "other"}, {"key": "C", "text": "others"}, {"key": "D", "text": "those"}], "correct": "another", "explanation": "الكلمة anotherتعني واحد إضافي مفرد. باقي الاختيارات جمع أو إشارة."}, {"question": "14. I don’t eat fast food, but my friend ________.", "options": [{"key": "A", "text": "do"}, {"key": "B", "text": "did"}, {"key": "C", "text": "does"}, {"key": "D", "text": "is"}], "correct": "does", "explanation": "الفعل doesيُستخدم كفعل مساعد بدل تكرار الفعل بعد (but) (do) للجمع، (did) زمن مختلف."}, {"question": "15. He has lived here ________ five years.", "options": [{"key": "A", "text": "yet"}, {"key": "B", "text": "since"}, {"key": "C", "text": "for"}, {"key": "D", "text": "to"}], "correct": "for", "explanation": "حرف الجر for يُستخدم مع مدة زمنية. (since) نقطة زمنية."}, {"question": "16. She has studied English ________ the age of ten.", "options": [{"key": "A", "text": "to"}, {"key": "B", "text": "yet"}, {"key": "C", "text": "for"}, {"key": "D", "text": "since"}], "correct": "since", "explanation": "حرف الجر sinceيُستخدم مع نقطة زمنية محددة."}], "model2": [{"question": "1. ________ your parents work in the same company?", "options": [{"key": "A", "text": "Does"}, {"key": "B", "text": "Is"}, {"key": "C", "text": "Do"}, {"key": "D", "text": "Are"}], "correct": "Do", "explanation": "الفعل do يُستخدم لأن الفاعل your parents جمع في المضارع البسيط عند تكوين سؤال."}, {"question": "2. We will miss the bus if we ________ late.", "options": [{"key": "A", "text": "will be"}, {"key": "B", "text": "are"}, {"key": "C", "text": "were"}, {"key": "D", "text": "be"}], "correct": "are", "explanation": "الفعل are صحيح لأن جملة الشرط الأولى تكون (if + present simple)."}, {"question": "3. She prefers ________ documentaries in her free time.", "options": [{"key": "A", "text": "watch"}, {"key": "B", "text": "watches"}, {"key": "C", "text": "watching"}, {"key": "D", "text": "watched"}], "correct": "watching", "explanation": "الفعل watchingصحيح لأن الفعل (prefer) يأتي بعده infinitive أو gerund حسب تكملة الجملة."}, {"question": "4. How ________ your friends this semester?", "options": [{"key": "A", "text": "is"}, {"key": "B", "text": "am"}, {"key": "C", "text": "be"}, {"key": "D", "text": "are"}], "correct": "are", "explanation": "الفعل areلأن الفاعل friends جمع."}, {"question": "5. They ________ the bridge ten years ago.", "options": [{"key": "A", "text": "build"}, {"key": "B", "text": "built"}, {"key": "C", "text": "building"}, {"key": "D", "text": "builds"}], "correct": "built", "explanation": "الفعل built لأن (ten years ago) يدل على الماضي البسيط."}, {"question": "6. ________ my uncle and his neighbors know about the plan.", "options": [{"key": "A", "text": "Either"}, {"key": "B", "text": "Neither"}, {"key": "C", "text": "Both"}, {"key": "D", "text": "Not only"}], "correct": "Both", "explanation": "الكلمة Both تُستخدم مع شيئين أو أكثر في جملة مثبتة."}, {"question": "7. They ________ born in different cities.", "options": [{"key": "A", "text": "is"}, {"key": "B", "text": "are"}, {"key": "C", "text": "was"}, {"key": "D", "text": "were"}], "correct": "were", "explanation": "الفعل were لأن التعبير (be born) في الماضي مع فاعل جمع."}, {"question": "8. This book is ________ than the one I read last week.", "options": [{"key": "A", "text": "interesting"}, {"key": "B", "text": "most interesting"}, {"key": "C", "text": "more interesting"}, {"key": "D", "text": "as interesting"}], "correct": "more interesting", "explanation": "الصفة more interesting لأنها صيغة المقارنة بين شيئين."}, {"question": "9. She is interested ________ science.", "options": [{"key": "A", "text": "in"}, {"key": "B", "text": "at"}, {"key": "C", "text": "on"}, {"key": "D", "text": "with"}], "correct": "in", "explanation": "حرف الجر in لأن الصفة (interested) تأتي مع (in + gerund)."}, {"question": "10. We’d rather ________ at home tonight.", "options": [{"key": "A", "text": "stays"}, {"key": "B", "text": "staying"}, {"key": "C", "text": "stayed"}, {"key": "D", "text": "stay"}], "correct": "stay", "explanation": "الفعل stayلأن القاعدة (would rather + base verb)."}, {"question": "11. When metal gets hot, it ________.", "options": [{"key": "A", "text": "expands"}, {"key": "B", "text": "expanded"}, {"key": "C", "text": "expanding"}, {"key": "D", "text": "expand"}], "correct": "expands", "explanation": "الفعل expandsلأن الجملة حقيقة علمية (zero conditional)."}, {"question": "12. He stopped ________ fast food to stay healthy.", "options": [{"key": "A", "text": "eat"}, {"key": "B", "text": "eats"}, {"key": "C", "text": "eating"}, {"key": "D", "text": "ate"}], "correct": "eating", "explanation": "الفعل eatingلأن (stop + gerund) تعني التوقف عن الفعل."}, {"question": "13. Can you give us ________ example, please?", "options": [{"key": "A", "text": "other"}, {"key": "B", "text": "others"}, {"key": "C", "text": "another"}, {"key": "D", "text": "those"}], "correct": "another", "explanation": "الكلمة anotherتعني واحد إضافي مفرد."}, {"question": "14. I like tea, but my friends ________.", "options": [{"key": "A", "text": "doesn’t"}, {"key": "B", "text": "don’t"}, {"key": "C", "text": "isn’t"}, {"key": "D", "text": "didn’t"}], "correct": "don’t", "explanation": "الفعل don’tيُستخدم مع فاعل جمع بدل تكرار الفعل بعد (but)."}, {"question": "15. She has worked here ________ four years.", "options": [{"key": "A", "text": "since"}, {"key": "B", "text": "for"}, {"key": "C", "text": "yet"}, {"key": "D", "text": "to"}], "correct": "for", "explanation": "حرف الجر forيُستخدم مع مدة زمنية."}, {"question": "16. They have lived in Riyadh ________ 2018.", "options": [{"key": "A", "text": "for"}, {"key": "B", "text": "to"}, {"key": "C", "text": "yet"}, {"key": "D", "text": "since"}], "correct": "since", "explanation": "حرف الجر sinceيُستخدم مع نقطة زمنية محددة."}]};
+
+function pad2(n) { return String(n).padStart(2,'0'); }
+function fmtTime(ms) {
+  const total = Math.max(0, Math.floor(ms/1000));
+  const m = Math.floor(total/60);
+  const s = total % 60;
+  return `${pad2(m)}:${pad2(s)}`;
+}
+
+let state = {
+  modelKey: null,
+  questions: [],
+  idx: 0,
+  startedAt: null,
+  timerId: null,
+  answers: [],
+  correct: 0,
+  wrong: 0,
+};
+
+const elScreen = document.getElementById('screen');
+const elStats = document.getElementById('stats');
+const elTime = document.getElementById('time');
+const elCorrect = document.getElementById('correctCount');
+const elWrong = document.getElementById('wrongCount');
+
+function resetState() {
+  state.modelKey = null;
+  state.questions = [];
+  state.idx = 0;
+  state.startedAt = null;
+  state.answers = [];
+  state.correct = 0;
+  state.wrong = 0;
+  if (state.timerId) clearInterval(state.timerId);
+  state.timerId = null;
+  elStats.style.display = 'none';
+}
+
+function startTimer() {
+  state.startedAt = Date.now();
+  elStats.style.display = '';
+  state.timerId = setInterval(() => {
+    elTime.textContent = fmtTime(Date.now() - state.startedAt);
+  }, 250);
+}
+
+function updateCounts() {
+  elCorrect.textContent = state.correct;
+  elWrong.textContent = state.wrong;
+}
+
+function esc(s) {
+  return (s ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderHome() {
+  resetState();
+  elScreen.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="small">اختر أحد النموذجين:</div>
+      <div class="grid">
+        <button class="primary" onclick="pickModel('model1')">النموذج التدريبي الأول (16 سؤال)</button>
+        <button class="primary" onclick="pickModel('model2')">النموذج التدريبي الثاني (16 سؤال)</button>
+      </div>
+      <div class="notice">سيظهر لك سؤال واحد فقط في كل مرة، وبعد اختيارك ستظهر لك الإجابة الصحيحة والشرح.</div>
+    </div>
+  `;
+}
+
+window.pickModel = function(modelKey) {
+  state.modelKey = modelKey;
+  state.questions = DB[modelKey];
+  state.idx = 0;
+  state.answers = [];
+  state.correct = 0;
+  state.wrong = 0;
+  startTimer();
+  updateCounts();
+  renderQuestion();
+};
+
+function renderQuestion() {
+  const q = state.questions[state.idx];
+  const progress = `${state.idx+1} / ${state.questions.length}`;
+  const options = q.options || [];
+
+  elScreen.innerHTML = `
+    <div class="qhead">
+      <div>
+        <div class="qnum">السؤال: ${progress}</div>
+        <div class="qtext">${esc(q.question)}</div>
+      </div>
+      <button class="mutedbtn" onclick="renderHome()">إنهاء وإعادة البدء</button>
+    </div>
+
+    <div class="choices">
+      ${options.map(opt => `
+        <div class="choice">
+          <div class="badge">${esc(opt.key)}</div>
+          <button onclick="chooseAnswer('${esc(opt.key)}')">
+            <span class="choiceText">${esc(opt.text)}</span>
+            <span class="choiceMeta">اختر</span>
+          </button>
+        </div>
+      `).join('')}
+    </div>
+
+    <div id="feedback"></div>
+  `;
+}
+
+window.chooseAnswer = function(pickedKey) {
+  const q = state.questions[state.idx];
+  const picked = (q.options || []).find(o => o.key === pickedKey);
+  const pickedText = picked ? picked.text : '';
+  const isCorrect = (pickedText || '').trim() === (q.correct || '').trim();
+
+  if (state.answers[state.idx]) return;
+
+  state.answers[state.idx] = {
+    qIndex: state.idx,
+    pickedKey,
+    pickedText,
+    isCorrect,
+    correctText: q.correct,
+    explanation: q.explanation,
+    question: q.question,
+    options: q.options
+  };
+
+  if (isCorrect) state.correct += 1;
+  else state.wrong += 1;
+  updateCounts();
+
+  document.querySelectorAll('.choice button').forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  fb.innerHTML = `
+    <div class="feedback ${isCorrect ? 'good' : 'bad'}">
+      <div class="fbTitle">
+        <b>${isCorrect ? '✅ إجابة صحيحة' : '❌ إجابة خاطئة'}</b>
+        <span class="small">الإجابة الصحيحة: <span class="ltr"><b>${esc(q.correct)}</b></span></span>
+      </div>
+      <div class="explain">${esc(q.explanation)}</div>
+      <div class="nav">
+        <button class="primary" onclick="nextQ()">التالي</button>
+        <button class="mutedbtn" onclick="goSummary()">إنهاء وعرض الملخص</button>
+      </div>
+    </div>
+  `;
+}
+
+window.nextQ = function() {
+  if (state.idx < state.questions.length - 1) {
+    state.idx += 1;
+    renderQuestion();
+  } else {
+    goSummary();
+  }
+}
+
+window.goSummary = function() {
+  if (state.timerId) clearInterval(state.timerId);
+  state.timerId = null;
+  const elapsed = state.startedAt ? (Date.now() - state.startedAt) : 0;
+
+  const answeredCount = state.answers.filter(Boolean).length;
+  const total = state.questions.length;
+
+  const items = state.questions.map((q, i) => {
+    const a = state.answers[i];
+    const isAnswered = !!a;
+    const tag = !isAnswered ? '<span class="tag">غير مُجاب</span>' : (a.isCorrect ? '<span class="tag good">صحيح</span>' : '<span class="tag bad">خطأ</span>');
+    const pickedLine = !isAnswered
+      ? '<div class="small">إجابتك: —</div>'
+      : `<div class="small">إجابتك: <span class="ltr"><b>${esc(a.pickedKey)}) ${esc(a.pickedText)}</b></span></div>`;
+    const correctLine = `<div class="small">الإجابة الصحيحة: <span class="ltr"><b>${esc(q.correct)}</b></span></div>`;
+    const optsLine = (q.options || []).map(o => `<span class="ltr">${esc(o.key)}) ${esc(o.text)}</span>`).join(' &nbsp; | &nbsp; ');
+
+    return `
+      <div class="summaryItem">
+        <div class="summaryTop">
+          <div>
+            <div class="qtext" style="font-size:16px; margin:0 0 6px 0;">${esc(q.question)}</div>
+            <div class="small ltr">${optsLine}</div>
+          </div>
+          ${tag}
+        </div>
+        ${pickedLine}
+        ${correctLine}
+        <div class="explain" style="margin-top:8px;">${esc(q.explanation)}</div>
+      </div>
+    `;
+  }).join('');
+
+  elScreen.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="qhead" style="margin-bottom:0;">
+        <div>
+          <div class="qnum">النتيجة النهائية</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:6px;">
+            <div class="pill">النموذج: <b>${state.modelKey === 'model1' ? 'الأول' : 'الثاني'}</b></div>
+            <div class="pill">الوقت المستغرق: <b>${fmtTime(elapsed)}</b></div>
+            <div class="pill">المُجاب: <b>${answeredCount} / ${total}</b></div>
+            <div class="pill">✅ صحيح: <b>${state.correct}</b></div>
+            <div class="pill">❌ خطأ: <b>${state.wrong}</b></div>
+          </div>
+        </div>
+        <button class="primary" onclick="renderHome()">ابدأ من جديد</button>
+      </div>
+
+      <div class="notice">أدناه ملخص بجميع الأسئلة مع إجاباتك والشرح.</div>
+
+      <div>${items}</div>
+    </div>
+  `;
+
+  elStats.style.display = '';
+  elTime.textContent = fmtTime(elapsed);
+  updateCounts();
+}
+
+renderHome();
+<\/script>
+</body>
+</html>
+`,
+  vocab: `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>أداة اختبارات المفردات — Preview</title>
+<style>
+:root {
+  --bg:#0b1020; --card:rgba(255,255,255,0.06); --card2:rgba(255,255,255,0.10);
+  --text:#f2f5ff; --muted:rgba(242,245,255,0.75);
+  --good:#22c55e; --bad:#ef4444; --border:rgba(255,255,255,0.14);
+  --blue:rgba(96,165,250,0.65);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; padding:24px; min-height:100vh; color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;
+  background: radial-gradient(1200px 700px at 10% 10%, rgba(96,165,250,0.18), transparent 60%),
+              radial-gradient(1000px 600px at 90% 20%, rgba(34,197,94,0.12), transparent 60%),
+              radial-gradient(900px 600px at 60% 90%, rgba(239,68,68,0.10), transparent 60%),
+              var(--bg);
+}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{font-size:20px;margin:0}
+.sub{font-size:13px;color:var(--muted);max-width:820px;line-height:1.6}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 10px 35px rgba(0,0,0,0.35)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+button{
+  appearance:none;border:1px solid var(--border);background:var(--card2);color:var(--text);
+  border-radius:14px;padding:12px 14px;cursor:pointer;font-weight:800;font-size:14px;text-align:right;
+  transition:transform .08s ease,border-color .15s ease;
+}
+button:hover{transform:translateY(-1px);border-color:rgba(255,255,255,0.25)}
+button:active{transform:translateY(0)}
+button[disabled]{opacity:.55;cursor:not-allowed;transform:none}
+.primary{background:linear-gradient(135deg, rgba(96,165,250,0.28), rgba(96,165,250,0.10)); border-color: rgba(96,165,250,0.55);}
+.mutedbtn{background:rgba(255,255,255,0.06)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.pill{padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.pill b{color:var(--text)}
+.qhead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.qnum{font-size:13px;color:var(--muted)}
+.qtext{font-size:18px;font-weight:900;line-height:1.35;direction:ltr;text-align:left;unicode-bidi:plaintext;margin-top:2px}
+.artext{margin-top:8px;font-size:14px;line-height:1.6;color:rgba(242,245,255,0.92)}
+.choices{display:grid;gap:10px;margin-top:14px}
+.choice{display:flex;gap:10px;align-items:flex-start}
+.badge{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);background:rgba(0,0,0,0.12);font-weight:900;flex:0 0 auto}
+.choice button{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.choiceText{direction:ltr;text-align:left;unicode-bidi:plaintext;font-weight:900}
+.choiceMeta{font-size:12px;color:var(--muted);font-weight:800}
+.feedback{margin-top:14px;padding:12px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,0.18)}
+.feedback.good{border-color:rgba(34,197,94,0.55);background:rgba(34,197,94,0.08)}
+.feedback.bad{border-color:rgba(239,68,68,0.60);background:rgba(239,68,68,0.08)}
+.fbTitle{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:6px}
+.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.tag.good{border-color:rgba(34,197,94,0.55);color:rgba(34,197,94,0.95)}
+.tag.bad{border-color:rgba(239,68,68,0.60);color:rgba(239,68,68,0.95)}
+.summaryItem{border:1px solid var(--border);border-radius:14px;padding:12px;background:rgba(255,255,255,0.05);margin-bottom:10px}
+.summaryTop{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.small{font-size:13px;color:var(--muted)}
+.ltr{direction:ltr;text-align:left;unicode-bidi:plaintext}
+.notice{margin-top:10px;font-size:12px;color:rgba(242,245,255,0.70);line-height:1.6}
+.tbtn{padding:8px 10px;border-radius:12px;font-size:12px;font-weight:900}
+/* Matching columns */
+.matchWrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:900px){.matchWrap{grid-template-columns:1fr}}
+.col{border:1px solid var(--border);border-radius:16px;background:rgba(255,255,255,0.04);padding:12px}
+.colTitle{font-size:13px;color:var(--muted);margin-bottom:10px}
+.list{display:grid;gap:10px}
+.itemBtn{width:100%;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.active{border-color:var(--blue)!important;}
+.done{opacity:0.65}
+/* Immediate correctness coloring */
+.flashGood{border-color:rgba(34,197,94,0.85)!important; box-shadow:0 0 0 3px rgba(34,197,94,0.18);}
+.flashBad{border-color:rgba(239,68,68,0.90)!important; box-shadow:0 0 0 3px rgba(239,68,68,0.18);}
+/* Preview helper */
+.previewBox{margin-top:12px; padding:12px; border:1px dashed rgba(255,255,255,0.20); border-radius:14px; background:rgba(0,0,0,0.12)}
+input[type="text"]{width:100%; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:var(--text); outline:none; font-weight:700}
+.copyRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; direction:ltr; text-align:left; unicode-bidi:plaintext}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>أداة اختبارات المفردات — (MCQ + Matching) مع Preview</h1>
+      <div class="sub">
+        ✅ 4 اختبارات (اختيار 1/2 + مزاوجة 1/2).<br/>
+        ✅ المزاوجة: تم خلط النموذجين (نصف من ملف + نصف من ملف آخر).<br/>
+        ✅ عند اختيار كلمة + تعريف: يضيء الأخضر إذا صحيح / الأحمر إذا خطأ (فوري).<br/>
+        ✅ زر «ترجمة» لإظهار/إخفاء العربية.
+      </div>
+    </div>
+    <div class="stats" id="stats" style="display:none;">
+      <div class="pill">الوقت: <b id="time">00:00</b></div>
+      <div class="pill">✅ صحيح: <b id="correctCount">0</b></div>
+      <div class="pill">❌ خطأ: <b id="wrongCount">0</b></div>
+    </div>
+  </header>
+
+  <div class="card" id="screen"></div>
+  <div class="notice">
+    ميزة Preview: عشان يفتح الرابط من تيليقرام مباشرة، لازم ترفع الملف على GitHub (أو أي استضافة) ثم تحط رابط Raw هنا ويعطيك رابط Preview جاهز.
+  </div>
+</div>
+
+<script>
+const DB = {"mcq1": {"title": "اختيار — نموذج 1", "type": "mcq", "items": [{"q_en": "The scientist is a __________ figure in the field of medicine.", "q_ar": "العالِم شخصية بارزة في مجال الطب.", "options": [{"key": "A", "en": "prominent", "ar": "بارز"}, {"key": "B", "en": "devoted", "ar": "متفانٍ"}, {"key": "C", "en": "extensive", "ar": "واسع"}, {"key": "D", "en": "reliable", "ar": "موثوق"}], "correct_key": "A", "correct_en": "prominent", "correct_ar": "بارز"}, {"q_en": "This company has a very strong __________ worldwide.", "q_ar": "هذه الشركة لديها سمعة قوية حول العالم.", "options": [{"key": "A", "en": "argument", "ar": "جدال"}, {"key": "B", "en": "reputation", "ar": "سمعة"}, {"key": "C", "en": "formula", "ar": "تركيبة"}, {"key": "D", "en": "conspiracy", "ar": "مؤامرة"}], "correct_key": "B", "correct_en": "reputation", "correct_ar": "سمعة"}, {"q_en": "The bridge can __________ over the river for hundreds of meters.", "q_ar": "يمكن للجسر أن يمتد فوق النهر.", "options": [{"key": "A", "en": "rank", "ar": "يصنف"}, {"key": "B", "en": "capture", "ar": "يلتقط"}, {"key": "C", "en": "span", "ar": "يمتد"}, {"key": "D", "en": "orbit", "ar": "مدار"}], "correct_key": "C", "correct_en": "span", "correct_ar": "يمتد"}, {"q_en": "She made a __________ decision without thinking carefully.", "q_ar": "اتخذت قرارًا عفويًا دون تفكير.", "options": [{"key": "A", "en": "prestigious", "ar": "مرموق"}, {"key": "B", "en": "reliable", "ar": "موثوق"}, {"key": "C", "en": "extensive", "ar": "واسع"}, {"key": "D", "en": "spontaneous", "ar": "عفوي"}], "correct_key": "D", "correct_en": "spontaneous", "correct_ar": "عفوي"}, {"q_en": "The movie had an __________ ending that shocked everyone.", "q_ar": "كان للفيلم نهاية مفاجئة.", "options": [{"key": "A", "en": "abrupt", "ar": "مفاجئ"}, {"key": "B", "en": "admired", "ar": "مُعجب"}, {"key": "C", "en": "intended", "ar": "مقصود"}, {"key": "D", "en": "animated", "ar": "كرتوني"}], "correct_key": "A", "correct_en": "abrupt", "correct_ar": "مفاجئ"}, {"q_en": "The company plans to __________ the new rules next year.", "q_ar": "تخطط الشركة لتطبيق القواعد الجديدة.", "options": [{"key": "A", "en": "dispute", "ar": "يجادل"}, {"key": "B", "en": "implement", "ar": "يطبق"}, {"key": "C", "en": "admire", "ar": "يعجب"}, {"key": "D", "en": "witness", "ar": "يشهد"}], "correct_key": "B", "correct_en": "implement", "correct_ar": "يطبق"}, {"q_en": "He is a __________ supporter of environmental protection.", "q_ar": "هو داعم مخلص لحماية البيئة.", "options": [{"key": "A", "en": "condensed", "ar": "مكثف"}, {"key": "B", "en": "exotic", "ar": "غريب"}, {"key": "C", "en": "devoted", "ar": "مخلص"}, {"key": "D", "en": "ironic", "ar": "ساخر"}], "correct_key": "C", "correct_en": "devoted", "correct_ar": "مخلص"}, {"q_en": "This book provides __________ information about space travel.", "q_ar": "يوفر هذا الكتاب معلومات واسعة.", "options": [{"key": "A", "en": "repetitive", "ar": "متكرر"}, {"key": "B", "en": "prestigious", "ar": "مرموق"}, {"key": "C", "en": "anxious", "ar": "قلق"}, {"key": "D", "en": "extensive", "ar": "واسع"}], "correct_key": "D", "correct_en": "extensive", "correct_ar": "واسع"}]}, "mcq2": {"title": "اختيار — نموذج 2", "type": "mcq", "items": [{"q_en": "Some animals hunt other animals for food in nature. These animals are called ________.", "q_ar": "بعض الحيوانات تصطاد حيوانات أخرى من أجل الغذاء في الطبيعة. تُسمى هذه الحيوانات ________.", "options": [{"key": "A", "en": "explorers", "ar": "مستكشفون"}, {"key": "B", "en": "predators", "ar": "مفترسات"}, {"key": "C", "en": "passengers", "ar": "ركاب"}, {"key": "D", "en": "neighbors", "ar": "جيران"}], "correct_key": "B", "correct_en": "predators", "correct_ar": "مفترسات"}, {"q_en": "Companies want customers to recognize their ________ easily.", "q_ar": "تريد الشركات أن يتعرف الزبائن على ________ الخاصة بها بسهولة.", "options": [{"key": "A", "en": "schedule", "ar": "جدول"}, {"key": "B", "en": "direction", "ar": "اتجاه"}, {"key": "C", "en": "brand", "ar": "علامة تجارية"}, {"key": "D", "en": "reaction", "ar": "رد فعل"}], "correct_key": "C", "correct_en": "brand", "correct_ar": "علامة تجارية"}, {"q_en": "Good ________ is important when people work together.", "q_ar": "________ الجيدة مهمة عندما يعمل الناس معًا.", "options": [{"key": "A", "en": "silence", "ar": "صمت"}, {"key": "B", "en": "punishment", "ar": "عقاب"}, {"key": "C", "en": "instruction", "ar": "تعليمات"}, {"key": "D", "en": "communication", "ar": "تواصل"}], "correct_key": "D", "correct_en": "communication", "correct_ar": "تواصل"}, {"q_en": "The building became dark when the ________ stopped working.", "q_ar": "أصبح المبنى مظلمًا عندما توقفت ________ عن العمل.", "options": [{"key": "A", "en": "circuits", "ar": "دوائر كهربائية"}, {"key": "B", "en": "engines", "ar": "محركات"}, {"key": "C", "en": "cables", "ar": "كابلات"}, {"key": "D", "en": "switches", "ar": "مفاتيح"}], "correct_key": "A", "correct_en": "circuits", "correct_ar": "دوائر كهربائية"}, {"q_en": "The story ended in an ________ way that surprised the readers.", "q_ar": "انتهت القصة بطريقة ________ فاجأت القرّاء.", "options": [{"key": "A", "en": "peaceful", "ar": "هادئة"}, {"key": "B", "en": "abrupt", "ar": "مفاجئة"}, {"key": "C", "en": "careful", "ar": "حذرة"}, {"key": "D", "en": "normal", "ar": "عادية"}], "correct_key": "B", "correct_en": "abrupt", "correct_ar": "مفاجئة"}, {"q_en": "Young people often buy clothes from popular ________.", "q_ar": "غالبًا ما يشتري الشباب الملابس من ________ مشهورة.", "options": [{"key": "A", "en": "styles", "ar": "أنماط"}, {"key": "B", "en": "designers", "ar": "مصممين"}, {"key": "C", "en": "brands", "ar": "علامات تجارية"}, {"key": "D", "en": "colors", "ar": "ألوان"}], "correct_key": "C", "correct_en": "brands", "correct_ar": "علامات تجارية"}, {"q_en": "His calm ________ helps him deal with problems easily.", "q_ar": "________ الهادئ يساعده على التعامل مع المشكلات بسهولة.", "options": [{"key": "A", "en": "habit", "ar": "عادة"}, {"key": "B", "en": "opinion", "ar": "رأي"}, {"key": "C", "en": "memory", "ar": "ذاكرة"}, {"key": "D", "en": "temperament", "ar": "طبع"}], "correct_key": "D", "correct_en": "temperament", "correct_ar": "طبع"}, {"q_en": "She felt a lot of ________ before the important exam.", "q_ar": "شعرت بالكثير من ________ قبل الاختبار المهم.", "options": [{"key": "A", "en": "anxiety", "ar": "قلق"}, {"key": "B", "en": "happiness", "ar": "سعادة"}, {"key": "C", "en": "confidence", "ar": "ثقة"}, {"key": "D", "en": "tiredness", "ar": "تعب"}], "correct_key": "A", "correct_en": "anxiety", "correct_ar": "قلق"}]}, "match1": {"title": "مزاوجة — نموذج 1", "type": "match", "words": [{"word_en": "differences", "word_ar": "اختلافات", "correct_letter": "B"}, {"word_en": "fearsome", "word_ar": "مخيف", "correct_letter": "A"}, {"word_en": "orbit", "word_ar": "مدار", "correct_letter": "C"}, {"word_en": "ironically", "word_ar": "بشكل ساخر", "correct_letter": "E"}, {"word_en": "witness", "word_ar": "يشهد", "correct_letter": "F"}, {"word_en": "capture", "word_ar": "يسيطر على", "correct_letter": "D"}, {"word_en": "devoted", "word_ar": "مخلص", "correct_letter": "G"}, {"word_en": "argument", "word_ar": "جدال", "correct_letter": "H"}], "defs": [{"letter": "A", "en": "causing great fear", "ar": "causing great fear\nيسبب خوفًا شديدًا"}, {"letter": "B", "en": "ways in which people are not the same", "ar": "ways in which people are not the same\nطرق يكون فيها الناس مختلفين عن بعضهم"}, {"letter": "C", "en": "a path in space followed by a planet, moon, or spacecraft", "ar": "a path in space followed by a planet, moon, or spacecraft\nمسار في الفضاء تتبعه الكواكب أو المركبات"}, {"letter": "D", "en": "to take control of something or someone", "ar": "يسيطر على شيء أو شخص"}, {"letter": "E", "en": "against the way it appears", "ar": "against the way it appears\nبعكس ما يبدو أو المتوقع"}, {"letter": "F", "en": "to see an event happen", "ar": "يرى حدثًا يحدث"}, {"letter": "G", "en": "loyal and committed", "ar": "مخلص وملتزم"}, {"letter": "H", "en": "a discussion where people disagree", "ar": "نقاش فيه اختلاف آراء"}]}, "match2": {"title": "مزاوجة — نموذج 2", "type": "match", "words": [{"word_en": "formula", "word_ar": "تركيبة", "correct_letter": "F"}, {"word_en": "outlandish", "word_ar": "غريب جدًا", "correct_letter": "G"}, {"word_en": "logo", "word_ar": "شعار", "correct_letter": "H"}, {"word_en": "content", "word_ar": "محتوى", "correct_letter": "D"}, {"word_en": "reputation", "word_ar": "سمعة", "correct_letter": "E"}, {"word_en": "spontaneous", "word_ar": "عفوي", "correct_letter": "C"}, {"word_en": "prestigious", "word_ar": "مرموق", "correct_letter": "A"}, {"word_en": "extensive", "word_ar": "واسع", "correct_letter": "B"}], "defs": [{"letter": "A", "en": "very respected and admired", "ar": "يحظى باحترام وإعجاب كبير"}, {"letter": "B", "en": "covering a large area or amount", "ar": "يغطي مساحة أو كمية كبيرة"}, {"letter": "C", "en": "a sudden action without planning", "ar": "تصرف يحدث بدون تخطيط"}, {"letter": "D", "en": "subject matter", "ar": "subject matter\nالموضوع أو المحتوى"}, {"letter": "E", "en": "the opinion people have about someone", "ar": "الرأي الذي يكونه الناس عن شخص"}, {"letter": "F", "en": "combination of ingredients", "ar": "combination of ingredients\nمزيج من المكونات"}, {"letter": "G", "en": "shockingly strange or unexpected", "ar": "shockingly strange or unexpected\nغريب أو غير متوقع بشكل صادم"}, {"letter": "H", "en": "design symbol of a business or product", "ar": "design symbol of a business or product\nرمز تصميمي لشركة أو منتج"}]}};
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function fmtTime(ms){ const t=Math.max(0, Math.floor(ms/1000)); const m=Math.floor(t/60); const s=t%60; return pad2(m)+":"+pad2(s); }
+function esc(s){ return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+let state={
+  testKey:null, test:null,
+  idx:0, startedAt:null, timerId:null,
+  correct:0, wrong:0,
+  answers:[],
+  showAr:false,
+  // matching
+  selectedWord:null, selectedDef:null,
+  wordToDef:{}, defToWord:{},
+  // matching attempt counters
+  attempts:{} // wordIndex -> wrong attempts
+};
+
+const elScreen=document.getElementById('screen');
+const elStats=document.getElementById('stats');
+const elTime=document.getElementById('time');
+const elCorrect=document.getElementById('correctCount');
+const elWrong=document.getElementById('wrongCount');
+
+function resetState(){
+  state.testKey=null; state.test=null; state.idx=0;
+  state.startedAt=null; state.correct=0; state.wrong=0; state.answers=[];
+  state.showAr=false;
+  state.selectedWord=null; state.selectedDef=null;
+  state.wordToDef={}; state.defToWord={}; state.attempts={};
+  if(state.timerId) clearInterval(state.timerId);
+  state.timerId=null;
+  elStats.style.display='none';
+}
+function startTimer(){
+  state.startedAt=Date.now();
+  elStats.style.display='';
+  state.timerId=setInterval(()=>{ elTime.textContent = fmtTime(Date.now()-state.startedAt); }, 250);
+}
+function updateCounts(){ elCorrect.textContent=state.correct; elWrong.textContent=state.wrong; }
+
+window.toggleAr = function(){ state.showAr=!state.showAr; renderScreen(true); };
+
+function headerBlock(title, progress){
+  const tLabel = state.showAr ? "إخفاء الترجمة" : "ترجمة";
+  return `
+    <div class="qhead">
+      <div><div class="qnum">${esc(title)} — ${esc(progress)}</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="mutedbtn tbtn" onclick="toggleAr()">${tLabel}</button>
+        <button class="mutedbtn tbtn" onclick="togglePreview()">Preview</button>
+        <button class="mutedbtn" onclick="renderHome()">خروج</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderHome(){
+  resetState();
+  const buttons = Object.keys(DB).map(k => `<button class="primary" onclick="pickTest('${k}')">${esc(DB[k].title)}</button>`).join("");
+  elScreen.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="small">اختر نوع الاختبار:</div>
+      <div class="grid">${buttons}</div>
+      <div class="previewBox" id="previewBox" style="display:none;"></div>
+      <div class="notice">ملاحظة: تنويع الإجابة الصحيحة في الاختيار تم عبر إعادة ترتيب الخيارات فقط.</div>
+    </div>
+  `;
+}
+window.pickTest = function(key){
+  state.testKey=key; state.test=DB[key];
+  state.idx=0; state.correct=0; state.wrong=0; state.answers=[];
+  state.showAr=false;
+  state.selectedWord=null; state.selectedDef=null; state.wordToDef={}; state.defToWord={}; state.attempts={};
+  startTimer(); updateCounts();
+  renderScreen();
+}
+
+function renderScreen(keep=false){
+  if(!state.test) return renderHome();
+  if(state.test.type==="mcq") return renderMCQ(keep);
+  return renderMatch(keep);
+}
+
+function renderMCQ(keep=false){
+  const items=state.test.items || [];
+  const it=items[state.idx];
+  const progress = "السؤال: " + (state.idx+1) + " / " + items.length;
+
+  const optsHtml = (it.options||[]).map(o => `
+    <div class="choice">
+      <div class="badge">${esc(o.key)}</div>
+      <button onclick="chooseMCQ('${esc(o.key)}')">
+        <span>
+          <span class="choiceText">${esc(o.en)}</span>
+          ${state.showAr && o.ar ? `<div class="small" style="margin-top:4px;">${esc(o.ar)}</div>` : ""}
+        </span>
+        <span class="choiceMeta">اختر</span>
+      </button>
+    </div>
+  `).join("");
+
+  elScreen.innerHTML = `
+    ${headerBlock(state.test.title, progress)}
+    <div class="qtext">${esc(it.q_en)}</div>
+    ${state.showAr && it.q_ar ? `<div class="artext">${esc(it.q_ar)}</div>` : ""}
+    <div class="choices">${optsHtml}</div>
+    <div id="feedback"></div>
+    <div class="previewBox" id="previewBox" style="display:none;"></div>
+  `;
+  if(keep) restoreMCQFeedback();
+}
+
+function lockChoices(){ document.querySelectorAll('.choice button').forEach(b=>b.disabled=true); }
+function setFeedback(html){ const fb=document.getElementById('feedback'); if(fb) fb.innerHTML=html; }
+function restoreMCQFeedback(){ const a=state.answers[state.idx]; if(!a) return; lockChoices(); setFeedback(a.feedbackHtml); }
+
+window.chooseMCQ = function(key){
+  if(state.answers[state.idx]) return;
+  const it = (state.test.items||[])[state.idx];
+  const picked = (it.options||[]).find(o=>o.key===key);
+  const isCorrect = key === it.correct_key;
+  if(isCorrect) state.correct++; else state.wrong++;
+  updateCounts();
+  lockChoices();
+
+  const correctOpt = (it.options||[]).find(o=>o.key===it.correct_key) || {en:it.correct_en, ar:it.correct_ar};
+  const correctLine = `<span class="ltr"><b>${esc(it.correct_key)}) ${esc(correctOpt.en||"")}</b></span>` + (state.showAr && correctOpt.ar ? ` <span class="small">— ${esc(correctOpt.ar)}</span>` : "");
+
+  const fbHtml = `
+    <div class="feedback ${isCorrect?'good':'bad'}">
+      <div class="fbTitle"><b>${isCorrect?'✅ إجابة صحيحة':'❌ إجابة خاطئة'}</b><span class="small">الصحيح: ${correctLine}</span></div>
+      <div class="nav">
+        <button class="primary" onclick="nextMCQ()">التالي</button>
+        <button class="mutedbtn" onclick="goSummary()">الملخص</button>
+      </div>
+    </div>
+  `;
+  setFeedback(fbHtml);
+  state.answers[state.idx] = {
+    pickedKey:key, pickedEn:(picked?.en||""), pickedAr:(picked?.ar||""),
+    isCorrect:isCorrect,
+    correctKey:it.correct_key, correctEn:(correctOpt.en||""), correctAr:(correctOpt.ar||""),
+    promptEn:it.q_en, promptAr:it.q_ar,
+    feedbackHtml:fbHtml
+  };
+}
+
+window.nextMCQ = function(){
+  if(state.idx < (state.test.items||[]).length - 1){ state.idx++; renderMCQ(); }
+  else { goSummary(); }
+}
+
+/* Matching with immediate green/red highlight */
+function renderMatch(keep=false){
+  const words=state.test.words || [];
+  const defs=state.test.defs || [];
+  const total=words.length;
+  const matched=Object.keys(state.wordToDef).length;
+  const progress = "تمت المزاوجة الصحيحة: " + matched + " / " + total;
+
+  const wordList = words.map((w, idx) => {
+    const chosen = state.wordToDef[idx];
+    const isActive = state.selectedWord === idx;
+    const isDone = chosen !== undefined;
+    return `
+      <div class="choice">
+        <div class="badge">${idx+1}</div>
+        <button id="wbtn_${idx}" class="itemBtn ${isActive?'active':''} ${isDone?'done':''}" onclick="selectWord(${idx})" ${isDone?'disabled':''}>
+          <span>
+            <span class="choiceText">${esc(w.word_en)}</span>
+            ${state.showAr && w.word_ar ? `<div class="small" style="margin-top:4px;">${esc(w.word_ar)}</div>` : ""}
+          </span>
+          <span class="choiceMeta">${isDone ? ("→ " + esc(chosen)) : "اختر"}</span>
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  const defList = defs.map(d => {
+    const usedBy = state.defToWord[d.letter];
+    const isActive = state.selectedDef === d.letter;
+    const isDone = usedBy !== undefined;
+    return `
+      <div class="choice">
+        <div class="badge">${esc(d.letter)}</div>
+        <button id="dbtn_${esc(d.letter)}" class="itemBtn ${isActive?'active':''} ${isDone?'done':''}" onclick="selectDef('${esc(d.letter)}')" ${isDone?'disabled':''}>
+          <span>
+            <span class="choiceText">${esc(d.en)}</span>
+            ${state.showAr && d.ar ? `<div class="small" style="margin-top:4px;">${esc(d.ar)}</div>` : ""}
+          </span>
+          <span class="choiceMeta">${isDone ? "مُستخدم" : "اختر"}</span>
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  elScreen.innerHTML = `
+    ${headerBlock(state.test.title, progress)}
+    <div class="matchWrap">
+      <div class="col"><div class="colTitle">الكلمات</div><div class="list">${wordList}</div></div>
+      <div class="col"><div class="colTitle">التعاريف</div><div class="list">${defList}</div></div>
+    </div>
+    <div id="feedback"></div>
+    <div class="nav" style="margin-top:12px;">
+      <button class="primary" onclick="finalizeMatching()" ${matched===total ? "" : "disabled"}>إنهاء وحساب النتيجة</button>
+      <button class="mutedbtn" onclick="resetMatching()">إعادة ضبط</button>
+      <button class="mutedbtn" onclick="goSummary()">الملخص</button>
+    </div>
+    <div class="previewBox" id="previewBox" style="display:none;"></div>
+  `;
+}
+
+window.selectWord = function(idx){ state.selectedWord = idx; renderMatch(true); }
+window.selectDef = function(letter){
+  state.selectedDef = letter;
+  if(state.selectedWord !== null && state.selectedDef !== null){
+    const wIdx = state.selectedWord;
+    const ltr = state.selectedDef;
+
+    const words = state.test.words || [];
+    const correct = (words[wIdx] || {}).correct_letter;
+    const wEl = document.getElementById("wbtn_"+wIdx);
+    const dEl = document.getElementById("dbtn_"+ltr);
+
+    const ok = ltr === correct;
+
+    // Visual flash
+    if(ok) {
+      wEl?.classList.add("flashGood");
+      dEl?.classList.add("flashGood");
+    } else {
+      wEl?.classList.add("flashBad");
+      dEl?.classList.add("flashBad");
+    }
+
+    setTimeout(()=>{
+      wEl?.classList.remove("flashGood","flashBad");
+      dEl?.classList.remove("flashGood","flashBad");
+
+      if(ok) {
+        // lock in
+        state.wordToDef[wIdx]=ltr;
+        state.defToWord[ltr]=wIdx;
+        state.correct++;
+        updateCounts();
+        setFeedback(`<div class="feedback good"><div class="fbTitle"><b>✅ صحيح</b><span class="small">تمت المزاوجة بنجاح</span></div></div>`);
+      } else {
+        // count wrong attempt, allow retry
+        state.wrong++;
+        state.attempts[wIdx] = (state.attempts[wIdx]||0)+1;
+        updateCounts();
+        setFeedback(`<div class="feedback bad"><div class="fbTitle"><b>❌ خطأ</b><span class="small">جرّب مرة أخرى</span></div></div>`);
+      }
+
+      state.selectedWord=null;
+      state.selectedDef=null;
+      renderMatch(true);
+    }, 350);
+  } else {
+    renderMatch(true);
+  }
+}
+
+window.resetMatching = function(){
+  state.selectedWord=null; state.selectedDef=null; state.wordToDef={}; state.defToWord={}; state.attempts={};
+  state.correct=0; state.wrong=0; state.answers=[];
+  updateCounts();
+  renderMatch();
+}
+
+window.finalizeMatching = function(){
+  // build answers list for summary
+  const words = state.test.words || [];
+  state.answers = words.map((w, idx)=>({
+    wordEn:w.word_en, wordAr:w.word_ar,
+    picked: state.wordToDef[idx],
+    correct: w.correct_letter,
+    ok: state.wordToDef[idx] === w.correct_letter,
+    wrongAttempts: state.attempts[idx] || 0
+  }));
+  goSummary();
+}
+
+/* Summary */
+window.goSummary = function(){
+  if(state.timerId) clearInterval(state.timerId);
+  state.timerId=null;
+  const elapsed = state.startedAt ? (Date.now() - state.startedAt) : 0;
+
+  let total=0, answered=0;
+  if(state.test.type==="mcq"){ total=(state.test.items||[]).length; answered=state.answers.filter(Boolean).length; }
+  else { total=(state.test.words||[]).length; answered=Object.keys(state.wordToDef).length; }
+
+  let itemsHtml="";
+  if(state.test.type==="mcq"){
+    itemsHtml = (state.test.items||[]).map((it, idx)=>{
+      const a=state.answers[idx];
+      const tag = !a ? '<span class="tag">غير مُجاب</span>' : (a.isCorrect ? '<span class="tag good">صحيح</span>' : '<span class="tag bad">خطأ</span>');
+      const correctOpt = (it.options||[]).find(o=>o.key===it.correct_key) || {en:it.correct_en, ar:it.correct_ar};
+      const pickedLine = !a ? '<div class="small">إجابتك: —</div>' :
+        `<div class="small">إجابتك: <span class="ltr"><b>${esc(a.pickedKey)}) ${esc(a.pickedEn)}</b></span>${state.showAr && a.pickedAr ? ` — ${esc(a.pickedAr)}` : ""}</div>`;
+      const correctLine = `<div class="small">الصحيح: <span class="ltr"><b>${esc(it.correct_key)}) ${esc(correctOpt.en||"")}</b></span>${state.showAr && correctOpt.ar ? ` — ${esc(correctOpt.ar)}` : ""}</div>`;
+      return `
+        <div class="summaryItem">
+          <div class="summaryTop">
+            <div>
+              <div class="qtext" style="font-size:16px;margin:0 0 6px 0;">${esc(it.q_en)}</div>
+              ${state.showAr && it.q_ar ? `<div class="small">${esc(it.q_ar)}</div>` : ""}
+            </div>
+            ${tag}
+          </div>
+          ${pickedLine}
+          ${correctLine}
+        </div>
+      `;
+    }).join("");
+  } else {
+    const defs = state.test.defs || [];
+    itemsHtml = (state.test.words||[]).map((wrd, idx)=>{
+      const picked = state.wordToDef[idx];
+      const ok = picked === wrd.correct_letter;
+      const tag = picked===undefined ? '<span class="tag">غير مُجاب</span>' : (ok ? '<span class="tag good">صحيح</span>' : '<span class="tag bad">خطأ</span>');
+      const pickedDef = defs.find(d=>d.letter===picked) || {};
+      const correctDef = defs.find(d=>d.letter===wrd.correct_letter) || {};
+      const wrongAtt = state.attempts[idx] || 0;
+
+      const pickedLine = picked===undefined ? '<div class="small">إجابتك: —</div>' :
+        `<div class="small">إجابتك: <span class="ltr"><b>${esc(picked)}) ${esc(pickedDef.en||"")}</b></span>${state.showAr && pickedDef.ar ? ` — ${esc(pickedDef.ar)}` : ""}</div>`;
+      const correctLine = `<div class="small">الصحيح: <span class="ltr"><b>${esc(wrd.correct_letter)}) ${esc(correctDef.en||"")}</b></span>${state.showAr && correctDef.ar ? ` — ${esc(correctDef.ar)}` : ""}</div>`;
+      const attemptsLine = `<div class="small">محاولات خاطئة على هذا البند: <b>${wrongAtt}</b></div>`;
+
+      return `
+        <div class="summaryItem">
+          <div class="summaryTop">
+            <div>
+              <div class="qtext" style="font-size:16px;margin:0 0 6px 0;">${esc(wrd.word_en)}</div>
+              ${state.showAr && wrd.word_ar ? `<div class="small">${esc(wrd.word_ar)}</div>` : ""}
+            </div>
+            ${tag}
+          </div>
+          ${pickedLine}
+          ${correctLine}
+          ${attemptsLine}
+        </div>
+      `;
+    }).join("");
+  }
+
+  const tLabel = state.showAr ? "إخفاء الترجمة" : "ترجمة";
+  elScreen.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="qhead" style="margin-bottom:0;">
+        <div>
+          <div class="qnum">النتيجة النهائية — ${esc(state.test.title)}</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px;">
+            <div class="pill">الوقت المستغرق: <b>${fmtTime(elapsed)}</b></div>
+            <div class="pill">المُجاب: <b>${answered} / ${total}</b></div>
+            <div class="pill">✅ صحيح: <b>${state.correct}</b></div>
+            <div class="pill">❌ خطأ: <b>${state.wrong}</b></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="mutedbtn tbtn" onclick="toggleAr()">${tLabel}</button>
+          <button class="mutedbtn tbtn" onclick="togglePreview()">Preview</button>
+          <button class="primary" onclick="renderHome()">ابدأ من جديد</button>
+        </div>
+      </div>
+      <div class="previewBox" id="previewBox" style="display:none;"></div>
+      <div class="notice">ملخص الإجابات (استخدم زر «ترجمة» لإظهار/إخفاء العربية).</div>
+      <div>${itemsHtml}</div>
+    </div>
+  `;
+  elStats.style.display='';
+  elTime.textContent=fmtTime(elapsed);
+  updateCounts();
+}
+
+/* Preview helper panel */
+window.togglePreview = function(){
+  const box = document.getElementById('previewBox');
+  if(!box) return;
+  const visible = box.style.display !== 'none';
+  if(visible) { box.style.display='none'; return; }
+
+  box.style.display='block';
+  box.innerHTML = `
+    <div class="small" style="margin-bottom:8px;">ضع رابط <b>RAW</b> بعد ما ترفع الملف على GitHub (أو أي استضافة) وسيعطيك رابط Preview جاهز لتيليقرام:</div>
+    <input id="rawUrl" type="text" placeholder="مثال: https://raw.githubusercontent.com/USER/REPO/main/vocab_quiz_tool_preview.html" />
+    <div class="copyRow">
+      <button class="primary" onclick="makePreview()">إنشاء رابط Preview</button>
+      <button class="mutedbtn" onclick="copyPreview()">نسخ</button>
+    </div>
+    <div class="notice">سيظهر الرابط هنا:</div>
+    <div id="previewOut" class="mono" style="word-break:break-all;"></div>
+    <div class="notice">صيغة Preview المستخدمة: <span class="mono">https://htmlpreview.github.io/? + RAW_URL</span></div>
+  `;
+}
+
+window.makePreview = function(){
+  const raw = document.getElementById('rawUrl')?.value?.trim() || "";
+  const out = document.getElementById('previewOut');
+  if(!out) return;
+  if(!raw) { out.textContent = "ضع رابط RAW أولاً."; return; }
+  out.textContent = "https://htmlpreview.github.io/?" + raw;
+}
+
+window.copyPreview = async function(){
+  const text = document.getElementById('previewOut')?.textContent || "";
+  if(!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("تم النسخ ✅");
+  } catch(e) {
+    alert("ما قدر ينسخ (جرّب نسخة يدويًا).");
+  }
+}
+
+renderHome();
+<\/script>
+</body>
+</html>
+`,
+};
+
+function showTool(which) {
+  document.getElementById('btnGrammar').classList.toggle('active', which === 'grammar');
+  document.getElementById('btnVocab').classList.toggle('active', which === 'vocab');
+  const frame = document.getElementById('toolFrame');
+  frame.srcdoc = TOOLS[which];
+}
+
+showTool('grammar');
+</script>
+</body>
+</html>
