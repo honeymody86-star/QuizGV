@@ -129,7 +129,7 @@
     if (player) player.destroy();
     player = root.PassoPlayer.createPlayer(screens.player, {
       lang, settings: store.settings, t: t(), N: N[lang], pack: pack(),
-      onExit: () => { if (confirm(t().exitConfirm)) { player.destroy(); renderHome(); } else player.resume(); },
+      onExit: () => { player.destroy(); renderHome(); },
       onSettings: () => openSettings(() => player.resume()),
       onWeak: (id) => { sessionWeak.add(id); store.weak[id] = (store.weak[id] || 0) + 1; save(); },
       onDone: (result) => finishLesson(lesson, result),
@@ -140,7 +140,7 @@
 
   function startReview() {
     const ids = Object.entries(store.weak).sort((a, b) => b[1] - a[1]).map(([id]) => id).slice(0, 12);
-    if (!ids.length) { alert(t().nothingToReview); return; }
+    if (!ids.length) return;
     startLesson({ id: 'review', type: 'review', ids, title: { ar: UI.ar.reviewTitle, en: UI.en.reviewTitle } });
   }
 
