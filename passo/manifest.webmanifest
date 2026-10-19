@@ -1,0 +1,11 @@
+{
+  "name": "Passo a Passo — Italian",
+  "short_name": "Passo a Passo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d1326",
+  "theme_color": "#0d1326",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
