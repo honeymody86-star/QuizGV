@@ -136,6 +136,7 @@
     pensare: { ar: 'يظن', en: 'to think', ic: '🤔' },
     sperare: { ar: 'يأمل', en: 'to hope', ic: '🤞' },
     venire: { ar: 'يأتي', en: 'to come', ic: '👋' },
+    dire: { ar: 'يقول', en: 'to say', ic: '🗣️' },
   };
 
   return { TENSES, PRONOUN_INFO, VERBS, speechLang: 'it-IT', name: { ar: 'الإيطالية', en: 'Italian', it: 'Italiano' }, flag: '🇮🇹' };

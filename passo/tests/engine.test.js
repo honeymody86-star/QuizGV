@@ -6,6 +6,7 @@ const lex = require('../lang/it/lexicon.js');
 const course = require('../lang/it/course.js');
 const M = require('../js/model.js');
 const match = require('../js/match.js');
+const scenes = require('../lang/it/scenes.js');
 
 const pack = { conj: C, lex, course };
 const f = (v, t, p, g, o) => C.conjugate(v, t, p, g, o).text;
@@ -83,4 +84,19 @@ test('speech matching accepts dropped pronouns and small errors', () => {
   assert.ok(match.judge("Tu hai studiato l'italiano.", ['tu hai studiato litaliano']).ok);
   assert.ok(match.judge('Io mangerò una mela.', ['io mangero una mela']).ok);
   assert.ok(!match.judge('Io mangerò una mela.', ['io bevo un caffè']).ok);
+});
+
+test('course statistics and sentence types', () => {
+  const st = M.courseStats(pack);
+  assert.ok(st.words > 100 && st.sentences > 60 && st.lessons >= 20);
+  const kinds = M.allLessons(pack).filter((l) => l.sentences).flatMap((l) => M.buildLesson(pack, l).sentences.map((s) => s.kind));
+  ['simple', 'compound', 'complex', 'cc'].forEach((k) => assert.ok(kinds.includes(k), k));
+});
+
+test('immersion scenes are well formed', () => {
+  assert.ok(scenes.length >= 5);
+  scenes.forEach((sc) => sc.lines.forEach((l) => {
+    assert.ok(l.m.ar && l.m.en, sc.id);
+    if (l.who === 'you') assert.strictEqual(new Set(l.choices).size, 3, sc.id);
+  }));
 });

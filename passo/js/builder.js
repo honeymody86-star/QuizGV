@@ -14,12 +14,12 @@
  */
 (function (root) {
   'use strict';
-  const { N: NARR, ROLE, OVERVIEW, UI } = root.PassoI18n;
+  const { N: NARR, ROLE, OVERVIEW, UI, KIND, LEVELS } = root.PassoI18n;
   const M = root.PassoModel;
   const Q = root.PassoQuiz;
   const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  const say = (line) => ({ beat: true, run: (c, sig) => c.say(line, sig) });
+  const say = (line) => ({ beat: true, line, run: (c, sig) => c.say(line, sig) });
   const act = (fn, opts) => Object.assign({ run: async (c, sig) => fn(c, true, sig), apply: (c) => fn(c, false) }, opts);
   const scene = (fn) => act(fn, { checkpoint: true, beat: true });
 
@@ -54,17 +54,25 @@
     const labels = model.rows.map((r) => r.label[lang]);
     const steps = [];
     const seen = new Set();
-    const showGrid = (s) => (c) => c.stage.grid(model, s, { lang, showMeaning: c.settings.meanings });
+    const showGrid = (s) => (c) => c.stage.grid(model, s, { lang, showMeaning: c.settings.meanings, kindLabel: KIND[lang][s.kind], roles });
+    const info = M.courseStats(pack).byLesson[lesson.id];
+    const ui = UI[lang];
 
-    steps.push(scene((c) => c.stage.title({ badge: `${lesson.unit.level} · ${lesson.unit.title[lang]}`, title: lesson.title[lang], goal: lesson.goal[lang], rows: model.rows.map((r) => Object.assign({}, r, { label: r.label[lang] })) })));
+    steps.push(scene((c) => c.stage.title({
+      badge: `${lesson.unit.level} · ${LEVELS[lesson.unit.level][lang]} · ${lesson.unit.title[lang]}`, title: lesson.title[lang], goal: lesson.goal[lang],
+      rows: model.rows.map((r) => Object.assign({}, r, { label: r.label[lang] })),
+      info: ui.lessonInfo(model.sentences.length, info.fresh.length, info.minutes),
+      vocabLabel: ui.newWords, vocab: info.fresh.map((v) => ({ it: v.it, ic: v.ic, role: v.role, m: v.m && v.m[lang] })),
+    })));
     steps.push(say(N.lessonIntro(lesson.title[lang], lesson.goal[lang])));
+    if (info.fresh.length) steps.push(say(N.newWords(info.fresh.length)));
     if (model.rows.length > 1) steps.push(say(N.rowsIntro(labels)));
 
     model.sentences.forEach((s, si) => {
       const mid = model.rows.findIndex((r) => r.key === 'pres');
       const introGloss = s.rows[mid >= 0 ? mid : 0].gloss[lang];
       steps.push(scene(showGrid(s)));
-      steps.push(say(N.sentenceIntro(si + 1, introGloss)));
+      steps.push(say(N.sentenceIntro(si + 1, introGloss, KIND[lang][s.kind])));
 
       // Build the sentence, one segment (column) at a time, in every row together
       let firstSeg = true;
@@ -83,20 +91,20 @@
           c.stage.showGloss(r, true);
           if (!anim) return;
           c.stage.focusRow(r);
-          await c.speakTarget(row.full, sig);
+          await c.speakTarget(row.full, sig, 1, { r, row });
           await c.say(N.means(row.gloss[lang]), sig);
           c.stage.focusRow(null);
-        }, { beat: true }));
+        }, { beat: true, pre: [{ target: row.full }, { line: N.means(row.gloss[lang]), native: lang }] }));
       });
 
       // Repeat after me (Pimsleur style: model → your turn → confirmation)
       steps.push(say(N.repeatIntro));
-      s.rows.forEach((row, r) => steps.push({ beat: true, run: (c, sig) => repeatRow(c, N, row, r, sig) }));
+      s.rows.forEach((row, r) => steps.push({ beat: true, pre: [{ target: row.full }], run: (c, sig) => repeatRow(c, N, row, r, sig) }));
 
       // Recall without looking
       const askRows = shuffle(s.rows.map((_, r) => r)).slice(0, Math.min(2, s.rows.length));
       steps.push(say(N.askIntro));
-      askRows.forEach((r) => steps.push({ beat: true, run: (c, sig) => anticipate(c, N, s.rows[r], r, sig, true) }));
+      askRows.forEach((r) => steps.push({ beat: true, pre: [{ line: N.ask(s.rows[r].gloss[lang]), native: lang }], run: (c, sig) => anticipate(c, N, s.rows[r], r, sig, true) }));
 
       // Mini quiz every two sentences
       if (si % 2 === 1 && si < model.sentences.length - 1) {
@@ -168,7 +176,8 @@
 
   async function repeatRow(c, N, row, r, sig) {
     c.stage.focusRow(r);
-    await c.speakTarget(row.full, sig, 0.82);
+    const ref = r == null ? null : { r, row };
+    await c.speakTarget(row.full, sig, 0.82, ref);
     if (sig.aborted) return;
     const res = await c.turn(row.full, sig);
     if (sig.aborted) return;
@@ -176,9 +185,9 @@
       await c.say(N.praise(), sig);
     } else if (res.heard) {
       await c.say(N.close, sig);
-      await c.speakTarget(row.full, sig, 0.82);
+      await c.speakTarget(row.full, sig, 0.82, ref);
     } else {
-      await c.speakTarget(row.full, sig);
+      await c.speakTarget(row.full, sig, 1, ref);
     }
     c.stage.focusRow(null);
   }
@@ -192,8 +201,9 @@
     if (cover) c.stage.cover(false);
     if (res.ok) await c.say(N.praise(), sig);
     else { c.markWeak(row.id); await c.say(N.answerIs, sig); }
-    await c.speakTarget(row.full, sig);
-    if (!res.ok) await c.speakTarget(row.full, sig, 0.82);
+    const ref = cover ? { r, row } : null;
+    await c.speakTarget(row.full, sig, 1, ref);
+    if (!res.ok) await c.speakTarget(row.full, sig, 0.82, ref);
     if (cover) c.stage.focusRow(null);
   }
 
@@ -243,9 +253,9 @@
     // Sentence anatomy, using the real grid with one row
     const demo = { id: 'demo', rows: ['pres'], sentences: [{ segs: [{ r: 'subj', p: 'io' }, { r: 'verb', v: 'mangiare' }, { r: 'obj', it: 'una mela', ic: '🍎', m: { ar: 'تفاحة', en: 'an apple' } }], g: { ar: ['آكلُ تفاحة'], en: ['I eat an apple'] } }] };
     const dm = M.buildLesson(pack, demo);
-    steps.push(scene((c) => c.stage.grid(dm, dm.sentences[0], { lang, showMeaning: true })));
+    steps.push(scene((c) => c.stage.grid(dm, dm.sentences[0], { lang, showMeaning: true, kindLabel: KIND[lang].simple, roles: ROLE[lang] })));
     steps.push(say(O.anatomy));
-    [0, 1, 2].forEach((k) => steps.push(act(async (c, anim, sig) => { c.stage.reveal(k, anim); if (anim) await root.PassoSpeech.sleep(450, sig); })));
+    [0, 1, 2].forEach((k) => steps.push(act(async (c, anim, sig) => { c.stage.reveal(k, anim); if (anim) await c.pause(450, sig); })));
     steps.push(say(O.anatomyWords));
     steps.push(act((c) => c.stage.showGloss(0, true)));
 
@@ -267,9 +277,9 @@
     steps.push(say(O.road));
 
     // First taste: repeat one sentence
-    steps.push(scene((c) => { c.stage.grid(dm, dm.sentences[0], { lang, showMeaning: true }); c.stage.revealAll(); c.stage.showGloss(0, true); }));
+    steps.push(scene((c) => { c.stage.grid(dm, dm.sentences[0], { lang, showMeaning: true, kindLabel: KIND[lang].simple, roles: ROLE[lang] }); c.stage.revealAll(); c.stage.showGloss(0, true); }));
     steps.push(say(O.try));
-    steps.push({ beat: true, run: async (c, sig) => { c.stage.focusRow(0); await c.speakTarget(dm.sentences[0].rows[0].full, sig, 0.82); } });
+    steps.push({ beat: true, run: async (c, sig) => { c.stage.focusRow(0); await c.speakTarget(dm.sentences[0].rows[0].full, sig, 0.82, { r: 0, row: dm.sentences[0].rows[0] }); } });
     steps.push(say(O.tryAsk));
     steps.push({ beat: true, run: (c, sig) => repeatRow(c, NARR[lang], dm.sentences[0].rows[0], 0, sig) });
     steps.push(say(O.bye));

@@ -36,6 +36,8 @@
         <h2>${esc(d.title)}</h2>
         <p>${esc(d.goal)}</p>
         ${d.rows ? `<div class="row-pills">${d.rows.map((r) => `<span class="pill t-${r.time}">${esc(r.icon)} ${esc(r.label)} <small dir="ltr">${esc(r.it)}</small></span>`).join('')}</div>` : ''}
+        ${d.info ? `<div class="title-info">${esc(d.info)}</div>` : ''}
+        ${d.vocab && d.vocab.length ? `<div class="vocab-head">${esc(d.vocabLabel)}</div><div class="vocab" dir="ltr">${d.vocab.map((v, i) => `<span class="vchip r-${v.role}" style="--d:${i * 60}ms"><i aria-hidden="true">${esc(v.ic || '•')}</i><b>${esc(v.it)}</b><small dir="auto">${esc(v.m || '')}</small></span>`).join('')}</div>` : ''}
       </div>`;
     }
 
@@ -54,7 +56,10 @@
         });
         cells += `<div class="gloss hid" data-row="${r}" dir="auto" style="grid-row:${line + 1};grid-column:2 / -1"><span class="full" dir="ltr">${esc(sentence.rows[r].full)}</span><span class="tr">${esc(sentence.rows[r].gloss[lang])}</span></div>`;
       });
-      this.el.innerHTML = `<div class="scene grid-scene"><div class="grid-scroll"><div class="grid" dir="ltr" style="grid-template-columns:max-content repeat(${n}, max-content)">${cells}</div></div></div>`;
+      const roles = Array.from(new Set(sentence.segs.map((g) => g.role)));
+      const head = opts.kindLabel ? `<div class="grid-head"><span class="kind k-${sentence.kind}">${esc(opts.kindLabel)}</span>
+        <span class="legend">${roles.map((r) => `<span class="lg r-${r}"><i></i>${esc((opts.roles || {})[r] || r)}</span>`).join('')}</span></div>` : '';
+      this.el.innerHTML = `<div class="scene grid-scene">${head}<div class="grid-scroll"><div class="grid" dir="ltr" style="grid-template-columns:max-content repeat(${n}, max-content)">${cells}</div></div></div>`;
       this.gridEl = $('.grid', this.el);
     }
 
@@ -79,6 +84,18 @@
       if (!this.gridEl) return;
       $$('[data-row]', this.gridEl).forEach((el) => el.classList.toggle('active', r != null && +el.dataset.row === r));
       this.gridEl.classList.toggle('has-focus', r != null);
+    }
+
+    // Karaoke: light up the token being spoken in row r (null clears)
+    karaoke(r, s) {
+      if (!this.gridEl) return;
+      $$('.tok.sung, .tok.now', this.gridEl).forEach((el) => el.classList.remove('sung', 'now'));
+      if (r == null) return;
+      $$(`.tok[data-row="${r}"]`, this.gridEl).forEach((el) => {
+        const k = +el.dataset.seg;
+        if (k < s) el.classList.add('sung');
+        else if (k === s) el.classList.add('now');
+      });
     }
 
     focusCell(r, s) {
@@ -149,9 +166,13 @@
     }
   }
 
-  // ---------- Instructor caption ----------
+  // ---------- Instructor caption (one span per word, for karaoke) ----------
   function captionHtml(line) {
-    return root.PassoSpeech.parse(line).map((p) => (p.target ? `<span class="it" dir="ltr">${esc(p.text)}</span>` : esc(p.text))).join('');
+    return root.PassoSpeech.parse(line).map((p) => {
+      let i = p.offset;
+      const html = esc(p.text).replace(/\S+/g, (w) => `<span class="cw" data-w="${i++}">${w}</span>`);
+      return p.target ? `<span class="it" dir="ltr">${html}</span>` : html;
+    }).join('');
   }
 
   root.PassoStage = { Stage, tokenHtml, captionHtml, esc };

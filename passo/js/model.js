@@ -63,7 +63,7 @@
     });
 
     segs.forEach((s) => { s.same = s.cells.every((c) => c.text === s.cells[0].text); });
-    return { index: si, segs, rows, note: sent.note, src: sent };
+    return { index: si, segs, rows, note: sent.note, src: sent, kind: kindOf(sent) };
   }
 
   function dispOf(c) {
@@ -87,5 +87,72 @@
     return out;
   }
 
-  return { buildLesson, allLessons, cap };
+  // ---------- Sentence type: simple / compound / complex / compound-complex ----------
+  const COORD = new Set(['e', 'ma', 'o', 'quindi', 'e poi']);
+  const SUBORD = new Set(['perché', 'quando', 'se', 'che']);
+  function kindOf(src) {
+    const verbs = src.segs.filter((s) => s.r === 'verb').length;
+    const conjs = src.segs.filter((s) => s.r === 'conj').map((s) => s.it);
+    const sub = conjs.some((c) => SUBORD.has(c));
+    const coord = verbs >= 2 && conjs.some((c) => COORD.has(c));
+    if (sub && coord) return 'cc';
+    if (sub) return 'complex';
+    if (coord) return 'compound';
+    return 'simple';
+  }
+
+  // ---------- Vocabulary & statistics ----------
+  const ARTICLES = new Set(['il', 'lo', 'la', 'i', 'gli', 'le', 'l', 'un', 'una', 'uno']);
+  const wordSplit = (t) => String(t).toLowerCase().split(/[\s']+/).map((w) => w.replace(/[^\p{L}]/gu, '')).filter((w) => w && !ARTICLES.has(w));
+
+  // Vocabulary items of a lesson: verbs by infinitive, other segments by their text
+  function lessonVocab(pack, lesson) {
+    const items = [];
+    const seen = new Set();
+    const add = (key, it) => { if (!seen.has(key)) { seen.add(key); items.push(it); } };
+    (lesson.sentences || []).forEach((s) => s.segs.forEach((seg) => {
+      if (seg.r === 'verb' && seg.v) {
+        const v = pack.lex.VERBS[seg.v] || {};
+        add('v:' + seg.v, { it: seg.v, ic: v.ic, m: { ar: v.ar, en: v.en }, role: 'verb', words: [seg.v] });
+      } else if (seg.r === 'subj' && seg.p) {
+        const info = pack.lex.PRONOUN_INFO[seg.p];
+        add('p:' + seg.p, { it: info.it, ic: info.ic, m: info.m, role: 'subj', words: [info.it] });
+      } else {
+        const texts = typeof seg.it === 'object' ? Object.entries(seg.it) : [[null, seg.it]];
+        texts.forEach(([k, t]) => {
+          const m = seg.m && (seg.m.ar ? seg.m : seg.m[k]);
+          add('w:' + t.toLowerCase(), { it: t, ic: typeof seg.ic === 'object' ? seg.ic[k] : seg.ic, m, role: seg.r, words: wordSplit(t) });
+        });
+      }
+    }));
+    return items;
+  }
+
+  function courseStats(pack) {
+    const lessons = allLessons(pack);
+    const seenItems = new Set();
+    const seenWords = new Set();
+    const byLesson = {};
+    const byLevel = {};
+    const tenses = new Set();
+    let sentences = 0;
+    lessons.forEach((l) => {
+      const lvl = (byLevel[l.unit.level] = byLevel[l.unit.level] || { lessons: [], words: new Set(), sentences: 0 });
+      lvl.lessons.push(l.id);
+      const items = lessonVocab(pack, l);
+      const fresh = items.filter((it) => !seenItems.has(it.it.toLowerCase()));
+      fresh.forEach((it) => seenItems.add(it.it.toLowerCase()));
+      const words = new Set(items.flatMap((it) => it.words));
+      words.forEach((w) => { seenWords.add(w); lvl.words.add(w); });
+      const n = (l.sentences || []).length;
+      sentences += n;
+      lvl.sentences += n;
+      (l.rows || []).forEach((r) => tenses.add(r));
+      (l.sentences || []).forEach((s) => s.segs.forEach((g) => g.tmap && Object.values(g.tmap).forEach((t) => tenses.add(t))));
+      byLesson[l.id] = { fresh, words, sentences: n, minutes: l.type === 'overview' ? 6 : Math.round(3 + n * (l.rows ? l.rows.length : 1) * 1.1) };
+    });
+    return { lessons: lessons.length, sentences, words: seenWords.size, tenses: tenses.size, byLesson, byLevel };
+  }
+
+  return { buildLesson, allLessons, cap, kindOf, lessonVocab, courseStats };
 });

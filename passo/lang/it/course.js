@@ -46,6 +46,21 @@
       desc: { ar: 'جمل بسيطة: فاعل + فعل + مفعول به', en: 'Simple sentences: subject + verb + object' },
       lessons: [
         {
+          id: 'u1l0', rows: TRIO,
+          title: { ar: 'أهم فعلين: essere و avere', en: 'The two key verbs: essere & avere' },
+          goal: { ar: '«essere» يعني «يكون» و«avere» يعني «عنده». هذولي أكثر فعلين تسمعهم في إيطاليا.', en: '“Essere” means “to be” and “avere” means “to have” — the two verbs you will hear most in Italy.' },
+          sentences: [
+            { segs: [subj('tu'), verb('essere'), comp('in Italia', 'في إيطاليا', 'in Italy', '🇮🇹')],
+              g: { ar: ['كنتَ في إيطاليا', 'أنتَ في إيطاليا', 'ستكون في إيطاليا'], en: ['You have been in Italy', 'You are in Italy', 'You will be in Italy'] } },
+            { segs: [subj('lei'), verb('avere'), obj('un cane', 'كلب', 'a dog', '🐶')],
+              g: { ar: ['كان عندها كلب', 'عندها كلب', 'سيكون عندها كلب'], en: ['She has had a dog', 'She has a dog', 'She will have a dog'] } },
+            { segs: [subj('noi'), verb('essere'), comp('a casa', 'في البيت', 'at home', '🏠'), DAYS],
+              g: { ar: ['كنّا في البيت أمس', 'نحن في البيت اليوم', 'سنكون في البيت غدًا'], en: ['We were at home yesterday', 'We are at home today', 'We will be at home tomorrow'] } },
+            { segs: [subj('loro'), verb('avere'), obj('una macchina', 'سيارة', 'a car', '🚗')],
+              g: { ar: ['كان عندهم سيارة', 'عندهم سيارة', 'سيكون عندهم سيارة'], en: ['They have had a car', 'They have a car', 'They will have a car'] } },
+          ],
+        },
+        {
           id: 'u1l1', rows: TRIO,
           title: { ar: 'أنا: أول جملة', en: '“I”: your first sentence' },
           goal: { ar: 'نبني جملًا مع «io» يعني «أنا» في الماضي والحاضر والمستقبل.', en: 'We build sentences with “io” — “I” — in the past, present and future.' },
@@ -134,6 +149,21 @@
               g: { ar: ['هل تكلّمتَ الإنجليزية؟', 'هل تتكلّمُ الإنجليزية؟', 'هل ستتكلّمُ الإنجليزية؟'], en: ['Did you speak English?', 'Do you speak English?', 'Will you speak English?'] } },
           ],
         },
+        {
+          id: 'u1l7', rows: TRIO,
+          title: { ar: 'أفعال كل يوم: fare • venire • dire', en: 'Everyday verbs: fare • venire • dire' },
+          goal: { ar: 'أفعال شاذة لكنها في كل جملة تقريبًا. نحفظها بالتكرار.', en: 'Irregular verbs that show up in almost every sentence. We learn them by repetition.' },
+          sentences: [
+            { segs: [subj('io'), verb('fare'), obj('colazione', 'الفطور', 'breakfast', '🥐'), DAYS],
+              g: { ar: ['فطرتُ أمس', 'أفطرُ اليوم', 'سأفطرُ غدًا'], en: ['I had breakfast yesterday', 'I have breakfast today', 'I will have breakfast tomorrow'] } },
+            { segs: [subj('tu'), verb('venire'), comp('con me', 'معي', 'with me', '🤝')],
+              g: { ar: ['جئتَ معي', 'تجي معي', 'ستجي معي'], en: ['You came with me', 'You come with me', 'You will come with me'] } },
+            { segs: [subj('loro'), verb('fare'), obj('la spesa', 'المقاضي', 'the shopping', '🛒')],
+              g: { ar: ['اشتروا المقاضي', 'يشترون المقاضي', 'سيشترون المقاضي'], en: ['They did the shopping', 'They do the shopping', 'They will do the shopping'] } },
+            { segs: [subj('lui'), verb('dire'), obj('la verità', 'الحقيقة', 'the truth', '💬')],
+              g: { ar: ['قال الحقيقة', 'يقول الحقيقة', 'سيقول الحقيقة'], en: ['He told the truth', 'He tells the truth', 'He will tell the truth'] } },
+          ],
+        },
       ],
     },
     {
@@ -156,6 +186,9 @@
             { segs: [subj('noi'), verb('andare'), comp('al mare', 'إلى البحر', 'to the sea', '🏖️'), conj('e', 'و', 'and'), verb('nuotare')],
               g: { ar: ['ذهبنا إلى البحر وسبحنا', 'نذهبُ إلى البحر ونسبح', 'سنذهبُ إلى البحر وسنسبح'],
                 en: ['We went to the sea and swam', 'We go to the sea and swim', 'We will go to the sea and swim'] } },
+            { segs: [subj('lei'), verb('parlare'), obj('italiano', 'الإيطالية', 'Italian', '🇮🇹'), conj('ma', 'لكن', 'but'), NON, verb('parlare'), obj('inglese', 'الإنجليزية', 'English', '🇬🇧')],
+              g: { ar: ['تكلّمتْ الإيطالية لكنها لم تتكلّم الإنجليزية', 'تتكلّمُ الإيطالية لكنها لا تتكلّم الإنجليزية', 'ستتكلّمُ الإيطالية لكنها لن تتكلّم الإنجليزية'],
+                en: ["She spoke Italian but didn't speak English", "She speaks Italian but doesn't speak English", "She will speak Italian but won't speak English"] } },
           ],
         },
         {
@@ -239,6 +272,8 @@
               g: { ar: ['عندما وصلتُ إلى البيت اتصلتُ بأمي', 'عندما أصلُ إلى البيت أتصلُ بأمي', 'عندما سأصلُ إلى البيت سأتصلُ بأمي'], en: ['When I arrived home, I called my mother', 'When I arrive home, I call my mother', 'When I arrive home, I will call my mother'] } },
             { segs: [conj('quando', 'عندما', 'when'), subj('lui'), verb('finire'), obj('il lavoro', 'العمل', 'work', '💼', { post: ',' }), verb('andare'), comp('in palestra', 'إلى النادي', 'to the gym', '🏋️')],
               g: { ar: ['عندما أنهى العمل ذهبَ إلى النادي', 'عندما يُنهي العمل يذهبُ إلى النادي', 'عندما سيُنهي العمل سيذهبُ إلى النادي'], en: ['When he finished work, he went to the gym', 'When he finishes work, he goes to the gym', 'When he finishes work, he will go to the gym'] } },
+            { segs: [conj('quando', 'عندما', 'when'), subj('noi'), verb('vedere'), obj('Roma', 'روما', 'Rome', '🏛️', { post: ',' }), verb('essere', { tmap: { pp: 'imp' } }), comp('felici', 'سعداء', 'happy', '😊')],
+              g: { ar: ['عندما رأينا روما كنّا سعداء', 'عندما نرى روما نكون سعداء', 'عندما سنرى روما سنكون سعداء'], en: ['When we saw Rome, we were happy', 'When we see Rome, we are happy', 'When we see Rome, we will be happy'] } },
           ],
         },
         {
@@ -305,6 +340,9 @@
               g: { ar: ['استطعتَ أن تتكلّم مع المدير', 'تستطيع أن تتكلّم مع المدير', 'ستستطيع أن تتكلّم مع المدير'], en: ['You were able to speak with the boss', 'You can speak with the boss', 'You will be able to speak with the boss'] } },
             { segs: [subj('lei'), verb('volere', { tmap: { pp: 'imp' } }), w('inf', 'imparare', 'أن تتعلّم', 'to learn', '🧠'), obj('lo spagnolo', 'الإسبانية', 'Spanish', '🇪🇸')],
               g: { ar: ['كانت تريد أن تتعلّم الإسبانية', 'تريد أن تتعلّم الإسبانية', 'ستريد أن تتعلّم الإسبانية'], en: ['She wanted to learn Spanish', 'She wants to learn Spanish', 'She will want to learn Spanish'] } },
+            { segs: [subj('noi'), verb('dovere', { auxVerb: 'partire' }), w('inf', 'partire', 'أن نسافر', 'to leave', '🧳'), comp('presto', 'مبكرًا', 'early', '🌅')],
+              note: { ar: 'مع فعل حركة بعده، المساعد يصير essere: «siamo dovuti partire».', en: 'With a motion verb after it, the helper becomes essere: “siamo dovuti partire”.' },
+              g: { ar: ['اضطررنا أن نسافر مبكرًا', 'يجب أن نسافر مبكرًا', 'سيجب أن نسافر مبكرًا'], en: ['We had to leave early', 'We have to leave early', 'We will have to leave early'] } },
           ],
         },
         {
@@ -340,6 +378,8 @@
               g: { ar: ['أعرف أنك ستأتي غدًا', 'آمل أن تأتي غدًا'], en: ['I know that you are coming tomorrow', 'I hope that you come tomorrow'] } },
             { segs: [{ r: 'verb', it: { pres: 'vedo', cong: 'voglio' }, ic: { pres: '👁️', cong: '🙏' }, m: { pres: { ar: 'أرى', en: 'I see' }, cong: { ar: 'أريد', en: 'I want' } } }, conj('che', 'أنّ', 'that'), subj('voi'), verb('parlare'), obj('italiano', 'الإيطالية', 'Italian', '🇮🇹')],
               g: { ar: ['أرى أنكم تتكلّمون الإيطالية', 'أريد أن تتكلّموا الإيطالية'], en: ['I see that you all speak Italian', 'I want you all to speak Italian'] } },
+            { segs: [{ r: 'verb', it: { pres: 'è certo', cong: 'è possibile' }, ic: { pres: '💯', cong: '🎲' }, m: { pres: { ar: 'من المؤكد', en: 'it is certain' }, cong: { ar: 'من الممكن', en: 'it is possible' } } }, conj('che', 'أنّ', 'that'), subj('loro'), verb('arrivare'), comp('tardi', 'متأخرين', 'late', '⏰')],
+              g: { ar: ['من المؤكد أنهم يصلون متأخرين', 'من الممكن أن يصلوا متأخرين'], en: ['It is certain that they arrive late', 'It is possible that they arrive late'] } },
           ],
         },
         {

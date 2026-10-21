@@ -48,6 +48,22 @@ async function playLesson(page, id, lang, shot) {
   return false;
 }
 
+async function playGame(page, id) {
+  await page.goto(base);
+  await page.click(`.game-card[data-game="${id}"]`);
+  if (id === 'scenes') await page.click('.scene-card');
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
+    if (await page.isVisible('.g-end')) return true;
+    const choice = await page.$('.g-choice:not(.right):not(.bad)');
+    if (choice) await choice.click().catch(() => {});
+    const tiles = await page.$$('.g-tiles .g-tile');
+    if (tiles.length) await tiles[Math.floor(Math.random() * tiles.length)].click().catch(() => {});
+    await page.waitForTimeout(30);
+  }
+  return false;
+}
+
 try {
   for (const [vw, vh, tag] of [[1280, 900, 'desktop'], [390, 844, 'phone']]) {
     const page = await browser.newPage({ viewport: { width: vw, height: vh } });
@@ -57,6 +73,13 @@ try {
       const ok = await playLesson(page, id, lang, process.env.SHOTS ? `${process.env.SHOTS}/${tag}-${id}` : null);
       console.log(`${ok ? 'PASS' : 'FAIL'} ${tag} ${id} (${lang})`);
       if (!ok) failed = true;
+    }
+    if (tag === 'desktop') {
+      for (const g of ['sprint', 'radar', 'chunk', 'flash', 'scenes']) {
+        const ok = await playGame(page, g);
+        console.log(`${ok ? 'PASS' : 'FAIL'} ${tag} gym:${g}`);
+        if (!ok) failed = true;
+      }
     }
     // The summary must have stored progress
     const progress = await page.evaluate(() => JSON.parse(localStorage.getItem('passo.v1')).progress);

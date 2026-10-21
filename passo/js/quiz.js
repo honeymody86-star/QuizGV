@@ -229,7 +229,7 @@
       await ctx.say(N.wrongIs, signal);
       await sayItalian(correctIt, signal);
     }
-    await root.PassoSpeech.sleep(450, signal);
+    await ctx.pause(450, signal);
     return ok;
   }
 
