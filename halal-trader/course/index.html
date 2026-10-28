@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دورة البوت الحلال</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* التخطيط: شريحة واحدة في المنتصف، شريط علوي للتقدم، وشريط سفلي للترجمة والتحكم مثل مشغل الدروس */
+:root{
+  --bg:#eef2ee; --surface:#ffffff; --ink:#14201b; --muted:#5a6b62; --line:#d6ded8;
+  --accent:#0d7a55; --accent-ink:#ffffff; --gold:#a8771f; --up:#12805c; --down:#c2412d;
+  --glow:rgba(168,119,31,.16); --code:#f5f7f4;
+  --f-display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1210; --surface:#131c19; --ink:#e6eee9; --muted:#93a49b; --line:#26332f;
+  --accent:#34c08a; --accent-ink:#06120d; --gold:#e3b45c; --up:#3ccf91; --down:#ff7a63;
+  --glow:rgba(227,180,92,.14); --code:#0f1715; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1210; --surface:#131c19; --ink:#e6eee9; --muted:#93a49b; --line:#26332f;
+  --accent:#34c08a; --accent-ink:#06120d; --gold:#e3b45c; --up:#3ccf91; --down:#ff7a63;
+  --glow:rgba(227,180,92,.14); --code:#0f1715; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--f-body);
+  display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:12px;padding-block:12px;max-width:1040px;width:100%;margin-inline:auto}
+header .brand{font:700 1.05rem/1.2 var(--f-display);white-space:nowrap}
+header .brand small{display:block;font:500 .75rem var(--f-body);color:var(--muted)}
+.dots{flex:1;display:flex;gap:4px;min-width:0}
+.dots button{flex:1;height:6px;border:0;border-radius:3px;background:var(--line);padding:0}
+.dots button.done{background:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.dots button.on{background:var(--accent)}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 12px;font-size:.9rem;white-space:nowrap}
+
+main{flex:1;min-height:0;display:flex;max-width:1040px;width:100%;margin-inline:auto}
+.slide{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  padding:clamp(18px,4vw,40px);overflow-y:auto;position:relative}
+.part{font:600 .8rem var(--f-body);letter-spacing:.02em;color:var(--gold)}
+.slide h2{font:700 clamp(1.5rem,3.6vw,2.2rem)/1.35 var(--f-display);margin:.2em 0 .7em;text-wrap:balance}
+.slide p{margin:0;max-width:65ch}
+.body{display:flex;flex-direction:column;gap:16px}
+
+/* التظليل أثناء الشرح */
+[data-k]{transition:opacity .35s,background-color .35s,box-shadow .35s;border-radius:12px}
+.speaking [data-k]{opacity:.42}
+.speaking [data-k].hl{opacity:1;background-color:var(--glow);box-shadow:0 0 0 2px var(--gold)}
+@media (prefers-reduced-motion:reduce){[data-k]{transition:none}}
+
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.tile{border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.tile b{display:block;font:600 1.05rem var(--f-display);margin-bottom:4px}
+.tile.no b{color:var(--down)} .tile.yes b{color:var(--up)}
+.big{font:700 clamp(1.6rem,5vw,2.6rem)/1.2 var(--f-display);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono);direction:ltr;unicode-bidi:isolate}
+.muted{color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.flow .tile{flex:1 1 160px;text-align:center}
+.arrow{align-self:center;color:var(--muted);font-size:1.4rem}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+td,th{border-bottom:1px solid var(--line);padding:8px 10px;text-align:right}
+th{font:600 .85rem var(--f-body);color:var(--muted)}
+ol.steps{margin:0;padding-inline-start:1.4em;display:flex;flex-direction:column;gap:6px}
+ol.steps li{padding:6px 10px}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:14px;overflow-x:auto;
+  direction:ltr;text-align:left;font:14px/1.7 var(--f-mono)}
+pre span[data-k]{display:block;padding-inline:6px;border-radius:6px}
+pre .c{color:var(--muted)}
+canvas{width:100%;height:240px;display:block;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.95rem}
+.ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--accent)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-inline-end:6px}
+
+.quiz{margin-top:22px;border-top:1px dashed var(--line);padding-top:16px;display:flex;flex-direction:column;gap:14px}
+.quiz .q{font-weight:600}
+.quiz .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.quiz .opts button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 14px;text-align:right}
+.quiz .opts button.right{border-color:var(--up);background:color-mix(in srgb,var(--up) 14%,var(--surface))}
+.quiz .opts button.wrong{border-color:var(--down);background:color-mix(in srgb,var(--down) 12%,var(--surface))}
+.quiz .ex{margin-top:6px;font-size:.92rem;color:var(--muted)}
+
+footer{max-width:1040px;width:100%;margin-inline:auto;padding-block:12px;display:flex;flex-direction:column;gap:10px}
+.caption{min-height:3.4em;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:.98rem;line-height:1.7}
+.caption .who{font:600 .75rem var(--f-body);color:var(--gold);display:block}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bar .play{white-space:nowrap;background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:9px 22px;font-weight:600;min-width:150px}
+.bar .nav{white-space:nowrap;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 16px}
+.bar .spacer{flex:1}
+.bar label{display:flex;align-items:center;gap:6px;font-size:.88rem;color:var(--muted)}
+.count{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);max-width:min(560px,92vw);padding:22px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{font:700 1.2rem var(--f-display);margin:0 0 8px}
+dialog .field{display:flex;flex-direction:column;gap:4px;margin-block:12px}
+dialog input,dialog select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px}
+dialog .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 14px}
+.btn.main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.status{font-size:.88rem;color:var(--muted);min-height:1.5em}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:12px;font-size:.92rem;max-width:90vw;z-index:20}
+@media (max-width:640px){
+  header .brand small{display:none}
+  .bar .play{min-width:0;flex:1}
+  .bar label.opt,.bar .lbl,.bar .spacer{display:none}
+  .bar .nav{padding:8px 12px}
+  canvas{height:200px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">دورة البوت الحلال<small>من الصفر إلى فهم كل سطر</small></div>
+  <nav class="dots" id="dots" aria-label="الشرائح"></nav>
+  <button class="icon-btn" id="openSettings">إعدادات الصوت</button>
+</header>
+
+<main><section class="slide" id="stage" aria-live="polite"></section></main>
+
+<footer>
+  <div class="caption" id="caption"><span class="who" id="who">الشرح الصوتي</span><span id="capText">اضغط «ابدأ الشرح» وخلّ الصوت يمشي معك نقطة نقطة.</span></div>
+  <div class="bar">
+    <button class="nav" id="prev" aria-label="الشريحة السابقة">→ <span class="lbl">السابق</span></button>
+    <button class="play" id="play">▶ ابدأ الشرح</button>
+    <button class="nav" id="next" aria-label="الشريحة التالية"><span class="lbl">التالي</span> ←</button>
+    <span class="spacer"></span>
+    <label class="opt"><input type="checkbox" id="auto" checked> انتقال تلقائي</label>
+    <label for="rate"><span class="lbl">السرعة</span>
+      <select id="rate"><option value="0.85">0.85×</option><option value="1" selected>1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option></select>
+    </label>
+    <span class="count" id="count"></span>
+  </div>
+</footer>
+
+<dialog id="settings">
+  <h3>إعدادات الصوت</h3>
+  <p class="muted" style="font-size:.92rem">صوت <b>Puck</b> من Google Gemini. تحتاج مفتاح API مجاني من
+    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+    المفتاح يُحفظ في متصفحك فقط. بدون مفتاح، الصفحة تستخدم صوت المتصفح العربي.</p>
+  <div class="field"><label for="key">مفتاح Gemini API</label><input id="key" type="password" dir="ltr" placeholder="AIza..." autocomplete="off"></div>
+  <div class="field"><label for="voice">الصوت</label>
+    <select id="voice" dir="ltr"><option>Puck</option><option>Charon</option><option>Fenrir</option><option>Orus</option><option>Kore</option><option>Aoede</option></select></div>
+  <div class="field"><label for="model">النموذج</label><input id="model" dir="ltr" value="gemini-2.5-flash-preview-tts"></div>
+  <div class="status" id="genStatus"></div>
+  <div class="row">
+    <button class="btn main" id="saveSettings">حفظ</button>
+    <button class="btn" id="pregen">توليد صوت كل الشرائح مسبقاً</button>
+    <button class="btn" id="clearCache">مسح الصوتيات المحفوظة</button>
+    <button class="btn" id="closeSettings">إغلاق</button>
+  </div>
+</dialog>
+
+<script>
+/* =====================================================================
+   محتوى الدورة: كل شريحة فيها
+   body : المحتوى المعروض. العناصر اللي عليها data-k تتظلل وقت الشرح
+   say  : الشرح الصوتي [رقم العنصر المظلل, النص]  (0 = بدون تظليل)
+   quiz : أسئلة تفاعلية اختيارية
+   init : رسم بياني أو تفاعل خاص بالشريحة
+   ===================================================================== */
+const SLIDES = [
+{part:"البداية", title:"من وش يعني سهم… لين تفهم كل سطر في البوت",
+ body:`<p class="muted">هذي خريطة الدورة. كل جزء يبني على اللي قبله.</p>
+ <div class="grid">
+  <div class="tile" data-k="1"><b>١. الأساسيات</b>السهم، السعر، الوسيط، المضاربة والعمولة</div>
+  <div class="tile" data-k="2"><b>٢. الضوابط الشرعية</b>الممنوعات، والنقية، وكيف دخلت في الكود</div>
+  <div class="tile" data-k="3"><b>٣. المؤشرات</b>المتوسط المتحرك و RSI، تجربها بيدك</div>
+  <div class="tile" data-k="4"><b>٤. الاستراتيجية</b>متى نشتري، متى نبيع، وصفقة كاملة بالأرقام</div>
+  <div class="tile" data-k="5"><b>٥. البناء</b>نفتح الكود ملف ملف</div>
+  <div class="tile" data-k="6"><b>٦. الأتمتة</b>كيف يشتغل كل شي تلقائياً، والتوقعات الواقعية</div>
+ </div>`,
+ say:[[0,"هلا والله! في هذي الدورة المصغرة بنمشي مع بعض خطوة بخطوة، من وش يعني سهم، لين ما تفهم كل سطر في البوت اللي بنيناه."],
+  [1,"أول شي بنفهم الأساسيات: السهم، وليه السعر يتحرك، ووش هو الوسيط، والفرق بين المضاربة والاستثمار."],
+  [2,"بعدها الضوابط الشرعية، وكيف حطيناها داخل الكود نفسه، عشان البوت ما يقدر يخالفها حتى لو بغى."],
+  [3,"ثم المؤشرات: المتوسط المتحرك، ومؤشر آر إس آي. وبتجربها بيدك على رسم بياني."],
+  [4,"ثم الاستراتيجية: متى يشتري البوت ومتى يبيع، ونمشي على صفقة كاملة بالأرقام."],
+  [5,"ثم نفتح الكود ملف ملف، ونفهم كيف الملفات تتكلم مع بعض."],
+  [6,"وفي الأخير نشوف كيف نخلي الشغل كله تلقائي، ووش التوقعات الواقعية. يلا نبدأ!"]]},
+
+{part:"الجزء ١ · الأساسيات", title:"وش هو السهم؟",
+ body:`<div class="tile" data-k="1"><span class="muted">شركة قيمتها</span> <span class="big num">1,000,000</span> ريال
+   <span class="muted">÷</span> <span class="big num">100,000</span> سهم <span class="muted">=</span> <span class="big num">10</span> ريال للسهم</div>
+ <div class="tile" data-k="2">تشتري <b class="num">10</b> أسهم بـ<b class="num">100</b> ريال ← صرت <b>شريك</b> تملك <b class="num">0.01%</b> من الشركة</div>
+ <div class="grid" data-k="3">
+  <div class="tile yes"><b>ربح من ارتفاع السعر</b>تشتري بـ10 وتبيع بـ11. هذا شغل المضارب.</div>
+  <div class="tile"><b>ربح من التوزيعات</b>الشركة توزع جزء من أرباحها على المساهمين.</div>
+ </div>`,
+ say:[[1,"تخيل شركة قيمتها مليون ريال، وقسمناها مية ألف قطعة. كل قطعة اسمها سهم، وقيمتها عشرة ريال."],
+  [2,"لو اشتريت عشرة أسهم بمية ريال، صرت فعلياً شريك في الشركة، ولو بنسبة صغيرة جداً."],
+  [3,"وتربح من السهم بطريقتين: إما سعره يرتفع وتبيعه بأغلى، أو الشركة توزع أرباح على المساهمين. والمضارب يركز على الطريقة الأولى."]]},
+
+{part:"الجزء ١ · الأساسيات", title:"ليه السعر يطلع وينزل؟",
+ body:`<div class="grid" data-k="1">
+  <div class="tile yes"><b>مشترين أكثر وأحرص</b>يرفعون السعر عشان يلقون أحد يبيع لهم ← السعر يطلع</div>
+  <div class="tile no"><b>بايعين أكثر</b>ينزلون السعر عشان يلقون أحد يشتري ← السعر ينزل</div>
+ </div>
+ <div data-k="2"><canvas id="c1"></canvas></div>
+ <div class="tile" data-k="3"><b>سعر الإغلاق</b>البوت ياخذ سعر واحد كل يوم: آخر سعر لما يقفل السوق السعودي الساعة 3 العصر.</div>`,
+ say:[[1,"السعر يتحرك بسبب العرض والطلب. إذا المشترين أكثر وأحرص، السعر يطلع. وإذا البايعين أكثر، السعر ينزل."],
+  [2,"عشان كذا تشوف السعر يتأرجح طول الوقت، زي هذا الرسم: يطلع وينزل، لكن له اتجاه عام."],
+  [3,"والبوت حقنا ما يراقب كل ثانية. هو ياخذ سعر واحد كل يوم، وهو سعر الإغلاق، يعني آخر سعر لما يقفل السوق الساعة ثلاث العصر."]],
+ init(){ drawChart("c1",{}); }},
+
+{part:"الجزء ١ · الأساسيات", title:"وش هو الوسيط؟",
+ body:`<div class="flow">
+  <div class="tile" data-k="1"><b>البنك</b>فلوسك أصلاً هنا</div><span class="arrow">←</span>
+  <div class="tile" data-k="2"><b>الوسيط</b>شركة وساطة مرخصة من هيئة السوق المالية<br><span class="muted">مثل الراجحي المالية، الأهلي المالية، دراية</span></div><span class="arrow">←</span>
+  <div class="tile" data-k="3"><b>السوق (تداول)</b>هنا تتقابل أوامر الشراء والبيع وتتنفذ</div>
+ </div>
+ <div class="tile" data-k="4"><b>API</b>«باب برمجي» عند الوسيط يخلي البرنامج يرسل أوامر بدالك. غير متاح للأفراد عند أغلب الوسطاء السعوديين.</div>`,
+ say:[[1,"فلوسك أصلاً موجودة في البنك."],
+  [2,"عشان تتداول، تفتح حساب عند شركة وساطة مرخصة من هيئة السوق المالية، وتحوّل لها الفلوس. الوسيط مو البنك، هو شركة مستقلة، حتى لو كانت تابعة لبنك."],
+  [3,"والوسيط هو اللي يوصّل أوامرك للسوق المالية السعودية، تداول، وينفذها مقابل عمولة صغيرة."],
+  [4,"والبوت عشان يتداول بنفسه، يحتاج وسيط يعطيه باب برمجي اسمه إيه بي آي. وهذا للأسف غير متاح للأفراد عند أغلب الوسطاء في السعودية. بنرجع لهالنقطة في آخر الدورة، لأن لها حل."]]},
+
+{part:"الجزء ١ · الأساسيات", title:"المضاربة، والعمولة اللي تاكل الأرباح",
+ body:`<div class="grid" data-k="1">
+  <div class="tile"><b>المستثمر</b>يشتري ويصبر سنين</div>
+  <div class="tile"><b>المضارب</b>يدخل ويطلع خلال أيام أو أسابيع، ويستفيد من التأرجح</div>
+ </div>
+ <div class="tile" data-k="2"><b>العمولة</b>تقريباً <span class="num">0.18%</span> عند الشراء + <span class="num">0.18%</span> عند البيع = <span class="num">0.36%</span> لكل صفقة كاملة.<br>
+  <span class="muted"><span class="num">100</span> صفقة بالسنة بكل رأس مالك ≈ <b class="num">36%</b> منه يروح عمولات.</span></div>
+ <div class="tile yes" data-k="3"><b>القاعدة الذهبية</b>المضاربة لازم تربح أكثر من «اشترِ واتركه»، وإلا ما لها داعي.</div>`,
+ say:[[1,"المستثمر يشتري ويصبر سنين. المضارب يدخل ويطلع خلال أيام أو أسابيع، ويحاول يستفيد من التأرجح."],
+  [2,"بس انتبه: كل مرة تشتري وتبيع تدفع عمولة، تقريباً ثلث في المية للصفقة الكاملة. يعني لو سويت مية صفقة في السنة بكل فلوسك، ممكن يروح أكثر من ثلث رأس مالك عمولات بس!"],
+  [3,"عشان كذا القاعدة الذهبية: المضاربة لازم تربح أكثر من إنك تشتري السهم وتتركه. وإلا ما لها داعي. وهذي المقارنة البوت يطبعها لك دايماً."]],
+ quiz:[{q:"اشتريت أسهم بـ1000 ريال ثم بعتها بنفس السعر. كم تقريباً دفعت عمولات؟",o:["0.36 ريال","3.6 ريال","36 ريال"],a:1,
+  e:"0.18% من 1000 = 1.8 ريال عند الشراء، ومثلها عند البيع = 3.6 ريال. يعني خسرت 3.6 ريال حتى لو السعر ما تغير."}]},
+
+{part:"الجزء ٢ · الضوابط الشرعية", title:"الحلال والحرام في التداول",
+ body:`<div class="grid">
+  <div class="tile no" data-k="1"><b>الرافعة والمارجن</b>قرض من الوسيط بفائدة = ربا</div>
+  <div class="tile no" data-k="2"><b>البيع على المكشوف</b>تبيع سهم ما تملكه</div>
+  <div class="tile no" data-k="3"><b>العقود والخيارات</b>الآجلة، الخيارات، الفوركس بالرافعة</div>
+  <div class="tile no" data-k="4"><b>نشاط محرم</b>بنوك ربوية، قمار، خمور، تأمين تجاري</div>
+ </div>
+ <div class="grid" data-k="5">
+  <div class="tile yes"><b>نقية ✓</b>نشاطها مباح، وما عندها قروض ربوية ولا دخل محرم</div>
+  <div class="tile"><b>مختلطة</b>نشاطها مباح، لكن عندها شيء من القروض أو الدخل المحرم</div>
+ </div>
+ <div class="tile" data-k="6"><b>داخل الكود</b>كاش فقط · ما نبيع إلا اللي نملكه · ما نلمس سهم خارج <span class="num">halal_list.csv</span></div>`,
+ say:[[1,"أول ممنوع: الرافعة المالية أو المارجن. هذا قرض من الوسيط بفائدة، يعني ربا."],
+  [2,"ثاني شي: البيع على المكشوف، يعني تبيع سهم ما تملكه على أمل إنه ينزل. وهذا فيه بيع ما لا تملك."],
+  [3,"ثالث شي: العقود الآجلة والخيارات والفوركس بالرافعة، وأغلب العلماء يحرمونها."],
+  [4,"ورابع شي: الشركات اللي نشاطها حرام، مثل البنوك الربوية والقمار والخمور والتأمين التجاري."],
+  [5,"وحتى الشركات اللي نشاطها مباح، فيه نقية: ما عندها قروض ربوية ولا دخل محرم. وفيه مختلطة: عندها شيء من هذا. وأنت اخترت النقية فقط، وهذا هو الأحوط."],
+  [6,"والجميل إننا ما نعتمد على الذاكرة. البوت مبرمج إنه يشتري بالكاش الموجود بس، وما يبيع إلا شي يملكه، وما يلمس أي سهم خارج قائمة الأسهم النقية. يعني حتى لو جات إشارة قوية لسهم ثاني، يتجاهلها."]],
+ quiz:[{q:"البوت شاف إشارة شراء قوية لسهم شركة تأمين تجاري. وش يسوي؟",o:["يشتري لأن الإشارة قوية","يتجاهله لأنه مو في القائمة النقية","يشتري نص الكمية بس"],a:1,
+  e:"البوت ما يشوف أصلاً إلا الأسهم اللي في halal_list.csv. أي سهم ثاني ما يدخل في حساباته."}]},
+
+{part:"الجزء ٣ · المؤشرات", title:"المتوسط المتحرك: وين الاتجاه؟",
+ body:`<p data-k="1">نجمع أسعار الإغلاق لآخر <b class="num" id="smaN">100</b> يوم ونقسمها على عددها. وكل يوم يدخل يوم جديد ويطلع أقدم يوم، فالخط «يتحرك».</p>
+ <div data-k="2"><canvas id="c2"></canvas>
+  <div class="ctl" style="margin-top:8px"><label for="smaR">عدد الأيام</label><input type="range" id="smaR" min="10" max="150" step="5" value="100"></div>
+  <div class="legend"><span><i style="background:var(--ink)"></i>السعر</span><span><i style="background:var(--gold)"></i>المتوسط المتحرك</span></div></div>
+ <div class="grid" data-k="3">
+  <div class="tile yes"><b>السعر فوق المتوسط</b>اتجاه صاعد ← مسموح نفكر بالشراء</div>
+  <div class="tile no"><b>السعر تحت المتوسط</b>اتجاه هابط ← البوت ما يشتري أبداً</div>
+ </div>`,
+ say:[[1,"المتوسط المتحرك فكرته بسيطة: نجمع أسعار الإغلاق لآخر مية يوم، ونقسمها على مية. ويتحرك كل يوم، لأنه يدخل يوم جديد ويطلع أقدم يوم."],
+  [2,"شوف الخط الذهبي في الرسم. هو يمسح التذبذب اليومي ويوريك الاتجاه الحقيقي. جرب حرك المؤشر تحت الرسم: كل ما زادت الأيام، صار الخط أنعم وأبطأ."],
+  [3,"والقاعدة اللي نستخدمها: إذا السعر فوق المتوسط، الاتجاه صاعد. وإذا تحته، الاتجاه هابط، والبوت ما يشتري أبداً في اتجاه هابط."]],
+ init(){ const r=document.getElementById("smaR"),n=document.getElementById("smaN");
+  const go=()=>{n.textContent=r.value;drawChart("c2",{sma:+r.value});}; r.oninput=go; go(); }},
+
+{part:"الجزء ٣ · المؤشرات", title:"مؤشر RSI: هل السهم انضرب؟",
+ body:`<div class="tile" data-k="1"><b>رقم من 0 إلى 100</b>يقيس: في آخر كم يوم، السهم كان ينزل أكثر ولا يطلع أكثر؟</div>
+ <div data-k="2"><canvas id="c3" style="height:300px"></canvas>
+  <div class="ctl" style="margin-top:8px"><label for="rsiR">عدد أيام RSI: <b class="num" id="rsiN">3</b></label><input type="range" id="rsiR" min="2" max="14" value="3"></div>
+  <div class="legend"><span><i style="background:var(--up)"></i>تحت 20: انضرب بقوة</span><span><i style="background:var(--down)"></i>فوق 70: انتعش بسرعة</span></div></div>
+ <p data-k="3" class="muted">نستخدم RSI على 3 أيام بس: سريع ويناسب المضاربة.</p>`,
+ say:[[1,"مؤشر آر إس آي رقم من صفر إلى مية. يقيس: في آخر كم يوم، هل السهم كان ينزل أكثر ولا يطلع أكثر؟"],
+  [2,"إذا نزل تحت عشرين، معناه السهم انضرب بقوة خلال أيام قليلة. وإذا طلع فوق سبعين، معناه انتعش بسرعة. شوف الخطين في الجزء السفلي من الرسم."],
+  [3,"وإحنا نستخدم آر إس آي على ثلاث أيام بس، لأنه سريع ويناسب المضاربة. جرب زوّد عدد الأيام وشوف كيف يصير المؤشر أهدأ، ونادراً يوصل للأطراف."]],
+ init(){ const r=document.getElementById("rsiR"),n=document.getElementById("rsiN");
+  const go=()=>{n.textContent=r.value;drawChart("c3",{rsi:+r.value});}; r.oninput=go; go(); }},
+
+{part:"الجزء ٤ · الاستراتيجية", title:"قاعدة الشراء: سهم قوي عليه خصم",
+ body:`<div class="grid">
+  <div class="tile" data-k="1"><b>الشرط ١</b>السعر فوق متوسط <span class="num">100</span> يوم ← الاتجاه صاعد</div>
+  <div class="tile" data-k="2"><b>الشرط ٢</b>RSI (3 أيام) تحت <span class="num">20</span> ← هبوط مؤقت قوي</div>
+ </div>
+ <div class="tile yes" data-k="3"><b>الاثنين مع بعض = شراء</b>واحد منهم بس ما يكفي</div>
+ <div data-k="4"><canvas id="c4" style="height:300px"></canvas>
+  <div class="legend"><span><i style="background:var(--up);height:8px;width:8px;border-radius:50%"></i>أيام كان البوت بيشتري فيها</span></div></div>`,
+ say:[[1,"الشرط الأول: السعر فوق المتوسط المتحرك. يعني السهم قوي واتجاهه صاعد."],
+  [2,"الشرط الثاني: آر إس آي تحت عشرين. يعني صار فيه هبوط مؤقت قوي."],
+  [3,"ولازم الشرطين مع بعض: سهم قوي، نزل نزلة مؤقتة. كأنك تشتري بضاعة ممتازة وعليها خصم."],
+  [4,"والنقاط الخضراء في الرسم هي الأيام اللي كان البوت بيشتري فيها. لاحظ إنها قليلة، وهذا طبيعي. البوت صبور وينتظر الفرصة."]],
+ init(){ drawChart("c4",{sma:100,rsi:3,buys:true}); },
+ quiz:[{q:"السعر 30، والمتوسط المتحرك 32، و RSI = 12. هل يشتري البوت؟",o:["نعم، لأن RSI منخفض جداً","لا، لأن السعر تحت المتوسط (اتجاه هابط)"],a:1,
+  e:"الشرط الأول ما تحقق. سهم في اتجاه هابط ممكن يكمل نزول، فالبوت ما يلمسه مهما كان RSI منخفض."}]},
+
+{part:"الجزء ٤ · الاستراتيجية", title:"قواعد البيع: يكفي شرط واحد",
+ body:`<div class="grid">
+  <div class="tile no" data-k="1"><b>وقف الخسارة</b>الصفقة خسرت <span class="num">5%</span> ← بيع فوراً</div>
+  <div class="tile yes" data-k="2"><b>جني الأرباح</b>الصفقة ربحت <span class="num">8%</span> ← بيع وخذ الربح</div>
+  <div class="tile yes" data-k="3"><b>السهم انتعش</b>RSI فوق <span class="num">70</span> ← الهدف تحقق</div>
+  <div class="tile" data-k="4"><b>طالت المدة</b><span class="num">20</span> يوم تداول بدون نتيجة ← حرر الفلوس</div>
+ </div>`,
+ say:[[1,"البوت يبيع إذا تحقق أي شرط من أربعة. أولها وقف الخسارة: إذا الصفقة خسرت خمسة في المية، يبيع فوراً بدون نقاش ولا أمل."],
+  [2,"ثانيها جني الأرباح: إذا الصفقة ربحت ثمانية في المية، ياخذ الربح ويمشي."],
+  [3,"ثالثها: إذا آر إس آي طلع فوق سبعين، يعني السهم رجع وانتعش، والهدف اللي دخلنا عشانه تحقق."],
+  [4,"ورابعها: إذا مرت عشرين يوم تداول والصفقة ما سوت شي، يطلع منها عشان يحرر الفلوس لفرصة أحسن."]],
+ quiz:[{q:"اشتريت السهم بـ20 ريال، واليوم سعره 18.9. وش يسوي البوت؟",o:["ينتظر لين يرجع","يبيع: وقف خسارة","يشتري زيادة لأنه رخص"],a:1,
+  e:"18.9 ÷ 20 = نزول 5.5%، وهذا تجاوز حد 5%. البوت يبيع فوراً. «الشراء زيادة لأنه رخص» من أخطر عادات المبتدئين."}]},
+
+{part:"الجزء ٤ · الاستراتيجية", title:"أهم جدول في الدورة",
+ body:`<div class="tbl" data-k="1"><table>
+  <tr><th>إذا خسرت</th><th>تحتاج تربح عشان ترجع لنفس المبلغ</th></tr>
+  <tr><td class="num">5%</td><td class="num">5.3%</td></tr>
+  <tr><td class="num">10%</td><td class="num">11.1%</td></tr>
+  <tr><td class="num">25%</td><td class="num">33.3%</td></tr>
+  <tr><td class="num">50%</td><td class="num"><b>100%</b></td></tr>
+  <tr><td class="num">90%</td><td class="num"><b>900%</b></td></tr>
+ </table></div>
+ <div class="tile yes" data-k="2"><b>ليه وقف الخسارة عند 5%؟</b>خسارة صغيرة تعوضها بسهولة، بدل خسارة كبيرة تكسرك.</div>
+ <div class="tile no" data-k="3"><b>انتبه</b>تحويل <span class="num">100</span> ريال إلى <span class="num">1000</span> = ربح <span class="num">900%</span>. نفس صعوبة الرجوع من خسارة 90%.</div>`,
+ say:[[1,"هذا أهم جدول في الدورة كلها. إذا خسرت عشرة في المية، تحتاج تربح أحد عشر عشان ترجع. وإذا خسرت النص، تحتاج تضاعف فلوسك بالكامل، بس عشان ترجع لنقطة البداية!"],
+  [2,"عشان كذا وقف الخسارة عند خمسة في المية: خسارة صغيرة تقدر تعوضها، بدل خسارة كبيرة تكسرك."],
+  [3,"ولاحظ آخر سطر: لو خسرت تسعين في المية، تحتاج تسع مية في المية. وهذا نفس الرقم اللي يحتاجه أحد يبغى يحول مية ريال لألف. عشان كذا الوعود السريعة خطيرة جداً."]]},
+
+{part:"الجزء ٤ · الاستراتيجية", title:"صفقة كاملة بالأرقام",
+ body:`<p class="muted">معك <span class="num">100</span> ريال، وسهم الإنماء سعره <span class="num">24</span> ريال وجاءت إشارة شراء.</p>
+ <ol class="steps">
+  <li data-k="1">البوت يخصص <b class="num">50</b> ريال للصفقة (حدنا الأقصى سهمين مختلفين، فنقسم الكاش على 2).</li>
+  <li data-k="2">كم سهم؟ <span class="num">50 ÷ (24 + 0.18%)</span> = <b class="num">2</b> سهم (أسهم كاملة فقط).</li>
+  <li data-k="3">التكلفة <span class="num">2 × 24 = 48</span> + عمولة <span class="num">0.09</span> ← الكاش المتبقي <b class="num">51.91</b></li>
+  <li data-k="4">بعد أيام: السعر <span class="num">25.5</span> و RSI فوق 70 ← إشارة بيع.</li>
+  <li data-k="5">البيع <span class="num">2 × 25.5 = 51</span> − عمولة <span class="num">0.09</span> = <b class="num">50.91</b></li>
+  <li data-k="6">الربح الصافي <span class="num">50.91 − 48.09</span> = <b class="num" style="color:var(--up)">+2.82</b> ريال</li>
+ </ol>`,
+ say:[[0,"الحين نمشي على صفقة كاملة بالأرقام، بالضبط مثل ما يحسبها البوت."],
+  [1,"معك مية ريال، والحد الأقصى سهمين مختلفين، فالبوت يخصص خمسين ريال لهذي الصفقة."],
+  [2,"يحسب كم سهم يقدر يشتري بعد العمولة، والجواب: سهمين. لأن الأسهم تنباع كاملة، ما فيه نص سهم."],
+  [3,"يدفع ثمانية وأربعين ريال، وعمولة تسعة هللات. ويتبقى معه واحد وخمسين ريال وشوي."],
+  [4,"بعد كم يوم، السعر صار خمسة وعشرين ونص، ومؤشر آر إس آي طلع فوق سبعين. هذي إشارة بيع."],
+  [5,"يبيع السهمين بواحد وخمسين ريال، ويدفع عمولة مرة ثانية."],
+  [6,"والربح الصافي بعد كل العمولات: ريالين واثنين وثمانين هللة. صغير؟ نعم. بس هذي هي المضاربة الحقيقية: أرباح صغيرة متكررة، وخسائر أصغر."]]},
+
+{part:"الجزء ٥ · البناء", title:"البوت فريق عمل: كل ملف له وظيفة",
+ body:`<div class="tile" data-k="2"><b class="num">config.py</b>كل الأرقام: المبلغ، العمولة، نسب وقف الخسارة… تغيرها من هنا بس</div>
+ <div class="flow">
+  <div class="tile" data-k="3"><b class="num">data.py</b>يجيب الأسعار<br><span class="num muted">halal_list.csv</span> <span class="muted">القائمة النقية</span></div><span class="arrow">←</span>
+  <div class="tile" data-k="4"><b class="num">strategy.py</b>يحسب المؤشرات ويقرر مع السبب</div><span class="arrow">←</span>
+  <div class="tile" data-k="5"><b class="num">engine.py</b> + <b class="num">account.py</b>المدير اليومي + الحساب والعمولات</div>
+ </div>
+ <div class="grid" data-k="6">
+  <div class="tile"><b class="num">backtest.py</b>يجرب على الماضي (3 سنوات) في ثواني</div>
+  <div class="tile"><b class="num">paper.py</b>يشتغل يوم بيوم على الحاضر بفلوس وهمية</div>
+ </div>`,
+ say:[[1,"الحين نفتح المطبخ. البوت مقسوم على ملفات صغيرة، كل ملف له وظيفة وحدة، زي فريق عمل كل واحد يعرف شغله."],
+  [2,"ملف الإعدادات config فيه كل الأرقام: المبلغ، والعمولة، ونسب وقف الخسارة وجني الأرباح. تبغى تغير شي؟ تغيره هنا بس."],
+  [3,"ملف data يجيب الأسعار من الإنترنت، وملف halal_list فيه قائمة الأسهم النقية."],
+  [4,"ملف strategy هو العقل: يحسب المؤشرات ويقرر أشتري ولا أبيع، ومع كل قرار يكتب السبب."],
+  [5,"ملف account هو الحساب: يخصم الفلوس والعمولة ويسجل كل عملية. وملف engine هو المدير اللي يمشي على هذي الخطوات كل يوم."],
+  [6,"وفوقهم ملفين للتشغيل: backtest يجرب الاستراتيجية على الماضي، و paper يشتغل يوم بيوم على الحاضر."]]},
+
+{part:"الجزء ٥ · البناء", title:"قلب الاستراتيجية: دالة الشراء",
+ body:`<p class="muted">من ملف <span class="num">strategy.py</span> كما هو:</p>
+<pre><span class="c">def should_buy(row):</span><span data-k="1">    if row.isna().any():
+        return False, "ما فيه بيانات كافية لحساب المؤشرات"</span><span data-k="2">    if row["close"] &lt;= row["trend"]:
+        return False, "الاتجاه هابط: السعر تحت المتوسط"</span><span data-k="3">    if row["rsi"] &gt;= config.RSI_BUY_BELOW:
+        return False, "الاتجاه صاعد لكن ما فيه هبوط كافي"
+    return True, "الاتجاه صاعد وفيه هبوط مؤقت"</span></pre>
+ <p class="muted" data-k="4">كل قرار يرجع شيئين: <b>نعم/لا</b> + <b>السبب بالعربي</b>. والسبب هو اللي تقرأه في السجل.</p>`,
+ say:[[1,"هذي دالة الشراء من الكود الحقيقي. أول سطر يتأكد إن عندنا بيانات كافية، لأن المتوسط المتحرك يحتاج مية يوم على الأقل."],
+  [2,"بعدها يفحص الشرط الأول: إذا السعر أقل من أو يساوي المتوسط، يرجع لا، الاتجاه هابط."],
+  [3,"ثم الشرط الثاني: إذا آر إس آي مو تحت عشرين، يرجع لا. وإذا عدّى الشرطين، يرجع نعم."],
+  [4,"ولاحظ إن كل قرار يرجع شيئين: نعم أو لا، والسبب بالعربي. وهذا السبب هو اللي تقراه في السجل كل يوم، وهو اللي يخليك تفهم وش يسوي البوت بالضبط."]]},
+
+{part:"الجزء ٥ · البناء", title:"الحساب: كاش فقط، بالكود",
+ body:`<p class="muted">من ملف <span class="num">account.py</span>، دالة الشراء:</p>
+<pre><span class="c">def buy(self, symbol, price, date, reason, budget):</span><span data-k="1">    shares = int(budget / (price * (1 + config.COMMISSION_RATE)))</span><span data-k="2">    if shares &lt; 1:
+        return "ما يكفي المبلغ لشراء سهم واحد"</span><span data-k="3">    cost = shares * price
+    fee = cost * config.COMMISSION_RATE
+    self.cash -= cost + fee</span></pre>
+ <div class="tile yes" data-k="4"><b>وش اللي مو موجود؟</b>ما فيه ولا سطر يقترض، ولا يبيع سهم ما نملكه. الحلال مضمون بطريقة بناء الكود.</div>`,
+ say:[[1,"أول سطر يحسب كم سهم نقدر نشتري بالميزانية بعد العمولة. وكلمة int معناها: خذ الرقم الصحيح بس. يعني سهمين، مو سهمين وشوي."],
+  [2,"إذا الفلوس ما تكفي لسهم واحد، يرفض ويقول لك السبب. ما يقترض، ولا يكمل بالسالب."],
+  [3,"وإذا تكفي، يخصم قيمة الأسهم والعمولة من الكاش. بس كذا."],
+  [4,"والأهم هو اللي مو موجود: ما فيه ولا سطر يقترض، ولا يبيع شي ما نملكه. يعني الضوابط الشرعية مضمونة بطريقة بناء الكود نفسه."]]},
+
+{part:"الجزء ٥ · البناء", title:"روتين البوت اليومي",
+ body:`<ol class="steps">
+  <li data-k="1"><b>أولاً: نراجع اللي نملكه</b> ← لكل سهم: هل تحقق شرط بيع؟ إذا نعم، نبيع.</li>
+  <li data-k="2"><b>ثانياً: ندور فرص</b> ← لكل سهم في القائمة النقية ما نملكه: هل تحقق شرطين الشراء؟</li>
+  <li data-k="3"><b>ثالثاً: فيه مكان؟</b> ← إذا عندنا سهمين، ما نشتري ثالث. وإلا نقسم الكاش على الأماكن الفاضية ونشتري.</li>
+  <li data-k="4"><b>رابعاً: نسجل</b> ← كل قرار وسببه في <span class="num">paper_log.txt</span></li>
+ </ol>
+<pre data-k="4">===== 2026-10-28 =====
+  [مصرف الراجحي] لا شراء: الاتجاه صاعد لكن ما فيه هبوط كافي (RSI = 53)
+  [بنك البلاد] شراء: الاتجاه صاعد وفيه هبوط مؤقت (RSI = 15)
+  >>> تنفيذ: شراء 1 سهم بنك البلاد بسعر 27.3 | عمولة 0.05</pre>`,
+ say:[[0,"هذا اللي يسويه ملف engine كل يوم، بالترتيب."],
+  [1,"أولاً يراجع الأسهم اللي نملكها: هل تحقق أي شرط من شروط البيع؟ إذا نعم، يبيع. ليه البيع أول؟ عشان يحرر الفلوس قبل ما يدور فرص جديدة."],
+  [2,"ثانياً يمر على كل سهم في القائمة النقية ما نملكه، ويسأل: هل تحقق شرطين الشراء؟"],
+  [3,"ثالثاً: إذا فيه إشارة، يتأكد إن فيه مكان. إذا عندنا سهمين أصلاً، ما يشتري ثالث. وإلا يقسم الكاش ويشتري."],
+  [4,"ورابعاً يسجل كل شي. وهذا مثال من السجل: لكل سهم سطر يقول وش قرر وليه."]]},
+
+{part:"الجزء ٥ · البناء", title:"الاختبار التاريخي مقابل التداول الورقي",
+ body:`<div class="grid">
+  <div class="tile" data-k="1"><b>backtest.py: الماضي</b>«لو شغلنا البوت آخر 3 سنوات، وش كان بيصير؟» النتيجة في ثواني.</div>
+  <div class="tile" data-k="2"><b>paper.py: الحاضر</b>كل يوم بعد الإغلاق، فلوس وهمية وأسعار حقيقية. يحفظ حسابه ويكمل بكرة.</div>
+ </div>
+ <div class="tile no" data-k="3"><b>فخ «الإفراط في التوافق»</b>لو قعدنا نعدّل الأرقام لين نلقى أحلى نتيجة في الماضي، غالباً فصّلنا استراتيجية على مقاس الماضي بس. عشان كذا نحتاج التداول الورقي كمان.</div>`,
+ say:[[1,"عندنا طريقتين للتشغيل. الأولى backtest: يجرب البوت على أسعار آخر ثلاث سنوات، ويقول لك وش كان بيصير، في ثواني."],
+  [2,"والثانية paper: يشتغل كل يوم بعد إغلاق السوق، بفلوس وهمية وأسعار حقيقية، ويحفظ حسابه ويكمل بكرة من حيث وقف."],
+  [3,"وليه نحتاج الاثنين؟ لأن نتيجة الماضي ما تضمن المستقبل. ولو قعدنا نعدل الأرقام لين نلقى أحلى نتيجة في الماضي، نكون فصّلنا استراتيجية على مقاس الماضي بس. وهذا اسمه الإفراط في التوافق، ومن أشهر الأخطاء."]]},
+
+{part:"الجزء ٦ · الأتمتة", title:"كيف يشتغل كل هذا تلقائياً؟",
+ body:`<div class="flow">
+  <div class="tile" data-k="1"><b>GitHub Actions</b>كل يوم 3:30 العصر، مجاناً في السحابة</div><span class="arrow">←</span>
+  <div class="tile" data-k="2"><b>البوت يشتغل</b>يقرر ويحفظ السجل والحساب في مستودعك</div><span class="arrow">←</span>
+  <div class="tile" data-k="3"><b>Claude يحلل</b>يقرأ السجل، يقيس النتائج، ويقترح تعديلات</div>
+ </div>
+ <div class="tile" data-k="4"><b>وبالفلوس الحقيقية؟</b>البوت يرسل لك تنبيه «اشترِ 2 سهم الإنماء» ← تنفذه من تطبيق الوسيط في دقيقة. البوت يفكر، وأنت تضغط الزر.</div>
+ <p class="muted">الخطوتين هذي بنبنيها مع بعض بعد الدورة.</p>`,
+ say:[[1,"الحين السؤال المهم: كيف يشتغل كل هذا بدون ما تشغله بيدك؟ الحل: خدمة اسمها جيت هب أكشنز. مجانية، وتشغّل البوت في السحابة كل يوم بعد إغلاق السوق."],
+  [2,"البوت يشتغل ويقرر، ويحفظ السجل والحساب في مستودعك على جيت هب تلقائياً. جهازك ما يحتاج يكون شغال أصلاً."],
+  [3,"وأنا دوري: ترجع لي بعد أسبوع أو أسبوعين، أقرا السجل، أحلل النتائج، وأقترح تعديلات ونختبرها قبل ما نعتمدها."],
+  [4,"ولما ننتقل للفلوس الحقيقية: بما إن الوسطاء السعوديين ما يسمحون للبوت يتداول بنفسه، البوت يرسل لك تنبيه: اشتري كذا سهم من كذا. وأنت تنفذه من تطبيق الوسيط في دقيقة. يعني البوت يسوي التفكير كله، وأنت بس تضغط الزر. وهذي الخطوات بنبنيها مع بعض بعد ما تخلص الدورة."]]},
+
+{part:"الختام", title:"الشطارة الحقيقية",
+ body:`<div class="tbl" data-k="1"><table>
+  <tr><th>العائد</th><th>الواقع</th></tr>
+  <tr><td>السوق في سنة جيدة</td><td class="num">≈ 10% بالسنة</td></tr>
+  <tr><td>أفضل صناديق العالم</td><td class="num">20–30% بالسنة</td></tr>
+  <tr><td>وعود «×10 في شهر»</td><td>غالباً احتيال</td></tr>
+ </table></div>
+ <ol class="steps" data-k="2">
+  <li>تشغّل <span class="num">python backtest.py</span> بالأسعار الحقيقية وتراجع النتيجة معي</li>
+  <li>نفعّل التشغيل اليومي التلقائي</li>
+  <li>شهرين تداول ورقي ونقيس</li>
+  <li>بعدها تقرر: نكمل، نعدّل، أو نوقف</li>
+ </ol>
+ <div class="tile yes" data-k="3"><b>اللي صرت تعرفه</b>تفهم كل قرار، تقيس كل شي بالأرقام، وتحمي فلوسك قبل ما تفكر بالربح.</div>`,
+ say:[[1,"خلنا نكون واقعيين: لو البوت تفوق على السوق ولو بشوي بعد العمولات، هذا إنجاز كبير. وأي أحد يوعدك بعشرة أضعاف في شهر، اهرب منه."],
+  [2,"والخطة الجاية: تشغل الاختبار التاريخي بالأسعار الحقيقية ونراجعه مع بعض، بعدها نفعّل التشغيل اليومي التلقائي، وبعد شهرين تداول ورقي تقرر: نكمل، أو نعدّل، أو نوقف."],
+  [3,"والشطارة الحقيقية مو إنك تلقى زر سحري. الشطارة إنك تفهم كل قرار، وتقيس كل شي بالأرقام، وتحمي فلوسك قبل ما تفكر في الربح. وأنت الحين صرت تفهم كل هذا. مبروك عليك، وجاوب على الأسئلة تحت عشان تتأكد."]],
+ quiz:[
+  {q:"وش اللي يخلي البوت يشتري؟",o:["RSI تحت 20 فقط","السعر فوق المتوسط فقط","الاثنين مع بعض"],a:2,e:"لازم الشرطين: اتجاه صاعد + هبوط مؤقت."},
+  {q:"خسرت 50% من رأس مالك. كم تحتاج تربح عشان ترجع؟",o:["50%","100%","75%"],a:1,e:"من 50 إلى 100 = ضعف المبلغ = 100%."},
+  {q:"ليه ما نستخدم الرافعة المالية؟",o:["لأنها قرض بفائدة (ربا) وتضاعف الخسارة","لأنها بطيئة","لأن العمولة أعلى"],a:0,e:"الرافعة قرض بفائدة، وكمان تخلي خسارة صغيرة تمسح الحساب كله."},
+  {q:"البوت ربح 12% بالسنة، و«اشترِ واتركه» ربح 20%. وش الاستنتاج؟",o:["البوت ممتاز","المضاربة ما تستاهل بهذي الإعدادات"],a:1,e:"المقياس الحقيقي هو المقارنة. 12% أقل من 20% يعني تعب وعمولات بدون فايدة."}]}
+];
+
+/* ===================== بيانات الرسم (أسعار تجريبية ثابتة) ===================== */
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const PRICES=(()=>{const r=rng(6);let p=24,out=[];for(let i=0;i<320;i++){const n=Math.sqrt(-2*Math.log(r()+1e-9))*Math.cos(2*Math.PI*r());p*=Math.exp(0.0009+0.016*n);out.push(p)}return out})();
+function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((s,x)=>s+x,0)/n)}
+function rsi(a,n){const out=[null];let g=0,l=0;const al=1/n;for(let i=1;i<a.length;i++){const c=a[i]-a[i-1];
+  g=i===1?Math.max(c,0):al*Math.max(c,0)+(1-al)*g; l=i===1?Math.max(-c,0):al*Math.max(-c,0)+(1-al)*l;
+  out.push(i<n?null:(l===0?100:100-100/(1+g/l)))}return out}
+
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function drawChart(id,{sma:sn,rsi:rn,buys}){
+  const cv=document.getElementById(id); if(!cv)return;
+  const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);x.clearRect(0,0,W,H);
+  const start=150,P=PRICES.slice(start),N=P.length,pad=12;
+  const priceH=rn?H*0.62:H, xs=i=>pad+(W-2*pad)*i/(N-1);
+  const S=sn?sma(PRICES,sn).slice(start):null, R=rn?rsi(PRICES,rn).slice(start):null;
+  const all=P.concat(S?S.filter(v=>v):[]),lo=Math.min(...all),hi=Math.max(...all);
+  const ys=v=>pad+(priceH-2*pad)*(1-(v-lo)/(hi-lo));
+  const line=(arr,f,col,w)=>{x.beginPath();let m=false;arr.forEach((v,i)=>{if(v==null)return;const X=xs(i),Y=f(v);m?x.lineTo(X,Y):x.moveTo(X,Y);m=true});x.strokeStyle=col;x.lineWidth=w;x.stroke()};
+  x.strokeStyle=css("--line");x.lineWidth=1;for(let k=1;k<4;k++){const y=pad+(priceH-2*pad)*k/4;x.beginPath();x.moveTo(pad,y);x.lineTo(W-pad,y);x.stroke()}
+  line(P,ys,css("--ink"),1.6);
+  if(S)line(S,ys,css("--gold"),2.4);
+  if(R){const top=priceH+8,h=H-top-pad,yr=v=>top+h*(1-v/100);
+    x.fillStyle=css("--glow");x.fillRect(pad,yr(70),W-2*pad,yr(20)-yr(70));
+    [[20,"--up"],[70,"--down"]].forEach(([v,c])=>{x.setLineDash([5,4]);x.beginPath();x.moveTo(pad,yr(v));x.lineTo(W-pad,yr(v));x.strokeStyle=css(c);x.lineWidth=1.2;x.stroke();x.setLineDash([])
+      x.fillStyle=css(c);x.font="11px "+css("--f-mono");x.fillText(v,W-pad-18,yr(v)-3)});
+    line(R,yr,css("--accent"),1.4)}
+  if(buys&&S&&R){x.fillStyle=css("--up");P.forEach((v,i)=>{if(S[i]&&R[i]!=null&&v>S[i]&&R[i]<20){x.beginPath();x.arc(xs(i),ys(v),5,0,7);x.fill()}})}
+}
+
+/* ===================== عرض الشرائح ===================== */
+const $=id=>document.getElementById(id);
+const stage=$("stage"),dots=$("dots");
+let cur=0;
+try{cur=Math.min(+localStorage.getItem("course.slide")||0,SLIDES.length-1)}catch(e){}
+SLIDES.forEach((s,i)=>{const b=document.createElement("button");b.title=s.title;b.setAttribute("aria-label",`الشريحة ${i+1}: ${s.title}`);b.onclick=()=>go(i);dots.appendChild(b)});
+
+function render(){
+  const s=SLIDES[cur];
+  stage.innerHTML=`<div class="part">${s.part}</div><h2>${s.title}</h2><div class="body">${s.body}</div>`+
+   (s.quiz?`<div class="quiz">${s.quiz.map((q,qi)=>`<div><div class="q">سؤال: ${q.q}</div><div class="opts">${q.o.map((o,oi)=>`<button data-q="${qi}" data-o="${oi}">${o}</button>`).join("")}</div><div class="ex" hidden></div></div>`).join("")}</div>`:"");
+  stage.scrollTop=0;
+  stage.querySelectorAll(".opts button").forEach(b=>b.onclick=()=>{
+    const q=s.quiz[+b.dataset.q],box=b.parentElement,ok=+b.dataset.o===q.a;
+    box.querySelectorAll("button").forEach((x,i)=>{x.classList.remove("right","wrong");if(i===q.a)x.classList.add("right")});
+    if(!ok)b.classList.add("wrong");
+    const ex=box.nextElementSibling;ex.hidden=false;ex.textContent=(ok?"✓ صح! ":"✗ مو صحيح. ")+q.e});
+  if(s.init)s.init();
+  [...dots.children].forEach((d,i)=>{d.className=i===cur?"on":i<cur?"done":""});
+  $("count").textContent=`${cur+1} / ${SLIDES.length}`;
+  $("prev").disabled=cur===0;$("next").disabled=cur===SLIDES.length-1;
+  try{localStorage.setItem("course.slide",cur)}catch(e){}
+}
+function go(i,keepPlaying){ if(i<0||i>=SLIDES.length)return; const was=Narrator.playing; Narrator.stop(); cur=i; render(); if(keepPlaying&&was)Narrator.play(); }
+function highlight(k,text){
+  stage.classList.toggle("speaking",Narrator.playing);
+  stage.querySelectorAll("[data-k]").forEach(e=>e.classList.toggle("hl",+e.dataset.k===k));
+  const el=stage.querySelector(`[data-k="${k}"]`);
+  if(el)el.scrollIntoView({block:"nearest",behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"});
+  if(text!=null)$("capText").textContent=text;
+}
+window.addEventListener("resize",()=>SLIDES[cur].init&&SLIDES[cur].init());
+matchMedia("(prefers-color-scheme:dark)").addEventListener?.("change",()=>SLIDES[cur].init&&SLIDES[cur].init());
+
+/* ===================== الصوت: Gemini (Puck) أو صوت المتصفح ===================== */
+const STYLE="اقرأ النص التالي باللهجة السعودية، بنبرة ودودة وحماسية وواضحة، كأنك مدرّب يشرح لصديقه خطوة بخطوة، وبسرعة متوسطة:\n\n";
+const FALLBACK_MODELS=["gemini-2.5-flash-preview-tts","gemini-2.5-flash-tts","gemini-2.5-pro-preview-tts"];
+const cfg={get key(){try{return localStorage.getItem("course.key")||""}catch(e){return""}},
+  get voice(){try{return localStorage.getItem("course.voice")||"Puck"}catch(e){return"Puck"}},
+  get model(){try{return localStorage.getItem("course.model")||FALLBACK_MODELS[0]}catch(e){return FALLBACK_MODELS[0]}}};
+
+// تخزين الصوتيات في المتصفح عشان ما نولدها كل مرة
+const DB={db:null,async open(){if(this.db)return this.db;return this.db=await new Promise((ok,no)=>{const r=indexedDB.open("course-audio",1);r.onupgradeneeded=()=>r.result.createObjectStore("a");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})},
+  async get(k){try{const d=await this.open();return await new Promise(ok=>{const r=d.transaction("a").objectStore("a").get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ok(null)})}catch(e){return null}},
+  async set(k,v){try{const d=await this.open();d.transaction("a","readwrite").objectStore("a").put(v,k)}catch(e){}},
+  async clear(){try{const d=await this.open();d.transaction("a","readwrite").objectStore("a").clear()}catch(e){}}};
+const mem=new Map();
+function slideText(s){return s.say.map(x=>x[1]).join("\n")}
+function cacheKey(s){const t=cfg.voice+"|"+slideText(s);let h=0;for(const c of t)h=Math.imul(31,h)+c.charCodeAt(0)|0;return"v1:"+h}
+
+function pcmToWav(b64,rate){const bin=atob(b64),pcm=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)pcm[i]=bin.charCodeAt(i);
+  const buf=new ArrayBuffer(44+pcm.length),v=new DataView(buf),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,"RIFF");v.setUint32(4,36+pcm.length,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,pcm.length,true);
+  new Uint8Array(buf,44).set(pcm);return new Blob([buf],{type:"audio/wav"})}
+
+async function geminiTTS(text){
+  const models=[...new Set([cfg.model,...FALLBACK_MODELS])];let last;
+  for(const m of models){
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(cfg.key)}`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:STYLE+text}]}],generationConfig:{responseModalities:["AUDIO"],
+        speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:cfg.voice}}}}})});
+    if(r.status===404){last="النموذج "+m+" غير موجود";continue}
+    if(r.status===429)throw new Error("وصلت حد الاستخدام المجاني لـ Gemini. انتظر دقيقة وجرب مرة ثانية.");
+    if(r.status===400||r.status===403)throw new Error("المفتاح غير صحيح أو غير مفعّل. تأكد منه في إعدادات الصوت.");
+    if(!r.ok)throw new Error("خطأ من Gemini ("+r.status+")");
+    const j=await r.json(),p=j.candidates?.[0]?.content?.parts?.find(p=>p.inlineData);
+    if(!p)throw new Error("Gemini ما رجّع صوت");
+    const rate=+(/rate=(\d+)/.exec(p.inlineData.mimeType||"")||[,24000])[1];
+    return pcmToWav(p.inlineData.data,rate);
+  }
+  throw new Error(last||"ما قدرت أوصل لـ Gemini");
+}
+async function audioFor(s){const k=cacheKey(s);if(mem.has(k))return mem.get(k);
+  let b=await DB.get(k);if(!b){b=await geminiTTS(slideText(s));DB.set(k,b)}mem.set(k,b);return b}
+
+const Narrator={playing:false,audio:null,token:0,
+  async play(){
+    const s=SLIDES[cur],my=++this.token;this.playing=true;setPlayBtn();highlight(s.say[0][0],s.say[0][1]);
+    if(cfg.key){
+      try{$("who").textContent="الشرح الصوتي · "+cfg.voice+" (جاري التحضير…)";
+        const blob=await audioFor(s);if(my!==this.token)return;
+        $("who").textContent="الشرح الصوتي · "+cfg.voice;
+        const a=this.audio=new Audio(URL.createObjectURL(blob));a.playbackRate=+$("rate").value;
+        const lens=s.say.map(x=>x[1].length),tot=lens.reduce((a,b)=>a+b,0);let seg=-1;
+        a.ontimeupdate=()=>{if(!a.duration)return;const f=a.currentTime/a.duration*tot;let acc=0,i=0;for(;i<lens.length-1;i++){acc+=lens[i];if(f<acc)break}
+          if(i!==seg){seg=i;highlight(s.say[i][0],s.say[i][1])}};
+        a.onended=()=>this.done(my);await a.play();return;
+      }catch(e){if(my!==this.token)return;toast(e.message+" سأستخدم صوت المتصفح.")}
+    }
+    this.browser(s,my);
+  },
+  browser(s,my){
+    if(!("speechSynthesis" in window)){toast("المتصفح ما يدعم الصوت. استخدم Chrome أو أضف مفتاح Gemini.");this.stop();return}
+    $("who").textContent="الشرح الصوتي · صوت المتصفح";
+    const vs=speechSynthesis.getVoices(),v=vs.find(v=>/ar[-_]SA/i.test(v.lang))||vs.find(v=>/^ar/i.test(v.lang));
+    let i=0;const next=()=>{if(my!==this.token)return;if(i>=s.say.length)return this.done(my);
+      const [k,t]=s.say[i++];highlight(k,t);const u=new SpeechSynthesisUtterance(t);u.lang=v?.lang||"ar-SA";if(v)u.voice=v;u.rate=+$("rate").value;
+      u.onend=next;u.onerror=next;speechSynthesis.speak(u)};
+    speechSynthesis.cancel();next();
+  },
+  done(my){if(my!==this.token)return;
+    if($("auto").checked&&cur<SLIDES.length-1&&!SLIDES[cur].quiz){go(cur+1);this.play()}
+    else{this.stop();$("capText").textContent=SLIDES[cur].quiz?"جاوب على السؤال، ثم اضغط «التالي».":"خلصت الشريحة. اضغط «التالي» أو أعد الشرح."}},
+  stop(){this.token++;this.playing=false;if(this.audio){this.audio.pause();this.audio=null}
+    try{speechSynthesis.cancel()}catch(e){}stage.classList.remove("speaking");stage.querySelectorAll(".hl").forEach(e=>e.classList.remove("hl"));setPlayBtn()}
+};
+function setPlayBtn(){$("play").textContent=Narrator.playing?"⏸ إيقاف":"▶ ابدأ الشرح"}
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),5000)}
+
+$("play").onclick=()=>Narrator.playing?Narrator.stop():Narrator.play();
+$("next").onclick=()=>go(cur+1,true);
+$("prev").onclick=()=>go(cur-1,true);
+$("rate").onchange=()=>{if(Narrator.audio)Narrator.audio.playbackRate=+$("rate").value};
+document.addEventListener("keydown",e=>{if(e.target.closest("input,select,dialog"))return;
+  if(e.key==="ArrowLeft")go(cur+1,true);else if(e.key==="ArrowRight")go(cur-1,true);
+  else if(e.key===" "){e.preventDefault();$("play").click()}});
+
+/* ===================== الإعدادات ===================== */
+const dlg=$("settings");
+$("openSettings").onclick=()=>{$("key").value=cfg.key;$("voice").value=cfg.voice;$("model").value=cfg.model;$("genStatus").textContent="";dlg.showModal()};
+$("closeSettings").onclick=()=>dlg.close();
+$("saveSettings").onclick=()=>{try{localStorage.setItem("course.key",$("key").value.trim());localStorage.setItem("course.voice",$("voice").value);
+  localStorage.setItem("course.model",$("model").value.trim()||FALLBACK_MODELS[0])}catch(e){}
+  $("genStatus").textContent=$("key").value.trim()?"تم الحفظ. الشرح بيكون بصوت "+$("voice").value+".":"تم الحفظ. بدون مفتاح، الشرح بصوت المتصفح."};
+$("clearCache").onclick=async()=>{await DB.clear();mem.clear();$("genStatus").textContent="انمسحت الصوتيات المحفوظة."};
+$("pregen").onclick=async()=>{
+  $("saveSettings").click();if(!cfg.key){$("genStatus").textContent="أضف مفتاح Gemini أول.";return}
+  for(let i=0;i<SLIDES.length;i++){
+    $("genStatus").textContent=`جاري توليد صوت الشريحة ${i+1} من ${SLIDES.length}…`;
+    for(let tries=0;;tries++){try{await audioFor(SLIDES[i]);break}catch(e){
+      if(tries>=4||!/حد الاستخدام/.test(e.message)){$("genStatus").textContent="توقف: "+e.message;return}
+      $("genStatus").textContent=`حد الاستخدام المجاني… أنتظر دقيقة ثم أكمل (الشريحة ${i+1})`;await new Promise(r=>setTimeout(r,61000))}}
+  }
+  $("genStatus").textContent="✓ جاهزة كل الصوتيات، وبتشتغل فوراً حتى بدون إنترنت سريع.";
+};
+
+render();
+</script>
+</body>
+</html>
