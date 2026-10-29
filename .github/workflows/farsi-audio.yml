@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'farsi-rhythm/data.js'
+      - 'farsi-rhythm/songs.js'
       - 'farsi-rhythm/tools/**'
       - '.github/workflows/farsi-audio.yml'
   workflow_dispatch:
