@@ -102,6 +102,11 @@ h3{font-size:17px;margin:0 0 6px}
 .sent .em{font-size:24px;white-space:nowrap}
 .sent .fa{font-size:18px}
 .hl{color:var(--brand);border-bottom:3px solid var(--brand2)}
+.lyric{appearance:none;display:block;width:100%;text-align:right;border:0;background:none;border-radius:14px;padding:8px 12px;margin:2px 0;transition:background .2s,transform .2s}
+.lyric .fa{font-size:20px}
+.lyric.now{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;transform:scale(1.02)}
+.lyric.now .muted,.lyric.now .hl{color:#fff;border-color:#fff}
+details>summary{list-style:none} details>summary::-webkit-details-marker{display:none}
 
 /* stage */
 .hud{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
@@ -169,6 +174,7 @@ input[type=checkbox]{width:22px;height:22px;accent-color:var(--brand)}
 <body>
 <div class="wrap" id="app"></div>
 <script src="data.js"></script>
+<script src="songs.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

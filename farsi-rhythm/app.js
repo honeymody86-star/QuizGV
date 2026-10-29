@@ -119,6 +119,7 @@ const firstMeaningOf = ar => ar.split('/')[0].replace(/\(.*?\)/g, '').trim();
 const CLIP_KEYS = { fa: new Map(), ar: new Map() };
 WORDS.forEach(w => { CLIP_KEYS.fa.set(w.fa, 'fa/w' + w.id); CLIP_KEYS.fa.set(w.voc, 'fa/w' + w.id); CLIP_KEYS.ar.set(firstMeaningOf(w.ar), 'ar/w' + w.id); });
 SENTS.forEach(s => { CLIP_KEYS.fa.set(s.fa, 'fa/s' + s.id); CLIP_KEYS.ar.set(s.ar, 'ar/s' + s.id); });
+SONGS.forEach(g => g.lines.forEach(l => { CLIP_KEYS.fa.set(l.fa, `fa/l${g.id}_${l.i}`); CLIP_KEYS.ar.set(l.ar, `ar/l${g.id}_${l.i}`); }));
 const Clips = {
   avail: new Set(), bufs: new Map(), loading: new Map(), src: null, out: null,
   get ready() { return this.avail.size > 0; },
@@ -435,7 +436,12 @@ function markSentence(s) {
 }
 
 /* ---------- الشاشات ---------- */
-function go(view, ...args) { endSession(); Voice.stop(); window.scrollTo(0, 0); VIEWS[view](...args); }
+let songAudio = null; // مشغّل الأغنية الحالي (يُوقف عند تغيير الشاشة)
+function go(view, ...args) {
+  endSession(); Voice.stop();
+  if (songAudio) { songAudio.pause(); songAudio = null; }
+  window.scrollTo(0, 0); VIEWS[view](...args);
+}
 
 const VIEWS = {
   home() {
@@ -464,6 +470,10 @@ const VIEWS = {
           <div class="card stat"><b>${n2a(SENTS.length)}</b><span class="small muted">جملة مُغنّاة</span></div>
         </div>
         <div class="notice">${esc(Voice.statusText())}<br>${Ear.Rec ? '🎤 تقييم النطق بالميكروفون متاح' : '🎤 متصفحك لا يدعم التعرّف على الكلام — سيكون تقييم النطق ذاتياً (استخدم Chrome لتقييم آلي)'}</div>
+        <div class="row between"><h2 style="margin:0">🎤 أغاني الدروس (${n2a(SONGS.length)})</h2></div>
+        <div class="lessons">${SONGS.map(g => `<button class="lesson" data-song="${g.id}"><div class="em">${LESSONS[g.lesson].icon}🎤</div>
+          <div class="small muted">أغنية الدرس ${n2a(g.lesson + 1)}</div><div class="t fa" style="font-size:17px">${esc(g.fa)}</div>
+          <div class="small muted">${esc(g.ar)} <span data-badge="${g.id}"></span></div></button>`).join('')}</div>
         <div class="row between"><h2 style="margin:0">📚 الدروس (${n2a(LESSONS.length)})</h2>
           ${weakWords().length ? `<button class="btn sm alt" id="weak">💪 راجع الكلمات الضعيفة (${n2a(Math.min(10, weakWords().length))})</button>` : ''}</div>
         <div class="lessons">${LESSONS.map(l => {
@@ -475,7 +485,9 @@ const VIEWS = {
         ${historyHtml()}
       </div>`;
     $app.querySelectorAll('.block').forEach(b => b.onclick = () => { Store.data.block = +b.dataset.b; Store.save(); VIEWS.home(); });
-    $app.querySelectorAll('.lesson').forEach(b => b.onclick = () => go('lesson', +b.dataset.l));
+    $app.querySelectorAll('.lesson[data-l]').forEach(b => b.onclick = () => go('lesson', +b.dataset.l));
+    $app.querySelectorAll('.lesson[data-song]').forEach(b => b.onclick = () => go('song', +b.dataset.song));
+    SONGS.forEach(async g => { const src = await SongFiles.source(g.id); const el = $app.querySelector(`[data-badge="${g.id}"]`); if (el) el.textContent = src ? '· 🎵 جاهزة' : '· ✍️ اصنعها في Suno'; });
     $app.querySelector('#startCh').onclick = () => go('challenge', Store.data.block);
     $app.querySelector('#set').onclick = () => go('settings');
     const wk = $app.querySelector('#weak'); if (wk) wk.onclick = () => go('practice', weakWords().slice(0, 10), 'مراجعة الكلمات الضعيفة');
@@ -488,6 +500,7 @@ const VIEWS = {
         <div style="flex:1"><div class="small muted">الدرس ${n2a(id + 1)} · الكلمات ${n2a(id * 10 + 1)}–${n2a(id * 10 + 10)}</div><h1>${l.icon} ${esc(l.title)}</h1></div></div>
       <div class="stack">
         <div class="row"><button class="btn pink big" id="singAll">🎵 غنِّ لي الدرس</button>
+          ${SONGS.some(g => g.lesson === id) ? '<button class="btn big" id="song">🎤 أغنية الدرس</button>' : ''}
           <button class="btn alt big" id="quiz">📝 اختبرني</button></div>
         <div class="words">${l.words.map(wid => { const w = WORDS[wid]; return `
           <button class="wcard" data-w="${wid}">${Store.mastered(wid) ? '<span class="done">⭐</span>' : ''}
@@ -501,6 +514,7 @@ const VIEWS = {
       </div>`;
     $app.querySelector('#back').onclick = () => go('home');
     $app.querySelector('#singAll').onclick = () => go('practice', l.words, l.title, { learnOnly: true, lesson: id });
+    const sg = $app.querySelector('#song'); if (sg) sg.onclick = () => go('song', SONGS.find(g => g.lesson === id).id);
     $app.querySelector('#quiz').onclick = () => go('practice', l.words, l.title, { lesson: id });
     $app.querySelectorAll('.wcard').forEach(b => b.onclick = () => quickSing([...wordLines(WORDS[+b.dataset.w], nullUI, false)]));
     $app.querySelectorAll('.sent').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.s], nullUI, false)));
@@ -870,6 +884,163 @@ function confetti() {
   box.innerHTML = Array.from({ length: 40 }, () => `<i style="right:${Math.random() * 100}%;animation-delay:${Math.random()}s">${['🎉', '⭐', '🎵', '🌸', '✨'][Math.random() * 5 | 0]}</i>`).join('');
   document.body.appendChild(box); setTimeout(() => box.remove(), 3600);
 }
+
+/* ---------- أغاني Suno: ملفات الأغاني ومزامنة الكلمات ---------- */
+const SongFiles = {
+  p: null, repo: new Map(),
+  open() {
+    if (!this.p) this.p = new Promise((res, rej) => {
+      const r = indexedDB.open('farsiRhythmSongs', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('songs');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return this.p;
+  },
+  async req(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('songs', mode), q = fn(tx.objectStore('songs'));
+      tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error);
+    });
+  },
+  get(id) { return this.req('readonly', st => st.get(id)).catch(() => null); },
+  put(id, blob) { return this.req('readwrite', st => st.put(blob, id)); },
+  del(id) { return this.req('readwrite', st => st.delete(id)); },
+  /** مصدر الأغنية: ملف أضافه المستخدم على جهازه، أو ملف مرفوع في المستودع songs/<id>.mp3 */
+  async source(id) {
+    const blob = await this.get(id);
+    if (blob) return { url: URL.createObjectURL(blob), local: true };
+    if (!this.repo.has(id)) {
+      this.repo.set(id, fetch(`songs/${id}.mp3`, { method: 'HEAD' }).then(r => r.ok).catch(() => false));
+    }
+    return (await this.repo.get(id)) ? { url: `songs/${id}.mp3`, local: false } : null;
+  },
+};
+
+function sunoLyrics(g) { return g.lines.map(l => (l.section ? (l.i ? '\n' : '') + l.section + '\n' : '') + l.fa).join('\n'); }
+async function copyText(text, btn) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch (e2) { /* تجاهل */ } ta.remove();
+  }
+  const old = btn.textContent; btn.textContent = ok ? '✔ نُسخ!' : '⚠️ انسخ يدوياً من الأسفل'; setTimeout(() => { btn.textContent = old; }, 1600);
+}
+
+VIEWS.song = async function (id) {
+  const g = SONGS[id], l = LESSONS[g.lesson];
+  const syncs = Store.data.songSync || (Store.data.songSync = {});
+  let times = syncs[id] || null;
+  $app.innerHTML = `
+    <div class="top"><button class="iconbtn" id="back" aria-label="رجوع">→</button>
+      <div style="flex:1"><div class="small muted">🎤 أغنية الدرس ${n2a(g.lesson + 1)} · ${l.icon} ${esc(l.title)}</div>
+      <h1 class="fa">${esc(g.fa)}</h1><div class="muted">${esc(g.ar)}</div></div></div>
+    <div class="stack">
+      <div class="card" id="player"></div>
+      <details class="card" id="suno"><summary style="font-weight:800;cursor:pointer">🎼 اصنع الأغنية في Suno</summary>
+        <ol class="small" style="line-height:2;padding-inline-start:20px">
+          <li>اضغط «انسخ الكلمات»، ثم افتح Suno واختر <b>Custom</b>.</li>
+          <li>الصق في خانة <b>Lyrics</b>، ثم انسخ «الأسلوب» والصقه في <b>Style of Music</b>.</li>
+          <li>اضغط <b>Create</b>، اختر النسخة الأجمل، ثم <b>Download → MP3</b> (تُحفظ في تطبيق «الملفات»).</li>
+          <li>ارجع هنا واضغط «📂 أضف ملف الأغنية».</li>
+        </ol>
+        <div class="row"><button class="btn sm" id="cpL">📋 انسخ الكلمات</button><button class="btn sm alt" id="cpS">📋 انسخ الأسلوب</button>
+          <a class="btn sm alt" href="https://suno.com/create" target="_blank" rel="noopener" style="text-decoration:none">🔗 افتح Suno</a></div>
+        <textarea readonly dir="rtl" style="width:100%;min-height:140px;margin-top:10px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;padding:8px">${esc(sunoLyrics(g))}</textarea>
+        <textarea readonly dir="ltr" style="width:100%;min-height:60px;margin-top:6px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:13px;padding:8px">${esc(g.style)}</textarea>
+      </details>
+      <div class="card"><h3>🧩 كلمات الأغنية الأساسية</h3>
+        <div class="chips" style="justify-content:flex-start">${l.words.map(w => `<button class="chip" data-w="${w}" style="border:0">${WORDS[w].icon} ${esc(WORDS[w].fa)} · ${esc(firstMeaning(WORDS[w].ar))}</button>`).join('')}</div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="quiz">📝 اختبرني على كلمات الأغنية</button></div></div>
+      <div class="card" id="lyrics">${g.lines.map(x => `${x.section ? `<div class="tag" style="margin-top:${x.i ? 14 : 0}px">${esc(x.section.replace(/[\[\]]/g, ''))}</div>` : ''}
+        <button class="lyric" data-i="${x.i}"><div class="fa">${markSentence({ fa: x.fa, words: l.words })}</div><div class="muted small">${esc(x.ar)}</div></button>`).join('')}</div>
+    </div>`;
+  const q = s => $app.querySelector(s);
+  q('#back').onclick = () => go('home');
+  q('#cpL').onclick = e => copyText(sunoLyrics(g), e.target);
+  q('#cpS').onclick = e => copyText(g.style, e.target);
+  q('#quiz').onclick = () => go('practice', l.words, g.fa, { lesson: g.lesson });
+  $app.querySelectorAll('.chip[data-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.w], nullUI, true)));
+
+  const src = await SongFiles.source(id);
+  if (!src) q('#suno').open = true;
+  let audio = null, cur = -1, loop = false;
+  const lyricEls = [...$app.querySelectorAll('.lyric')];
+  const setCur = i => {
+    if (i === cur) return;
+    if (lyricEls[cur]) lyricEls[cur].classList.remove('now');
+    cur = i;
+    if (lyricEls[cur]) { lyricEls[cur].classList.add('now'); lyricEls[cur].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  };
+  const lineAt = t => { if (!times) return -1; let i = -1; times.forEach((s, k) => { if (s <= t) i = k; }); return i; };
+
+  const renderPlayer = () => {
+    const p = q('#player');
+    if (!src) {
+      p.innerHTML = `<h3>🎵 لا يوجد ملف للأغنية بعد</h3><div class="small muted">اصنعها في Suno (الخطوات بالأسفل)، ثم أضف ملف MP3. وحتى ذلك الحين: اضغط أي سطر لتسمع نطقه بصوت طبيعي 👇</div>
+        <div class="row" style="margin-top:10px"><label class="btn">📂 أضف ملف الأغنية<input type="file" id="file" accept="audio/*,.mp3,.m4a,.wav" hidden></label></div>`;
+    } else {
+      p.innerHTML = `<audio id="au" controls playsinline preload="auto" src="${src.url}" style="width:100%"></audio>
+        <div class="row" style="margin-top:10px">
+          <button class="btn sm" id="sync">⏱️ ${times ? 'أعد مزامنة الكلمات' : 'زامن الكلمات مع الأغنية'}</button>
+          <button class="btn sm alt" id="loop" ${times ? '' : 'disabled'}>🔁 كرّر السطر</button>
+          <button class="btn sm alt" id="rate">🐢 أبطأ</button>
+          <label class="btn sm alt">📂 غيّر الملف<input type="file" id="file" accept="audio/*,.mp3,.m4a,.wav" hidden></label>
+        </div>
+        <div class="small muted" id="hint" style="margin-top:8px">${times ? 'اضغط أي سطر لتقفز إليه في الأغنية. «كرّر السطر» يعيده حتى تحفظه 🧠' : 'زامن الكلمات مرة واحدة: شغّل الأغنية واضغط الزر عند بداية كل سطر، فيصير لديك كاريوكي 🎤'}</div>
+        <div id="syncbox"></div>`;
+      audio = songAudio = q('#au');
+      audio.ontimeupdate = () => {
+        if (!times || q('#syncbox').childElementCount) return;
+        const t = audio.currentTime;
+        if (loop && cur >= 0 && times[cur + 1] != null && t >= times[cur + 1] - 0.05) { audio.currentTime = times[cur]; return; }
+        setCur(lineAt(t));
+      };
+      q('#loop').onclick = e => { loop = !loop; e.target.classList.toggle('pink', loop); e.target.textContent = loop ? '🔁 يكرّر السطر…' : '🔁 كرّر السطر'; };
+      q('#rate').onclick = e => { const slow = audio.playbackRate === 1; audio.playbackRate = slow ? 0.8 : 1; e.target.textContent = slow ? '🐇 السرعة العادية' : '🐢 أبطأ'; };
+      q('#sync').onclick = startSync;
+    }
+    q('#file').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      await SongFiles.put(id, f);
+      delete syncs[id]; Store.save();
+      go('song', id);
+    };
+  };
+
+  function startSync() {
+    const box = q('#syncbox'), marks = [];
+    loop = false; setCur(-1);
+    box.innerHTML = `<div class="notice" style="margin-top:10px;text-align:center">
+      <div class="small">اضغط الزر الكبير عند بداية كل سطر 👇</div>
+      <div class="fa" id="nextL" style="font-size:22px;margin:8px 0"></div>
+      <button class="btn big pink" id="tap" style="width:100%">👆 بدأ السطر</button>
+      <button class="btn sm alt" id="cancel" style="margin-top:8px">إلغاء</button></div>`;
+    const show = () => { const n = g.lines[marks.length]; box.querySelector('#nextL').textContent = n ? n.fa : '✔'; };
+    show();
+    audio.currentTime = 0; audio.playbackRate = 1; audio.play();
+    const finish = () => {
+      if (marks.length >= 2) { while (marks.length < g.lines.length) marks.push(marks[marks.length - 1] + 3); syncs[id] = marks; times = marks; Store.save(); }
+      box.innerHTML = ''; audio.onended = null; renderPlayer();
+    };
+    box.querySelector('#tap').onclick = () => {
+      marks.push(Math.max(0, audio.currentTime - 0.25)); // تعويض زمن ردّ الفعل
+      setCur(marks.length - 1); show();
+      if (marks.length >= g.lines.length) finish();
+    };
+    box.querySelector('#cancel').onclick = () => { audio.pause(); box.innerHTML = ''; setCur(-1); };
+    audio.onended = finish;
+  }
+
+  lyricEls.forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    if (audio && times && !q('#syncbox').childElementCount) { audio.currentTime = times[i]; audio.play(); setCur(i); return; }
+    // بلا أغنية: نطق طبيعي للسطر ثم معناه
+    Voice.stop(); setCur(i);
+    Voice.speak(g.lines[i].fa, { lang: 'fa', rate: 0.95 }).then(() => Store.s.arabic && Voice.speak(g.lines[i].ar, { lang: 'ar' }));
+  });
+  renderPlayer();
+};
 
 document.addEventListener('pointerdown', () => Voice.unlock(), { once: true, capture: true });
 VIEWS.home();

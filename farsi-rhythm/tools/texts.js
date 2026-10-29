@@ -11,4 +11,8 @@ C.sentences.forEach(s => {
   out.push({ key: 'fa/s' + s.id, lang: 'fa', text: s.fa });
   out.push({ key: 'ar/s' + s.id, lang: 'ar', text: s.ar });
 });
+require('../songs.js').forEach(g => g.lines.forEach(l => {
+  out.push({ key: `fa/l${g.id}_${l.i}`, lang: 'fa', text: l.fa });
+  out.push({ key: `ar/l${g.id}_${l.i}`, lang: 'ar', text: l.ar });
+}));
 process.stdout.write(JSON.stringify(out));
