@@ -92,7 +92,7 @@ class Groove {
   start() {
     const ctx = Music.init();
     if (!ctx) { // لا يوجد Web Audio: إيقاع بصري فقط
-      this.timer = setInterval(() => this.onBeat(this.beat++), this.spb * 1000);
+      this.timer = setInterval(() => this.onBeat(this.beat++, 0), this.spb * 1000);
       return;
     }
     this.next = ctx.currentTime + 0.08;
@@ -105,11 +105,70 @@ class Groove {
       if (b % 2 === 0) Music.kick(t); else Music.clap(t);
       Music.hat(t + half);
       Music.bell(t, MELODY[b % 16]);
-      setTimeout(() => { if (this.timer) this.onBeat(b); }, Math.max(0, (t - ctx.currentTime) * 1000));
+      // نستدعي قبل الضربة بقليل ليُجدوَل الصوت المسجّل على وقتها بالضبط
+      setTimeout(() => { if (this.timer) this.onBeat(b, t); }, Math.max(0, (t - ctx.currentTime) * 1000 - 40));
       this.next += this.spb; this.beat++;
     }
   }
   stop() { clearInterval(this.timer); this.timer = null; }
+}
+
+/* ---------- التسجيلات الصوتية الطبيعية (audio/*.mp3) ---------- */
+const firstMeaningOf = ar => ar.split('/')[0].replace(/\(.*?\)/g, '').trim();
+// نص ← مفتاح الملف؛ يطابق tools/texts.js
+const CLIP_KEYS = { fa: new Map(), ar: new Map() };
+WORDS.forEach(w => { CLIP_KEYS.fa.set(w.fa, 'fa/w' + w.id); CLIP_KEYS.fa.set(w.voc, 'fa/w' + w.id); CLIP_KEYS.ar.set(firstMeaningOf(w.ar), 'ar/w' + w.id); });
+SENTS.forEach(s => { CLIP_KEYS.fa.set(s.fa, 'fa/s' + s.id); CLIP_KEYS.ar.set(s.ar, 'ar/s' + s.id); });
+const Clips = {
+  avail: new Set(), bufs: new Map(), loading: new Map(), src: null, out: null,
+  get ready() { return this.avail.size > 0; },
+  async init() {
+    try {
+      const r = await fetch('audio/index.json', { cache: 'no-cache' });
+      if (r.ok) Object.keys((await r.json()).texts).forEach(k => this.avail.add(k));
+    } catch (e) { /* لا توجد تسجيلات: نستخدم أصوات الجهاز */ }
+    if (this.ready && !session && document.querySelector('.hero')) VIEWS.home(); // حدّث حالة الصوت في الرئيسية
+  },
+  key(text, lang) { const k = CLIP_KEYS[lang] && CLIP_KEYS[lang].get(text); return k && this.avail.has(k) ? k : null; },
+  load(key) {
+    if (this.bufs.has(key)) return Promise.resolve(this.bufs.get(key));
+    if (this.loading.has(key)) return this.loading.get(key);
+    const ctx = Music.init();
+    if (!ctx) return Promise.resolve(null);
+    const p = fetch('audio/' + key + '.mp3').then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+      .then(buf => { this.bufs.set(key, buf); this.loading.delete(key); if (this.bufs.size > 300) this.bufs.delete(this.bufs.keys().next().value); return buf; })
+      .catch(() => { this.loading.delete(key); this.avail.delete(key); return null; });
+    this.loading.set(key, p);
+    return p;
+  },
+  /** يشغّل التسجيل عند الوقت when (وقت AudioContext) بسرعة/نبرة rate */
+  play(buf, when, rate) {
+    const ctx = Music.ctx;
+    if (!this.out) { this.out = ctx.createGain(); this.out.gain.value = 1.4; this.out.connect(ctx.destination); }
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.playbackRate.value = rate; src.connect(this.out);
+    const at = Math.max(ctx.currentTime, when || 0);
+    src.start(at);
+    this.stop(); this.src = src;
+    return new Promise(resolve => {
+      src.onended = () => { if (this.src === src) this.src = null; resolve(); };
+      setTimeout(resolve, (at - ctx.currentTime + buf.duration / rate) * 1000 + 400); // احتياط
+    });
+  },
+  stop() { if (this.src) { try { this.src.stop(); } catch (e) { /* انتهى */ } this.src = null; } },
+};
+Clips.init();
+
+// ملف WAV صامت صغير يُشغَّل بلا توقف ليعمل صوت Web Audio على iPhone حتى في الوضع الصامت
+function silentWav() {
+  const n = 4000, b = new DataView(new ArrayBuffer(44 + n));
+  const str = (o, t) => [...t].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  str(0, 'RIFF'); b.setUint32(4, 36 + n, true); str(8, 'WAVEfmt '); b.setUint32(16, 16, true);
+  b.setUint16(20, 1, true); b.setUint16(22, 1, true); b.setUint32(24, 8000, true); b.setUint32(28, 8000, true);
+  b.setUint16(32, 1, true); b.setUint16(34, 8, true); str(36, 'data'); b.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
 }
 
 /* ---------- الصوت (نطق فارسي/عربي) ---------- */
@@ -118,10 +177,11 @@ const Voice = {
   /** يفتح الصوت على iOS/Safari: يجب أن يُستدعى داخل لمسة المستخدم */
   unlock() {
     if (this.unlocked) return; this.unlocked = true;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* غير مدعوم */ }
     Music.init();
+    const keep = new Audio(silentWav()); keep.loop = true; keep.setAttribute('playsinline', ''); keep.play().catch(() => {});
     if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }
-    this.player.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-    this.player.play().catch(() => {});
+    this.player.src = silentWav(); this.player.play().catch(() => {});
   },
   init() {
     if (!('speechSynthesis' in window)) return;
@@ -137,6 +197,7 @@ const Voice = {
   },
   mode(lang) {
     const pref = Store.s.voice;
+    if (pref === 'auto' && Clips.ready) return 'clips';
     if (pref === 'online') return 'online';
     if (pref === 'native') return this.native(lang) ? 'native' : 'none';
     return this.native(lang) ? 'native' : (this.onlineFailed[lang] ? 'none' : 'online');
@@ -146,6 +207,8 @@ const Voice = {
   },
   cache: new Map(),
   preload(text, lang = 'fa') {
+    const ck = Store.s.voice === 'auto' && Clips.key(text, lang);
+    if (ck) { Clips.load(ck); return; }
     if (this.mode(lang) !== 'online') return;
     const u = this.url(text, lang);
     if (this.cache.has(u)) return;
@@ -155,12 +218,23 @@ const Voice = {
   },
   stop() {
     if ('speechSynthesis' in window) speechSynthesis.cancel();
-    this.player.pause();
+    this.player.pause(); Clips.stop();
     this.current = null;
   },
   /** ينطق النص ويعيد وعداً ينتهي عند انتهاء النطق. pitch: 0.5–2 */
-  speak(text, { lang = 'fa', pitch = 1, rate = 1 } = {}) {
-    const mode = this.mode(lang);
+  speak(text, { lang = 'fa', pitch = 1, rate = 1, when = 0 } = {}) {
+    const ck = Store.s.voice === 'auto' && Music.init() && Clips.key(text, lang);
+    if (ck) {
+      // التسجيل الطبيعي: نرفع النبرة والسرعة معاً فيصير «غناءً» على الإيقاع
+      return Clips.load(ck).then(buf => buf
+        ? Clips.play(buf, when, Math.min(1.45, Math.max(0.75, rate * (1 + (pitch - 1) * 0.4))))
+        : this.speakTTS(text, { lang, pitch, rate }));
+    }
+    return this.speakTTS(text, { lang, pitch, rate });
+  },
+  speakTTS(text, { lang, pitch, rate }) {
+    let mode = this.mode(lang);
+    if (mode === 'clips') mode = this.native(lang) ? 'native' : (this.onlineFailed[lang] ? 'none' : 'online');
     const est = 1200 + text.length * 170 / rate;
     if (mode === 'none') return sleep(Math.min(est, 2500));
     return new Promise(resolve => {
@@ -187,6 +261,7 @@ const Voice = {
   },
   statusText() {
     const m = this.mode('fa');
+    if (m === 'clips') return '🎙️ نطق فارسي طبيعي مسجّل يُغنّى على الإيقاع — يعمل على iPhone وكل الأجهزة';
     if (m === 'native') return '🔊 صوت فارسي من جهازك: ' + this.native('fa').name;
     if (m === 'online') return '🌐 صوت فارسي أونلاين (Google) — يحتاج إنترنت';
     return '🔇 لا يوجد صوت فارسي متاح — جرّب متصفح Chrome أو Edge، أو فعّل الصوت الأونلاين من الإعدادات';
@@ -297,7 +372,7 @@ function sing(lines, ui) {
     let i = 0, busy = false, restUntil = -1, finished = false;
     const pre = k => { const l = lines[k]; if (l && l.text) Voice.preload(l.text, l.lang); };
     pre(0); pre(1);
-    const groove = new Groove(beat => {
+    const groove = new Groove((beat, t) => {
       ui.beat(beat);
       if (finished || busy || beat < restUntil) return;
       if (i >= lines.length) { finished = true; groove.stop(); resolve(); return; }
@@ -307,7 +382,7 @@ function sing(lines, ui) {
       if (l.on) l.on();
       if (l.rest) { restUntil = beat + l.rest; return; }
       busy = true; Music.setDuck(true);
-      Voice.speak(l.text, l).then(() => { busy = false; Music.setDuck(false); ui.hl(null); });
+      Voice.speak(l.text, { ...l, when: t }).then(() => { busy = false; Music.setDuck(false); ui.hl(null); });
     });
     session.groove = groove;
     session.abortP.catch(e => { finished = true; groove.stop(); reject(e); });
@@ -509,7 +584,7 @@ const VIEWS = {
         <label class="set"><span>🥁 سرعة الإيقاع: <b id="bpmv">${n2a(S.bpm)}</b> نبضة/دقيقة</span><input type="range" id="bpm" min="80" max="132" step="4" value="${S.bpm}"></label>
         <label class="set"><span>🎹 مستوى الموسيقى</span><input type="range" id="music" min="0" max="100" step="5" value="${S.music}"></label>
         <label class="set"><span>🗣️ مصدر الصوت</span><select id="voice">
-          <option value="auto" ${S.voice === 'auto' ? 'selected' : ''}>تلقائي (الجهاز ثم أونلاين)</option>
+          <option value="auto" ${S.voice === 'auto' ? 'selected' : ''}>تلقائي (تسجيلات طبيعية)</option>
           <option value="native" ${S.voice === 'native' ? 'selected' : ''}>صوت الجهاز فقط</option>
           <option value="online" ${S.voice === 'online' ? 'selected' : ''}>صوت أونلاين (Google)</option></select></label>
         ${fav.length > 1 ? `<label class="set"><span>🇮🇷 الصوت الفارسي</span><select id="faVoice"><option value="">افتراضي</option>${fav.map(v => `<option ${S.faVoice === v.name ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></label>` : ''}
@@ -592,6 +667,7 @@ async function learn(ids, sids, label, challenge) {
     lines.push(...ls);
   });
   sids.forEach(sid => lines.push(...sentLines(SENTS[sid], ui, challenge)));
+  lines.forEach(l => l.text && Voice.preload(l.text, l.lang)); // حمّل تسجيلات المجموعة كلها مسبقاً
   await guard(Promise.race([sing(lines, ui), skipP]));
   if (session.groove) session.groove.stop();
   Music.setDuck(false);

@@ -1,0 +1,39 @@
+name: Farsi rhythm audio
+
+# يولّد التسجيلات الصوتية للكلمات والجمل كلما تغيّر data.js، ويحفظها في المستودع
+on:
+  push:
+    paths:
+      - 'farsi-rhythm/data.js'
+      - 'farsi-rhythm/tools/**'
+      - '.github/workflows/farsi-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: farsi-audio-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install edge-tts==7.0.2 && sudo apt-get install -y -qq ffmpeg
+      - name: Generate clips
+        working-directory: farsi-rhythm
+        run: node tools/texts.js > /tmp/texts.json && python tools/tts.py /tmp/texts.json audio
+      - name: Commit clips
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add farsi-rhythm/audio
+          git diff --cached --quiet && exit 0
+          git commit -m "Generate Farsi rhythm audio clips"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
