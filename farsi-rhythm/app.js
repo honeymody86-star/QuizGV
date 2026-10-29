@@ -722,6 +722,8 @@ function askSpeak(id, label, skipModel) {
         q('#fb').className = 'fb bad'; q('#fb').textContent = r.error === 'no-speech' ? 'لم أسمع شيئاً، اضغط 🎤 وحاول مجدداً' : 'حاول مجدداً';
         if (tries >= 3) resolve(best); return;
       }
+      // بعض الأجهزة (مثل iPhone) لا تدعم الإملاء بالفارسية فتكتب بلغة أخرى: ننتقل للتقييم الذاتي
+      if (r.texts.length && !r.texts.some(t => /[\u0600-\u06FF]/.test(t))) { Ear.broken = true; selfMode(); return; }
       const { score, heard } = scoreSpeech(w.fa, r.texts);
       best = Math.max(best, score);
       const mt = q('#mt'); mt.style.width = score + '%'; mt.style.background = score >= PASS_SCORE ? 'var(--ok)' : score >= 35 ? 'var(--warn)' : 'var(--bad)';

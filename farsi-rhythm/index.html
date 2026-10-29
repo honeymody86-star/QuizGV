@@ -7,6 +7,11 @@
 <meta name="description" content="تعلّم أهم ٦٠٠ كلمة فارسية بالغناء والإيقاع — للمتحدثين بالعربية" />
 <meta name="theme-color" content="#6d28d9" />
 <meta name="referrer" content="no-referrer" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="فارسي بالإيقاع" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<link rel="apple-touch-icon" href="icon.png" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -38,8 +43,8 @@ body{
   font-family:"Vazirmatn", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
   -webkit-tap-highlight-color:transparent;
 }
-.wrap{max-width:860px;margin:0 auto;padding:16px 16px 60px}
-button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:860px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .btn{
   appearance:none;border:0;border-radius:16px;padding:12px 18px;font-weight:800;font-size:16px;
   background:var(--brand);color:#fff;box-shadow:var(--shadow);transition:transform .08s;
