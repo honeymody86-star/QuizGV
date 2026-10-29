@@ -4,7 +4,7 @@
 يعيد التوليد فقط للنصوص التي تغيّرت (حسب audio/index.json)، ويقصّ الصمت
 من البداية والنهاية لتنطبق الكلمات على ضربات الإيقاع بدقة.
 """
-import asyncio, json, os, subprocess, sys, tempfile
+import asyncio, json, os, subprocess, sys, threading, wave
 
 import edge_tts
 
@@ -12,6 +12,16 @@ try:
     from gtts import gTTS
 except ImportError:  # الاحتياط اختياري
     gTTS = None
+
+try:
+    from piper import PiperVoice
+except ImportError:
+    PiperVoice = None
+
+# نماذج Piper مفتوحة المصدر (تعمل محلياً بلا خدمة خارجية): PIPER_DIR/<name>.onnx
+PIPER_MODELS = {'fa': 'fa_IR-gyro-medium', 'ar': 'ar_JO-kareem-medium'}
+PIPER_DIR = os.environ.get('PIPER_DIR', 'voices')
+_piper, _piper_lock = {}, threading.Lock()
 
 VOICES = {'fa': 'fa-IR-DilaraNeural', 'ar': 'ar-SA-ZariyahNeural'}
 RATE = {'w': '-8%', 's': '-5%'}
@@ -26,6 +36,25 @@ async def edge(item, raw):
     kind = item['key'].split('/')[1][0]
     comm = edge_tts.Communicate(item['text'], VOICES[item['lang']], rate=RATE[kind])
     await asyncio.wait_for(comm.save(raw), timeout=25)
+
+
+def _piper_save(item, raw):
+    lang = item['lang']
+    with _piper_lock:
+        if lang not in _piper:
+            _piper[lang] = PiperVoice.load(os.path.join(PIPER_DIR, PIPER_MODELS[lang] + '.onnx'))
+        voice = _piper[lang]
+        with wave.open(raw, 'wb') as wf:
+            if hasattr(voice, 'synthesize_wav'):
+                voice.synthesize_wav(item['text'], wf)
+            else:
+                voice.synthesize(item['text'], wf)
+
+
+async def piper(item, raw):
+    if PiperVoice is None:
+        raise RuntimeError('piper-tts not installed')
+    await asyncio.to_thread(_piper_save, item, raw)
 
 
 async def google(item, raw):
@@ -68,7 +97,7 @@ async def main(texts_file, out_dir):
     print(f'{len(todo)} of {len(items)} clips to generate', flush=True)
     # فحص سريع لكل محرّك قبل البدء، حتى نفشل بسرعة برسالة واضحة
     engines = []
-    for engine in (edge, google):
+    for engine in (edge, piper, google):
         try:
             await asyncio.wait_for(engine({'key': 'fa/w0', 'lang': 'fa', 'text': 'سلام'}, '/tmp/probe.mp3'), 40)
             engines.append(engine)

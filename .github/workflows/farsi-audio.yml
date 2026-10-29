@@ -24,16 +24,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install edge-tts==7.0.2 gTTS==2.5.4 && (which ffmpeg || sudo apt-get install -y -qq ffmpeg)
+      - name: Install TTS engines
+        run: |
+          pip install -U edge-tts piper-tts gTTS
+          which ffmpeg || sudo apt-get install -y -qq ffmpeg
+          mkdir -p "$RUNNER_TEMP/voices" && cd "$RUNNER_TEMP/voices"
+          base=https://huggingface.co/rhasspy/piper-voices/resolve/main
+          for v in fa/fa_IR/gyro/medium/fa_IR-gyro-medium ar/ar_JO/kareem/medium/ar_JO-kareem-medium; do
+            curl -fsSL -O "$base/$v.onnx" -O "$base/$v.onnx.json" || echo "could not download $v"
+          done
+          ls -la
       - name: Generate clips
         working-directory: farsi-rhythm
         timeout-minutes: 40
+        env:
+          PIPER_DIR: ${{ runner.temp }}/voices
         run: node tools/texts.js > /tmp/texts.json && python -u tools/tts.py /tmp/texts.json audio
       - name: Commit clips
         if: ${{ !cancelled() }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          [ -d farsi-rhythm/audio ] || exit 0
           git add farsi-rhythm/audio
           git diff --cached --quiet && exit 0
           git commit -m "Generate Farsi rhythm audio clips"
