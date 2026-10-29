@@ -8,29 +8,52 @@ import asyncio, json, os, subprocess, sys, tempfile
 
 import edge_tts
 
+try:
+    from gtts import gTTS
+except ImportError:  # الاحتياط اختياري
+    gTTS = None
+
 VOICES = {'fa': 'fa-IR-DilaraNeural', 'ar': 'ar-SA-ZariyahNeural'}
 RATE = {'w': '-8%', 's': '-5%'}
 TRIM = ('silenceremove=start_periods=1:start_threshold=-45dB,areverse,'
         'silenceremove=start_periods=1:start_threshold=-45dB,areverse')
 
 
-async def synth(item, out_dir, sem):
+STATE = {'done': 0, 'edge_fail': 0}
+
+
+async def edge(item, raw):
+    kind = item['key'].split('/')[1][0]
+    comm = edge_tts.Communicate(item['text'], VOICES[item['lang']], rate=RATE[kind])
+    await asyncio.wait_for(comm.save(raw), timeout=25)
+
+
+async def google(item, raw):
+    if gTTS is None:
+        raise RuntimeError('gTTS not installed')
+    await asyncio.to_thread(lambda: gTTS(item['text'], lang=item['lang']).save(raw))
+
+
+async def synth(item, out_dir, sem, engines):
     path = os.path.join(out_dir, item['key'] + '.mp3')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     async with sem:
-        for attempt in range(4):
-            try:
-                with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as tmp:
-                    raw = tmp.name
-                kind = item['key'].split('/')[1][0]
-                await edge_tts.Communicate(item['text'], VOICES[item['lang']], rate=RATE[kind]).save(raw)
-                subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', raw, '-af', TRIM,
-                                '-ac', '1', '-ar', '24000', '-b:a', '48k', path], check=True)
-                os.remove(raw)
-                return True
-            except Exception as e:  # شبكة أو حدّ معدّل: أعد المحاولة
-                print('retry', item['key'], e, file=sys.stderr)
-                await asyncio.sleep(2 * (attempt + 1))
+        for attempt in range(3):
+            for engine in engines:
+                raw = path + '.raw.mp3'
+                try:
+                    await engine(item, raw)
+                    await asyncio.to_thread(subprocess.run, [
+                        'ffmpeg', '-loglevel', 'error', '-y', '-i', raw, '-af', TRIM,
+                        '-ac', '1', '-ar', '24000', '-b:a', '48k', path], check=True, timeout=30)
+                    os.remove(raw)
+                    STATE['done'] += 1
+                    if STATE['done'] % 100 == 0:
+                        print(f"  {STATE['done']} clips", flush=True)
+                    return True
+                except Exception as e:  # شبكة أو حدّ معدّل: جرّب المحرّك التالي ثم أعد المحاولة
+                    print('retry', item['key'], engine.__name__, type(e).__name__, e, flush=True)
+            await asyncio.sleep(2 * (attempt + 1))
     return False
 
 
@@ -42,9 +65,20 @@ async def main(texts_file, out_dir):
         old = json.load(open(index_path, encoding='utf-8')).get('texts', {})
     todo = [i for i in items
             if old.get(i['key']) != i['text'] or not os.path.exists(os.path.join(out_dir, i['key'] + '.mp3'))]
-    print(f'{len(todo)} of {len(items)} clips to generate')
-    sem = asyncio.Semaphore(6)
-    results = await asyncio.gather(*(synth(i, out_dir, sem) for i in todo))
+    print(f'{len(todo)} of {len(items)} clips to generate', flush=True)
+    # فحص سريع لكل محرّك قبل البدء، حتى نفشل بسرعة برسالة واضحة
+    engines = []
+    for engine in (edge, google):
+        try:
+            await asyncio.wait_for(engine({'key': 'fa/w0', 'lang': 'fa', 'text': 'سلام'}, '/tmp/probe.mp3'), 40)
+            engines.append(engine)
+            print('engine ok:', engine.__name__, flush=True)
+        except Exception as e:
+            print('engine unavailable:', engine.__name__, type(e).__name__, e, flush=True)
+    if not engines:
+        sys.exit('no TTS engine reachable')
+    sem = asyncio.Semaphore(8)
+    results = await asyncio.gather(*(synth(i, out_dir, sem, engines) for i in todo))
     failed = [i['key'] for i, ok in zip(todo, results) if not ok]
     texts = {i['key']: i['text'] for i in items
              if i['key'] not in failed and os.path.exists(os.path.join(out_dir, i['key'] + '.mp3'))}
