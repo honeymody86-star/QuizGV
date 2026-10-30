@@ -415,12 +415,12 @@ function stageUI(root) {
       const em = q('.stage .em'); if (em) { em.classList.add('bump'); setTimeout(() => em.classList.remove('bump'), 140); }
     },
     word(w, hl) {
-      q('.stage').innerHTML = `<div class="tag">🎵 كلمة جديدة</div><div class="em">${w.icon}</div>
+      q('.stage').innerHTML = `<div class="tag">🎵 كلمة جديدة</div><button class="say replay" onclick="Voice.speak(WORDS[${w.id}].fa)" aria-label="أعد الاستماع">🔊</button><div class="em">${w.icon}</div>
         <div class="fa" data-k="fa">${esc(w.voc)}</div><div class="ar" data-k="ar">${esc(w.ar)}</div>`;
       this.hl(hl);
     },
     sentence(s, hl) {
-      q('.stage').innerHTML = `<div class="tag">🎶 جملة</div><div class="em">${s.icon}</div>
+      q('.stage').innerHTML = `<div class="tag">🎶 جملة</div><button class="say replay" onclick="Voice.speak(SENTS[${s.id}].fa)" aria-label="أعد الاستماع">🔊</button><div class="em">${s.icon}</div>
         <div data-k="read"><div class="sfa" data-k="sfa">${markSentence(s)}</div><div class="sar" data-k="sar">${esc(s.ar)}</div></div>
         <div class="chips">${s.words.map(id => `<span class="chip">${WORDS[id].icon} ${esc(WORDS[id].fa)}</span>`).join('')}</div>`;
       this.hl(hl === 'fa' ? 'sfa' : hl);
@@ -537,12 +537,15 @@ const VIEWS = {
           ${SONGS.some(g => g.lesson === id) ? '<button class="btn big" id="song">🎤 أغنية الدرس</button>' : ''}
           <button class="btn alt big" id="quiz">📝 اختبرني</button></div>
         <div class="words">${l.words.map(wid => { const w = WORDS[wid]; return `
-          <button class="wcard" data-w="${wid}">${Store.mastered(wid) ? '<span class="done">⭐</span>' : ''}
-          <div class="em">${w.icon}</div><div class="fa">${esc(w.voc)}</div><div class="ar">${esc(w.ar)}</div></button>`; }).join('')}</div>
+          <div class="wcard">${Store.mastered(wid) ? '<span class="done">⭐</span>' : ''}
+          <div class="em">${w.icon}</div><div class="fa">${esc(w.voc)}</div><div class="ar">${esc(w.ar)}</div>
+          <div class="acts"><button class="say" data-say-w="${wid}" aria-label="استمع">🔊 استمع</button><button class="say alt" data-sing-w="${wid}" aria-label="غنِّ">🎵</button></div></div>`; }).join('')}</div>
+        <div class="row center"><button class="btn alt sm" id="allW">🔊 استمع لكل الكلمات بالترتيب</button><button class="btn alt sm" id="allS">🔊 استمع لكل الجمل بالترتيب</button></div>
         <h2>🎶 الجمل (${n2a(l.sentences.length)})</h2>
         ${l.sentences.map(sid => { const s = SENTS[sid]; return `
-          <button class="sent" data-s="${sid}"><span class="em">${s.icon}</span><div><div class="fa">${markSentence(s)}</div>
-          <div class="muted small">${esc(s.ar)}</div></div></button>`; }).join('')}
+          <div class="sent"><span class="em">${s.icon}</span><div style="flex:1"><div class="fa">${markSentence(s)}</div>
+          <div class="muted small">${esc(s.ar)}</div></div>
+          <div class="acts col"><button class="say" data-say-s="${sid}" aria-label="استمع">🔊</button><button class="say alt" data-sing-s="${sid}" aria-label="غنِّ">🎵</button></div></div>`; }).join('')}
         <div class="row center">${id > 0 ? '<button class="btn alt sm" id="prev">→ الدرس السابق</button>' : ''}
           ${id < LESSONS.length - 1 ? '<button class="btn alt sm" id="next">الدرس التالي ←</button>' : ''}</div>
       </div>`;
@@ -550,8 +553,13 @@ const VIEWS = {
     $app.querySelector('#singAll').onclick = () => go('practice', l.words, l.title, { learnOnly: true, lesson: id });
     const sg = $app.querySelector('#song'); if (sg) sg.onclick = () => go('song', SONGS.find(g => g.lesson === id).id);
     $app.querySelector('#quiz').onclick = () => go('practice', l.words, l.title, { lesson: id });
-    $app.querySelectorAll('.wcard').forEach(b => b.onclick = () => quickSing([...wordLines(WORDS[+b.dataset.w], nullUI, false)]));
-    $app.querySelectorAll('.sent').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.s], nullUI, false)));
+    // 🔊 استماع بسيط (نطق طبيعي بلا إيقاع) — 🎵 غناء على الإيقاع
+    $app.querySelectorAll('[data-say-w]').forEach(b => b.onclick = () => sayItems([{ fa: WORDS[+b.dataset.sayW].fa, ar: firstMeaning(WORDS[+b.dataset.sayW].ar), btn: b }]));
+    $app.querySelectorAll('[data-say-s]').forEach(b => b.onclick = () => sayItems([{ fa: SENTS[+b.dataset.sayS].fa, ar: SENTS[+b.dataset.sayS].ar, btn: b }]));
+    $app.querySelectorAll('[data-sing-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.singW], nullUI, false)));
+    $app.querySelectorAll('[data-sing-s]').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.singS], nullUI, false)));
+    $app.querySelector('#allW').onclick = () => sayItems(l.words.map(w => ({ fa: WORDS[w].fa, ar: firstMeaning(WORDS[w].ar), btn: $app.querySelector(`[data-say-w="${w}"]`) })));
+    $app.querySelector('#allS').onclick = () => sayItems(l.sentences.map(x => ({ fa: SENTS[x].fa, ar: SENTS[x].ar, btn: $app.querySelector(`[data-say-s="${x}"]`) })));
     const p = $app.querySelector('#prev'); if (p) p.onclick = () => go('lesson', id - 1);
     const n = $app.querySelector('#next'); if (n) n.onclick = () => go('lesson', id + 1);
   },
@@ -697,6 +705,22 @@ const VIEWS = {
     el('reset').onclick = () => { if (confirm('هل تريد مسح كل التقدّم؟')) { Store.data.words = {}; Store.data.challenges = []; Store.save(); go('home'); } };
   },
 };
+
+/* ---------- 🔊 استماع مباشر لكلمة/جملة (أو قائمة بالترتيب) ---------- */
+let sayToken = 0;
+async function sayItems(items) {
+  const my = ++sayToken;
+  endSession(); Voice.stop();
+  document.querySelectorAll('.say.on').forEach(x => x.classList.remove('on'));
+  for (const it of items) {
+    if (my !== sayToken) return;
+    if (it.btn) { it.btn.classList.add('on'); it.btn.closest('.wcard,.sent')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    await Voice.speak(it.fa, { lang: 'fa' });
+    if (my === sayToken && Store.s.arabic && it.ar) { await sleep(250); await Voice.speak(it.ar, { lang: 'ar' }); }
+    if (it.btn) it.btn.classList.remove('on');
+    await sleep(400);
+  }
+}
 
 /* ---------- مراحل التعلّم والاختبار ---------- */
 const nullUI = { beat() {}, word() {}, sentence() {}, hl() {} };
