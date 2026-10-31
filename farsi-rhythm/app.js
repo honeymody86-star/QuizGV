@@ -23,7 +23,7 @@ const Store = {
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.key)); } catch (e) { /* تخزين غير متاح */ }
-    this.data = Object.assign({ words: {}, challenges: [], block: 0, days: {}, stages: {}, exams: [], saved: null }, d || {});
+    this.data = Object.assign({ words: {}, sents: {}, challenges: [], block: 0, mode: 'words', days: {}, stages: {}, exams: [], saved: null }, d || {});
     this.data.settings = Object.assign(
       { bpm: 104, music: 55, voice: 'auto', faVoice: '', arabic: true, speak: true, theme: '' },
       (d && d.settings) || {});
@@ -459,10 +459,13 @@ function go(view, ...args) {
 const VIEWS = {
   home() {
     const total = Object.values(Store.data.words).filter(w => w.m).length;
-    const best = Store.data.challenges.reduce((m, c) => Math.max(m, c.mastered), 0);
-    const sv = Store.data.saved, due = dueWords(), lvl = levelOf(total);
+    const sentsDone = Object.values(Store.data.sents).filter(x => x.m).length;
+    const sv = Store.data.saved, due = dueWords(), lvl = levelOf(total), mode = Store.data.mode || 'words';
     const blocks = Array.from({ length: LESSONS.length / BLOCK_SIZE }, (_, b) => {
-      const ids = blockWords(b), m = Store.masteredIn(ids);
+      const ids = blockWords(b);
+      const m = (Store.data.mode || 'words') === 'sents'
+        ? Math.round(blockSents(b).filter(x => Store.data.sents[x] && Store.data.sents[x].m).length / blockSents(b).length * 100)
+        : Store.masteredIn(ids);
       return `<button class="block ${b === Store.data.block ? 'sel' : ''}" data-b="${b}">
         الكلمات ${n2a(b * 100 + 1)}–${n2a(b * 100 + 100)}<div class="bar"><i style="width:${m}%"></i></div></button>`;
     }).join('');
@@ -472,14 +475,18 @@ const VIEWS = {
         <button class="iconbtn" id="set" aria-label="الإعدادات">⚙️</button></div>
       <div class="stack">
         ${sv ? `<div class="card resume"><div class="row between"><div><b>⏸ لديك تحدٍّ متوقّف</b>
-          <div class="small muted">الكلمات ${n2a(sv.block * 100 + 1)}–${n2a(sv.block * 100 + 100)} · المجموعة ${n2a(sv.group + 1)}/١٠ · متبقٍّ ⏱ ${fmtTime(CHALLENGE_MS - sv.elapsed)}</div></div>
+          <div class="small muted">${sv.mode === 'sents' ? '💬 الجمل' : '🔤 الكلمات'} ${n2a(sv.block * 100 + 1)}–${n2a(sv.block * 100 + 100)} · المجموعة ${n2a(sv.group + 1)}/١٠ · متبقٍّ ⏱ ${fmtTime(CHALLENGE_MS - sv.elapsed)}</div></div>
           <div class="row"><button class="btn pink" id="resume">▶ أكمل</button><button class="btn alt sm" id="drop">✕</button></div></div></div>` : ''}
         <div class="card hero">
-          <h2>🏆 تحدّي ١٠٠ كلمة في ٣٠ دقيقة</h2>
-          <div class="muted small">لكل مجموعة من ١٠ كلمات: تسمع الأغنية والإيقاع 🎶 ← تختبر السمع 🎧 ← تقيّم نطقك 🎤. الكلمة تُحسب «متقَنة» عندما تنجح في السمع والنطق.</div>
+          <div class="tabs"><button class="tab ${mode === 'words' ? 'sel' : ''}" data-mode="words">🔤 تحدّي الكلمات</button>
+            <button class="tab ${mode === 'sents' ? 'sel' : ''}" data-mode="sents">💬 تحدّي الجمل</button></div>
+          ${mode === 'words' ? `<h2>🏆 تحدّي ١٠٠ كلمة في ٣٠ دقيقة</h2>
+          <div class="muted small">لكل مجموعة من ١٠ كلمات: تسمع الأغنية والإيقاع 🎶 ← تختبر السمع 🎧 ← تقيّم نطقك 🎤. الكلمة تُحسب «متقَنة» عندما تنجح في السمع والنطق.</div>`
+          : `<h2>🏆 تحدّي ٥٠ جملة في ٣٠ دقيقة</h2>
+          <div class="muted small">لكل درس ٥ جمل: تسمعها مُغنّاة 🎶 ← تفهم معناها بالسمع 🎧 ← ترتّب كلماتها 🧩 ← تقولها بصوتك 🎤. الجملة تُحسب «متقَنة» عندما تنجح في الثلاثة.</div>`}
           <div class="blocks">${blocks}</div>
           <div class="row between"><button class="btn big" id="startCh">ابدأ التحدّي ▶</button>
-          <span class="small muted">١٠ دروس · ١٠٠ كلمة · ⏱ ٣٠:٠٠</span></div>
+          <span class="small muted">١٠ دروس · ${mode === 'words' ? '١٠٠ كلمة' : '٥٠ جملة'} · ⏱ ٣٠:٠٠ · ⏸ يمكنك الإيقاف</span></div>
         </div>
         <div class="features">
           <button class="feat" id="review" ${due.length ? '' : 'disabled'}><span class="em">📅</span><b>مراجعة اليوم</b>
@@ -491,6 +498,7 @@ const VIEWS = {
           <div class="card stat"><b>${n2a(total)}</b><span class="small muted">كلمة متقَنة من ٦٠٠</span></div>
           <div class="card stat"><b>${lvl[2]} ${lvl[1]}</b><span class="small muted">مستواك</span></div>
           <div class="card stat"><b>🔥 ${n2a(streak())}</b><span class="small muted">أيام متتالية</span></div>
+          <div class="card stat"><b>${n2a(sentsDone)}</b><span class="small muted">جملة متقَنة من ${n2a(SENTS.length)}</span></div>
         </div>
         <div class="notice">${esc(Voice.statusText())}<br>${Ear.Rec ? '🎤 تقييم النطق بالميكروفون متاح' : '🎤 متصفحك لا يدعم التعرّف على الكلام — سيكون تقييم النطق ذاتياً (استخدم Chrome لتقييم آلي)'}</div>
         <div class="row between"><h2 style="margin:0">🎤 أغاني الدروس (${n2a(SONGS.length)})</h2></div>
@@ -513,8 +521,9 @@ const VIEWS = {
     SONGS.forEach(async g => { const src = await SongFiles.source(g.id); const el = $app.querySelector(`[data-badge="${g.id}"]`); if (el) el.textContent = src ? '· 🎵 جاهزة' : '· ✍️ اصنعها في Suno'; });
     $app.querySelector('#startCh').onclick = () => {
       if (sv && !confirm('عندك تحدٍّ متوقف — بدء تحدٍّ جديد يلغيه. متأكد؟')) return;
-      Store.data.saved = null; go('challenge', Store.data.block);
+      Store.data.saved = null; go('challenge', Store.data.block, false, mode);
     };
+    $app.querySelectorAll('.tab').forEach(t => t.onclick = () => { Store.data.mode = t.dataset.mode; Store.save(); VIEWS.home(); });
     if (sv) {
       $app.querySelector('#resume').onclick = () => go('challenge', sv.block, true);
       $app.querySelector('#drop').onclick = () => { if (confirm('إلغاء التحدي المتوقف؟')) { Store.data.saved = null; Store.save(); VIEWS.home(); } };
@@ -543,7 +552,7 @@ const VIEWS = {
         <div class="row center"><button class="btn alt sm" id="allW">🔊 استمع لكل الكلمات بالترتيب</button><button class="btn alt sm" id="allS">🔊 استمع لكل الجمل بالترتيب</button></div>
         <h2>🎶 الجمل (${n2a(l.sentences.length)})</h2>
         ${l.sentences.map(sid => { const s = SENTS[sid]; return `
-          <div class="sent"><span class="em">${s.icon}</span><div style="flex:1"><div class="fa">${markSentence(s)}</div>
+          <div class="sent">${Store.data.sents[sid] && Store.data.sents[sid].m ? '<span class="done">⭐</span>' : ''}<span class="em">${s.icon}</span><div style="flex:1"><div class="fa">${markSentence(s)}</div>
           <div class="muted small">${esc(s.ar)}</div></div>
           <div class="acts col"><button class="say" data-say-s="${sid}" aria-label="استمع">🔊</button><button class="say alt" data-sing-s="${sid}" aria-label="غنِّ">🎵</button></div></div>`; }).join('')}
         <div class="row center">${id > 0 ? '<button class="btn alt sm" id="prev">→ الدرس السابق</button>' : ''}
@@ -565,14 +574,16 @@ const VIEWS = {
   },
 
   /** تحدّي ١٠٠ كلمة في ٣٠ دقيقة */
-  async challenge(block, resume) {
+  async challenge(block, resume, mode = 'words') {
     const saved = resume && Store.data.saved;
-    const s = newSession({ limit: CHALLENGE_MS, kind: 'challenge', block, results: {}, sent: { ok: 0, n: 0 }, done: new Set() });
+    if (saved) mode = saved.mode || 'words';
+    const s = newSession({ limit: CHALLENGE_MS, kind: 'challenge', mode, block, results: {}, sent: { ok: 0, n: 0 }, done: new Set() });
     let start = 0, phase = 'learn';
     if (saved) {
       block = s.block = saved.block; start = saved.group; phase = saved.phase;
       s.start = Date.now() - saved.elapsed; s.results = saved.results; s.sent = saved.sent; s.done = new Set(saved.done);
     }
+    const sentMode = mode === 'sents';
     const lessonIds = Array.from({ length: BLOCK_SIZE }, (_, k) => block * BLOCK_SIZE + k);
     try {
       await countdown(saved ? 'نكمل من حيث توقفت 💪' : null);
@@ -580,8 +591,17 @@ const VIEWS = {
         const l = LESSONS[lessonIds[k]];
         const label = `المجموعة ${n2a(k + 1)}/${n2a(lessonIds.length)} · ${l.icon} ${l.title}`;
         s.group = k;
-        if (phase === 'learn') { s.done = new Set(); saveChallenge('learn'); await learn(l.words, l.sentences, label, true); phase = 'test'; }
-        if (phase === 'test') { saveChallenge('test'); await test(l.words, l.sentences, label, true); phase = 'check'; }
+        const sids = l.sentences.slice(0, SENTS_PER_LESSON);
+        if (phase === 'learn') {
+          s.done = new Set(); saveChallenge('learn');
+          if (sentMode) await learnSents(sids, label); else await learn(l.words, l.sentences, label, true);
+          phase = 'test';
+        }
+        if (phase === 'test') {
+          saveChallenge('test');
+          if (sentMode) await testSents(sids, label, true); else await test(l.words, l.sentences, label, true);
+          phase = 'check';
+        }
         // 🏁 اختبار المرحلة بعد كل خمسة دروس (المؤقّت متوقف أثناءه)
         if (phase === 'check' && (k + 1) % 5 === 0) {
           saveChallenge('check');
@@ -597,7 +617,15 @@ const VIEWS = {
       if (!(e instanceof Abort)) console.error(e);
       if (!(e instanceof Abort) || e.message !== 'timeup') return; // الخروج والإيقاف يعرضان شاشتهما بنفسهما
     }
-    finishRun(s, 100);
+    finishRun(s, challengeTotal(s));
+  },
+
+  /** تدريب على جمل محددة بلا مؤقّت */
+  async sentPractice(sids, title) {
+    const s = newSession({ kind: 'practice', mode: 'sents', results: {}, sent: { ok: 0, n: 0 } });
+    try { await learnSents(sids, title); await testSents(sids, title, false); }
+    catch (e) { if (!(e instanceof Abort)) console.error(e); if (!(e instanceof Abort) || e.message === 'end') return; }
+    finishRun(s, sids.length);
   },
 
   paused() {
@@ -605,7 +633,7 @@ const VIEWS = {
     if (!sv) return go('home');
     $app.innerHTML = `<div class="card stage" style="min-height:70vh">
       <div class="em">⏸</div><h1>التحدّي متوقّف</h1>
-      <div class="muted">الكلمات ${n2a(sv.block * 100 + 1)}–${n2a(sv.block * 100 + 100)} · المجموعة ${n2a(sv.group + 1)}/١٠</div>
+      <div class="muted">${sv.mode === 'sents' ? '💬 تحدّي الجمل' : '🔤 تحدّي الكلمات'} · الكلمات ${n2a(sv.block * 100 + 1)}–${n2a(sv.block * 100 + 100)} · المجموعة ${n2a(sv.group + 1)}/١٠</div>
       <div class="timer" style="margin:10px 0">⏱ متبقٍّ ${fmtTime(CHALLENGE_MS - sv.elapsed)}</div>
       <div class="small muted">حُفظ تقدّمك. تقدر تقفل التطبيق وترجع لاحقاً — ستجد زر «أكمل» في الصفحة الرئيسية.</div>
       <div class="row center" style="margin-top:14px"><button class="btn big pink" id="res">▶ أكمل</button><button class="btn alt" id="home">🏠 الرئيسية</button></div></div>`;
@@ -634,14 +662,15 @@ const VIEWS = {
     const avgSp = sp.length ? Math.round(sp.reduce((a, [, r]) => a + r.speak, 0) / sp.length) : null;
     const elapsed = Date.now() - s.start;
     const weak = res.filter(([, r]) => !r.mastered).map(([id]) => +id);
-    const win = s.kind === 'challenge' && mastered >= 100;
+    const sm = s.mode === 'sents';
+    const win = s.kind === 'challenge' && mastered >= total;
     $app.innerHTML = `
       <div class="top"><h1>${win ? '🏆 أنجزت التحدّي!' : s.kind === 'challenge' ? '📊 نتيجة التحدّي' : '📊 النتيجة'}</h1>
         <button class="iconbtn" id="home" aria-label="الرئيسية">🏠</button></div>
       <div class="stack">
         <div class="card center row" style="flex-direction:column">
           <div class="bignum">${n2a(mastered)}<span style="font-size:24px"> / ${n2a(total)}</span></div>
-          <div class="muted">كلمة متقَنة (سماع ✔ + نطق ✔)</div>
+          <div class="muted">${sm ? 'جملة متقَنة (فهم ✔ + ترتيب ✔ + نطق ✔)' : 'كلمة متقَنة (سماع ✔ + نطق ✔)'}</div>
           <div class="meter" style="max-width:420px"><i style="width:${mastered / total * 100}%;background:linear-gradient(90deg,#7c3aed,#ec4899)"></i></div>
           ${s.cancelled === 'timeup' ? '<div class="fb bad">⏰ انتهى الوقت!</div>' : ''}
         </div>
@@ -650,16 +679,19 @@ const VIEWS = {
           <div class="card stat"><b>${n2a(first)}</b><span class="small muted">صحيحة من أول محاولة</span></div>
           <div class="card stat"><b>${avgSp == null ? '—' : n2a(avgSp) + '٪'}</b><span class="small muted">متوسط دقة النطق</span></div>
           <div class="card stat"><b>${n2a(s.sent.ok)}/${n2a(s.sent.n)}</b><span class="small muted">جمل فهمتها بالسمع</span></div>
+          ${sm ? `<div class="card stat"><b>${n2a(s.arr ? s.arr.ok : 0)}/${n2a(s.arr ? s.arr.n : 0)}</b><span class="small muted">جمل رتّبتها صحيحة</span></div>` : ''}
         </div>
-        ${weak.length ? `<div class="card"><h3>💪 كلمات تحتاج مراجعة (${n2a(weak.length)})</h3>
-          <div class="chips" style="justify-content:flex-start">${weak.map(id => `<span class="chip bad">${WORDS[id].icon} ${esc(WORDS[id].fa)} · ${esc(firstMeaning(WORDS[id].ar))}</span>`).join('')}</div>
+        ${weak.length ? `<div class="card"><h3>💪 ${sm ? 'جمل' : 'كلمات'} تحتاج مراجعة (${n2a(weak.length)})</h3>
+          <div class="chips" style="justify-content:flex-start">${weak.map(id => sm
+            ? `<span class="chip bad">${SENTS[id].icon} ${esc(SENTS[id].fa)}</span>`
+            : `<span class="chip bad">${WORDS[id].icon} ${esc(WORDS[id].fa)} · ${esc(firstMeaning(WORDS[id].ar))}</span>`).join('')}</div>
           <div class="row" style="margin-top:12px"><button class="btn" id="redo">🔁 راجعها الآن</button></div></div>` : ''}
         <div class="row center"><button class="btn pink big" id="again">${s.kind === 'challenge' ? 'تحدٍّ جديد ▶' : 'العودة'}</button></div>
       </div>`;
     if (win) confetti();
     $app.querySelector('#home').onclick = () => go('home');
     $app.querySelector('#again').onclick = () => s.kind === 'challenge' ? go('home') : (s.lesson != null ? go('lesson', s.lesson) : go('home'));
-    const r = $app.querySelector('#redo'); if (r) r.onclick = () => go('practice', weak.slice(0, 10), 'مراجعة');
+    const r = $app.querySelector('#redo'); if (r) r.onclick = () => sm ? go('sentPractice', weak.slice(0, 8), 'مراجعة الجمل') : go('practice', weak.slice(0, 10), 'مراجعة');
   },
 
   settings() {
@@ -730,7 +762,7 @@ async function quickSing(lines) {
 }
 
 function hud(label, extra = '') {
-  const pause = session.kind === 'challenge' ? '<button class="iconbtn" id="pause" aria-label="إيقاف مؤقت">⏸</button>' : '';
+  const pause = session.kind === 'challenge' ? '<button class="pausebtn" id="pause" aria-label="إيقاف مؤقت">⏸ إيقاف</button>' : '';
   const timer = !session.limit ? '<span></span>'
     : `<span class="timer" id="timer">${session.frozen ? '⏸ المؤقّت متوقف' : '⏱ ' + fmtTime(tleft())}</span>`;
   return `<div class="hud"><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="iconbtn" id="quit" aria-label="خروج">✕</button>${pause}</div>
@@ -740,14 +772,14 @@ function bindQuit() {
   $app.querySelector('#quit').onclick = () => {
     if (session && session.kind === 'challenge') {
       if (!confirm('إنهاء التحدّي وعرض النتيجة؟')) return;
-      const s = session; abortSession('quit'); finishRun(s, 100);
+      const s = session; closePauseOverlay(); abortSession('quit'); finishRun(s, challengeTotal(s));
     } else if (session && session.kind === 'exam') {
       if (!confirm('إنهاء الاختبار الآن؟ الأسئلة الباقية تُحسب خطأ.')) return;
       abortSession('quit');
     } else go('home');
   };
   const p = $app.querySelector('#pause');
-  if (p) p.onclick = () => pauseChallenge();
+  if (p) p.onclick = () => pauseInPlace();
 }
 
 async function countdown(msg) {
@@ -890,10 +922,11 @@ function askListen(id, label) {
 /** سؤال النطق: تقول الكلمة ويقيّمها التعرّف على الكلام. يعيد رقماً (٠–١٠٠) أو true/false في التقييم الذاتي */
 function askSpeak(id, label, skipModel) {
   if (!Store.s.speak) return Promise.resolve(null);
-  const w = WORDS[id];
+  const w = typeof id === 'object' ? id : WORDS[id]; // كلمة أو جملة {fa, voc, icon, ar, sent, pass}
+  const pass = w.pass || PASS_SCORE;
   $app.innerHTML = hud(label) + `<div class="card stage">
-    <div class="tag">🎤 قلها بصوتك</div><div class="em">${w.icon}</div>
-    <div class="fa">${esc(w.voc)}</div><div class="ar">${esc(w.ar)}</div>
+    <div class="tag">🎤 ${w.sent ? 'قل الجملة بصوتك' : 'قلها بصوتك'}</div><div class="em">${w.icon}</div>
+    <div class="${w.sent ? 'sfa' : 'fa'}">${esc(w.voc)}</div><div class="${w.sent ? 'sar' : 'ar'}">${esc(w.ar)}</div>
     <div class="row center"><button class="btn alt sm" id="model">🔊 اسمع النطق</button></div>
     <button class="mic" id="mic" aria-label="سجّل">🎤</button>
     <div class="meter"><i id="mt" style="width:0"></i></div>
@@ -916,7 +949,7 @@ function askSpeak(id, label, skipModel) {
       if (!Ear.ok) { busy = false; selfMode(); return; }
       tries++;
       q('#mic').classList.add('on'); q('#fb').className = 'fb'; q('#fb').textContent = 'أستمع إليك... 👂';
-      const r = await Ear.listen(4500);
+      const r = await Ear.listen(w.sent ? 7500 : 4500);
       if (!session || session.cancelled) return;
       q('#mic').classList.remove('on'); busy = false;
       if (r.error) {
@@ -928,9 +961,9 @@ function askSpeak(id, label, skipModel) {
       if (r.texts.length && !r.texts.some(t => /[\u0600-\u06FF]/.test(t))) { Ear.broken = true; selfMode(); return; }
       const { score, heard } = scoreSpeech(w.fa, r.texts);
       best = Math.max(best, score);
-      const mt = q('#mt'); mt.style.width = score + '%'; mt.style.background = score >= PASS_SCORE ? 'var(--ok)' : score >= 35 ? 'var(--warn)' : 'var(--bad)';
+      const mt = q('#mt'); mt.style.width = score + '%'; mt.style.background = score >= pass ? 'var(--ok)' : score >= 35 ? 'var(--warn)' : 'var(--bad)';
       q('#heard').textContent = heard ? `سمعتُ: «${heard}»` : '';
-      const ok = score >= PASS_SCORE;
+      const ok = score >= pass;
       q('#fb').className = 'fb ' + (ok ? 'ok' : 'bad');
       q('#fb').textContent = ok ? `👏 ممتاز! ${n2a(score)}٪` : `${n2a(score)}٪ — ${tries < 2 ? 'اسمع وحاول مرة أخرى' : 'سنراجعها لاحقاً'}`;
       if (ok || tries >= 2) { await sleep(ok ? 650 : 1100); resolve(best); return; }
@@ -977,7 +1010,7 @@ function finishRun(s, total) {
     Store.data.saved = null;
     today().rounds.push(s.block);
     const mastered = Object.values(s.results).filter(r => r.mastered).length;
-    Store.data.challenges.unshift({ at: Date.now(), block: s.block, mastered, ms: Date.now() - s.start, timeup: s.cancelled === 'timeup' });
+    Store.data.challenges.unshift({ at: Date.now(), mode: s.mode, total: challengeTotal(s), block: s.block, mastered, ms: elapsedOf(s), timeup: s.cancelled === 'timeup' });
     Store.data.challenges = Store.data.challenges.slice(0, 20);
     Store.save();
   }
@@ -997,8 +1030,8 @@ function historyHtml() {
   const h = Store.data.challenges.slice(0, 5);
   if (!h.length) return '';
   return `<div class="card"><h3>🗓️ آخر التحديات</h3>${h.map(c => `<div class="row between small" style="padding:6px 0;border-bottom:1px solid var(--border)">
-    <span>${new Date(c.at).toLocaleDateString('ar')} · الكلمات ${n2a(c.block * 100 + 1)}–${n2a(c.block * 100 + 100)}</span>
-    <b>${n2a(c.mastered)}/١٠٠ · ${fmtTime(c.ms)}${c.timeup ? ' ⏰' : ''}</b></div>`).join('')}</div>`;
+    <span>${c.mode === 'sents' ? '💬' : '🔤'} ${new Date(c.at).toLocaleDateString('ar')} · الكلمات ${n2a(c.block * 100 + 1)}–${n2a(c.block * 100 + 100)}</span>
+    <b>${n2a(c.mastered)}/${n2a(c.total || 100)} · ${fmtTime(c.ms)}${c.timeup ? ' ⏰' : ''}</b></div>`).join('')}</div>`;
 }
 function confetti() {
   const box = document.createElement('div'); box.className = 'confetti';
@@ -1009,13 +1042,15 @@ function confetti() {
 /* ---------- الإيقاف المؤقت للتحدّي ---------- */
 function saveChallenge(phase) {
   const s = session; if (!s || s.kind !== 'challenge') return;
-  Store.data.saved = { block: s.block, group: s.group || 0, phase, elapsed: elapsedOf(s), results: s.results, sent: s.sent, done: [...(s.done || [])] };
+  s.phase = phase;
+  Store.data.saved = { mode: s.mode, block: s.block, group: s.group || 0, phase, elapsed: elapsedOf(s), results: s.results, sent: s.sent, done: [...(s.done || [])] };
   Store.save();
 }
 function pauseChallenge() {
   if (!session || session.kind !== 'challenge') return;
+  closePauseOverlay();
   freeze(false);
-  saveChallenge(Store.data.saved ? Store.data.saved.phase : 'learn');
+  saveChallenge(session.phase || 'learn');
   abortSession('pause');
   session = null;
   VIEWS.paused();
@@ -1026,7 +1061,7 @@ function waitNext(ms) {
   const nx = $app.querySelector('#nx');
   if (!nx) return sleep(ms);
   nx.innerHTML = '<button class="btn sm alt" id="nextBtn" style="margin-top:6px">التالي ⏭</button>';
-  return guard(new Promise(r => { const t = setTimeout(r, ms); nx.querySelector('#nextBtn').onclick = () => { clearTimeout(t); r(); }; }));
+  return guard(new Promise(r => { const t = setTimeout(() => whenResumed().then(r), ms); nx.querySelector('#nextBtn').onclick = () => { clearTimeout(t); r(); }; }));
 }
 /** سؤال اختيار من متعدد عام. options: [{key, html}] */
 function askChoice({ label, tag, prompt, options, correct, audio, explain, wide, wait = 700, onAnswer }) {
@@ -1325,6 +1360,177 @@ VIEWS.marathon = function () {
   const g = $app.querySelector('#go'); if (g) g.onclick = () => { Store.data.block = next; Store.save(); go('challenge', next); };
   const f = $app.querySelector('#final'); if (f) f.onclick = () => go('examRun', 'all');
 };
+
+/* ---------- ⏸ إيقاف مؤقت في المكان نفسه ثم استئناف ---------- */
+const SENTS_PER_LESSON = 5;
+const challengeTotal = s => s.mode === 'sents' ? BLOCK_SIZE * SENTS_PER_LESSON : 100;
+function blockSents(b) { return LESSONS.slice(b * BLOCK_SIZE, b * BLOCK_SIZE + BLOCK_SIZE).flatMap(l => l.sentences.slice(0, SENTS_PER_LESSON)); }
+const whenResumed = () => (session && session.paused) ? session.pausedP : Promise.resolve();
+
+function pauseInPlace() {
+  const s = session;
+  if (!s || s.kind !== 'challenge' || s.paused) return;
+  s.paused = true; s.wasFrozen = !!s.frozen;
+  s.pausedP = new Promise(r => { s.resumeFn = r; });
+  freeze(true);
+  if (Music.ctx) Music.ctx.suspend(); // يوقف الإيقاع والتسجيلات في اللحظة نفسها
+  if ('speechSynthesis' in window) speechSynthesis.pause();
+  Ear.stop();
+  saveChallenge(s.phase || 'learn');
+  const ov = document.createElement('div');
+  ov.className = 'overlay'; ov.id = 'pauseOv';
+  ov.innerHTML = `<div class="card stage" style="min-height:0;max-width:420px;width:100%">
+    <div class="em">⏸</div><h1>متوقّف مؤقتاً</h1>
+    <div class="timer" style="margin:6px 0">⏱ متبقٍّ ${fmtTime(s.limit - elapsedOf(s))}</div>
+    <div class="small muted">المؤقّت والصوت متوقفان. خذ راحتك ☕ — سنكمل من النقطة نفسها بالضبط.</div>
+    <button class="btn big pink" id="resumeNow" style="width:100%;margin-top:12px">▶ استئناف</button>
+    <button class="btn alt" id="saveExit" style="width:100%">💾 احفظ واخرج (تكمل لاحقاً)</button></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#resumeNow').onclick = resumeInPlace;
+  ov.querySelector('#saveExit').onclick = () => { resumeAudio(); pauseChallenge(); };
+}
+function resumeAudio() {
+  if (Music.ctx) Music.ctx.resume();
+  if ('speechSynthesis' in window) speechSynthesis.resume();
+}
+function closePauseOverlay() { const ov = document.getElementById('pauseOv'); if (ov) ov.remove(); }
+function resumeInPlace() {
+  const s = session;
+  closePauseOverlay();
+  if (!s || !s.paused) return;
+  s.paused = false;
+  if (!s.wasFrozen) freeze(false);
+  resumeAudio();
+  s.resumeFn();
+  const t = document.getElementById('timer');
+  if (t && !s.frozen) t.textContent = '⏱ ' + fmtTime(tleft());
+}
+// إذا خرجت من التطبيق أثناء التحدّي يتوقف تلقائياً
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseInPlace(); });
+
+/* ---------- 💬 تحدّي الجمل ---------- */
+function recordSent(sid, ok) {
+  const x = Store.data.sents[sid] || (Store.data.sents[sid] = { m: 0, c: 0, x: 0 });
+  if (ok) { x.c++; x.m = 1; } else { x.x++; x.m = 0; }
+  const d = today(); d.n++; if (ok) d.ok++;
+  Store.save();
+}
+const sentItem = sid => ({ fa: SENTS[sid].fa, voc: SENTS[sid].fa, icon: SENTS[sid].icon, ar: SENTS[sid].ar, sent: true, pass: 55 });
+const sentOk = sc => sc === null || sc === true || (typeof sc === 'number' && sc >= 55);
+
+async function learnSents(sids, label) {
+  check();
+  $app.innerHTML = hud(label) + `
+    <div class="chips" id="prog" style="margin-bottom:10px">${sids.map(id => `<span class="chip" data-p="${id}">${SENTS[id].icon}</span>`).join('')}</div>
+    <div class="card"><div class="dots"><span></span><span></span><span></span><span></span></div><div class="stage"></div></div>
+    <div class="row center" style="margin-top:12px"><button class="btn alt" id="skip">⏭ إلى الاختبار</button></div>`;
+  bindQuit();
+  const ui = stageUI($app);
+  let skip;
+  const skipP = new Promise(r => { skip = r; });
+  $app.querySelector('#skip').onclick = () => { Voice.stop(); if (session.groove) session.groove.stop(); skip(); };
+  const lines = [];
+  sids.forEach(sid => {
+    const ls = sentLines(SENTS[sid], ui, false);
+    const on0 = ls[0].on;
+    ls[0].on = () => { on0(); $app.querySelectorAll('#prog .chip').forEach(c => c.classList.toggle('cur', +c.dataset.p === sid)); };
+    lines.push(...ls);
+  });
+  lines.forEach(l => l.text && Voice.preload(l.text, l.lang));
+  await guard(Promise.race([sing(lines, ui), skipP]));
+  if (session.groove) session.groove.stop();
+  Music.setDuck(false);
+}
+
+async function testSents(sids, label, challenge) {
+  session.arr = session.arr || { ok: 0, n: 0 };
+  const one = async (sid, lab) => {
+    const okM = await askSentence(sid, lab); session.sent.n++; if (okM) session.sent.ok++;
+    const okA = await askArrange(sid, lab); session.arr.n++; if (okA) session.arr.ok++;
+    const sc = await askSpeak(sentItem(sid), lab, true);
+    return { okM, okA, sc, ok: okM && okA && sentOk(sc) };
+  };
+  for (const sid of shuffle(sids)) {
+    check();
+    if (session.done && session.done.has(sid)) continue;
+    const r = wordResult(sid);
+    const o = await one(sid, label);
+    if (typeof o.sc === 'number') r.speak = o.sc;
+    r.first = r.mastered = o.ok; r.tries = 1;
+    recordSent(sid, o.ok);
+    if (session.done) { session.done.add(sid); if (session.kind === 'challenge') saveChallenge('test'); }
+  }
+  const failed = sids.filter(id => !session.results[id] || !session.results[id].mastered);
+  if (failed.length && (!challenge || tleft() > failed.length * 25000)) {
+    check();
+    $app.innerHTML = hud(label + ' · 🔁 مراجعة') + `<div class="card"><div class="dots"><span></span><span></span><span></span><span></span></div><div class="stage"></div></div>`;
+    bindQuit();
+    const ui = stageUI($app), lines = [];
+    failed.forEach(sid => lines.push(...sentLines(SENTS[sid], ui, true)));
+    await guard(sing(lines, ui));
+    for (const sid of failed) {
+      check();
+      const r = wordResult(sid);
+      const okA = await askArrange(sid, label + ' · إعادة');
+      const sc = await askSpeak(sentItem(sid), label + ' · إعادة', true);
+      if (typeof sc === 'number') r.speak = Math.max(r.speak || 0, sc);
+      r.mastered = okA && sentOk(sc); r.tries = 2;
+      recordSent(sid, r.mastered);
+    }
+  }
+}
+
+/** 🧩 رتّب كلمات الجملة */
+function askArrange(sid, label) {
+  const s = SENTS[sid];
+  const tokens = s.fa.split(/\s+/);
+  if (tokens.length < 3) return qSentReverse(sid, label);
+  let pool = tokens.map((t, i) => ({ t, i }));
+  for (let k = 0; k < 5; k++) { pool = shuffle(pool); if (pool.some((x, j) => x.i !== j)) break; }
+  const built = [];
+  $app.innerHTML = hud(label) + `<div class="card stage">
+    <div class="tag">🧩 رتّب كلمات الجملة</div>
+    <div class="em" style="font-size:54px">${s.icon}</div><div class="sar">${esc(s.ar)}</div>
+    <div class="built" id="built"></div>
+    <div class="pool" id="pool"></div>
+    <div class="row center"><button class="btn alt sm" id="hear">🔊 ساعدني بالاستماع</button><button class="btn alt sm" id="clr">↺ مسح</button></div>
+    <div class="fb" id="fb"></div><div id="nx"></div></div>`;
+  bindQuit();
+  const q = x => $app.querySelector(x);
+  q('#hear').onclick = () => Voice.speak(s.fa, { rate: 0.95 });
+  return guard(new Promise(resolve => {
+    let done = false;
+    const render = () => {
+      q('#built').innerHTML = built.length ? built.map((x, j) => `<button class="tile on" data-b="${j}">${esc(x.t)}</button>`).join('')
+        : '<span class="small muted">اضغط الكلمات بالترتيب الصحيح 👇</span>';
+      q('#pool').innerHTML = pool.map((x, j) => `<button class="tile" data-p="${j}">${esc(x.t)}</button>`).join('');
+      $app.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { if (done) return; built.push(pool.splice(+b.dataset.p, 1)[0]); render(); finish(); });
+      $app.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { if (done) return; pool.push(built.splice(+b.dataset.b, 1)[0]); render(); });
+    };
+    q('#clr').onclick = () => { if (done) return; pool.push(...built.splice(0)); render(); };
+    const finish = async () => {
+      if (pool.length) return;
+      done = true;
+      const ok = built.map(x => x.t).join(' ') === tokens.join(' ');
+      q('#built').classList.add(ok ? 'ok' : 'bad');
+      const fb = q('#fb'); fb.className = 'fb ' + (ok ? 'ok' : 'bad');
+      fb.innerHTML = `${ok ? '✔ ترتيب صحيح!' : '✘ الترتيب الصحيح:'}<div class="fa" style="font-size:22px">${markSentence(s)}</div>`;
+      Voice.speak(s.fa, { rate: 0.95 });
+      await waitNext(readMs(s.fa) + (ok ? 0 : 1500));
+      resolve(ok);
+    };
+    render();
+  }));
+}
+/** للجمل القصيرة: ترى المعنى وتختار الجملة الفارسية الصحيحة */
+function qSentReverse(sid, label) {
+  const s = SENTS[sid];
+  const others = shuffle(SENTS.filter(x => x.id !== sid && Math.abs(x.lesson - s.lesson) <= 3)).slice(0, 2);
+  const opts = shuffle([s, ...others]);
+  return askChoice({ label, tag: '🔁 اختر الجملة الفارسية', prompt: `<div class="em" style="font-size:54px">${s.icon}</div><div class="sar" style="font-size:20px">${esc(s.ar)}</div>`,
+    options: opts.map(o => ({ key: o.id, html: faHtml(o.fa, 20) })), correct: sid, wide: true, wait: readMs(s.fa),
+    explain: `<div class="fa" style="font-size:22px">${markSentence(s)}</div>`, onAnswer: () => Voice.speak(s.fa, { rate: 0.95 }) });
+}
 
 /* ---------- أغاني Suno: ملفات الأغاني ومزامنة الكلمات ---------- */
 const SongFiles = {
