@@ -1,7 +1,8 @@
 /* فارسي بالإيقاع — تعلّم ٦٠٠ كلمة فارسية بالغناء للمتحدثين بالعربية */
 'use strict';
 
-const { lessons: LESSONS, words: WORDS, sentences: SENTS } = COURSE;
+const { lessons: LESSONS, words: WORDS, sentences: SENTS, verbs: VERBS } = COURSE;
+const PRONOUNS = [['من', 'أنا'], ['تو', 'أنتَ'], ['او', 'هو/هي'], ['ما', 'نحن'], ['شما', 'أنتم'], ['آنها', 'هم']];
 const $app = document.getElementById('app');
 const CHALLENGE_MS = 30 * 60 * 1000;
 const BLOCK_SIZE = 10; // دروس في كل تحدٍّ = ١٠٠ كلمة
@@ -119,6 +120,12 @@ const firstMeaningOf = ar => ar.split('/')[0].replace(/\(.*?\)/g, '').trim();
 const CLIP_KEYS = { fa: new Map(), ar: new Map() };
 WORDS.forEach(w => { CLIP_KEYS.fa.set(w.fa, 'fa/w' + w.id); CLIP_KEYS.fa.set(w.voc, 'fa/w' + w.id); CLIP_KEYS.ar.set(firstMeaningOf(w.ar), 'ar/w' + w.id); });
 SENTS.forEach(s => { CLIP_KEYS.fa.set(s.fa, 'fa/s' + s.id); CLIP_KEYS.ar.set(s.ar, 'ar/s' + s.id); });
+VERBS.forEach(id => {
+  const v = WORDS[id].verb;
+  v.past.forEach((t, p) => { if (!CLIP_KEYS.fa.has(t)) CLIP_KEYS.fa.set(t, `fa/v${id}_p${p}`); });
+  v.pres.forEach((t, p) => { if (!CLIP_KEYS.fa.has(t)) CLIP_KEYS.fa.set(t, `fa/v${id}_n${p}`); });
+  CLIP_KEYS.ar.set(v.arPast, `ar/v${id}_p`); CLIP_KEYS.ar.set(v.arPres, `ar/v${id}_n`);
+});
 SONGS.forEach(g => g.lines.forEach(l => { CLIP_KEYS.fa.set(l.fa, `fa/l${g.id}_${l.i}`); CLIP_KEYS.ar.set(l.ar, `ar/l${g.id}_${l.i}`); }));
 const Clips = {
   avail: new Set(), bufs: new Map(), loading: new Map(), src: null, out: null,
@@ -365,8 +372,24 @@ function wordLines(w, ui, short) {
   ];
   if (Store.s.arabic) lines.push({ text: firstMeaning(w.ar), lang: 'ar', pitch: 1.1, align: 2, on: () => ui.hl('ar') });
   else lines.push({ rest: 2, on: () => ui.hl('ar') });
+  if (w.verb) {
+    // الفعل: الماضي ثم المضارع (جذراهما قد يختلفان تماماً)
+    const v = w.verb, ar = Store.s.arabic;
+    lines.push({ text: v.past[0], lang: 'fa', pitch: 1.35, align: 2, on: () => ui.hl('vp') });
+    if (ar && !short) lines.push({ text: v.arPast, lang: 'ar', pitch: 1.05, align: 2, on: () => ui.hl('vp') });
+    lines.push({ text: v.pres[0], lang: 'fa', pitch: 1.55, align: 2, on: () => ui.hl('vn') });
+    if (ar && !short) lines.push({ text: v.arPres, lang: 'ar', pitch: 1.05, align: 2, on: () => ui.hl('vn') });
+    return lines;
+  }
   if (!short) lines.push({ text: w.fa, lang: 'fa', pitch: 0.95, align: 2, on: () => ui.hl('fa') });
   return lines;
+}
+/** سطرا الماضي/المضارع تحت الفعل */
+function verbRows(w, keys) {
+  const v = w.verb;
+  return `<div class="vrows"><div class="vrow" ${keys ? 'data-k="vp"' : ''}><span class="vt">⏪ ماضٍ</span>${faHtml(v.past[0], 20)}<span class="muted">${esc(v.arPast)}</span></div>
+    <div class="vrow" ${keys ? 'data-k="vn"' : ''}><span class="vt">▶️ مضارع</span>${faHtml(v.pres[0], 20)}<span class="muted">${esc(v.arPres)}</span></div>
+    <div class="small muted">الجذران: ${faHtml(v.pastStem, 15)} ↔ ${faHtml(v.presStem, 15)}</div></div>`;
 }
 function sentLines(s, ui, short) {
   const lines = [{ text: s.fa, lang: 'fa', pitch: 1.15, rate: 0.95, align: 4, on: () => ui.sentence(s, 'fa') }];
@@ -416,7 +439,7 @@ function stageUI(root) {
     },
     word(w, hl) {
       q('.stage').innerHTML = `<div class="tag">🎵 كلمة جديدة</div><button class="say replay" onclick="Voice.speak(WORDS[${w.id}].fa)" aria-label="أعد الاستماع">🔊</button><div class="em">${w.icon}</div>
-        <div class="fa" data-k="fa">${esc(w.voc)}</div><div class="ar" data-k="ar">${esc(w.ar)}</div>`;
+        <div class="fa" data-k="fa">${esc(w.voc)}</div><div class="ar" data-k="ar">${esc(w.ar)}</div>${w.verb ? verbRows(w, true) : ''}`;
       this.hl(hl);
     },
     sentence(s, hl) {
@@ -493,6 +516,7 @@ const VIEWS = {
             <span class="small muted">${due.length ? n2a(due.length) + ' كلمة حان وقتها' : 'لا شيء مستحق الآن ✔'}</span></button>
           <button class="feat" id="exam"><span class="em">🎓</span><b>اختبار القدرات</b><span class="small muted">موقوت بأقسام · درجة من ١٠٠</span></button>
           <button class="feat" id="mara"><span class="em">🌅</span><b>ماراثون اليوم</b><span class="small muted">٦٠٠ كلمة في يوم؟ · ${n2a(today().rounds.length)}/٦</span></button>
+          <button class="feat" id="verbs"><span class="em">📘</span><b>الأفعال</b><span class="small muted">${n2a(VERBS.length)} فعلاً · الماضي والمضارع</span></button>
         </div>
         <div class="stats">
           <div class="card stat"><b>${n2a(total)}</b><span class="small muted">كلمة متقَنة من ٦٠٠</span></div>
@@ -531,6 +555,7 @@ const VIEWS = {
     $app.querySelector('#review').onclick = () => go('review');
     $app.querySelector('#exam').onclick = () => go('exam');
     $app.querySelector('#mara').onclick = () => go('marathon');
+    $app.querySelector('#verbs').onclick = () => go('verbs');
     $app.querySelectorAll('.stagecard').forEach(b => b.onclick = () => go('stage', +b.dataset.stage));
     $app.querySelector('#set').onclick = () => go('settings');
     const wk = $app.querySelector('#weak'); if (wk) wk.onclick = () => go('practice', weakWords().slice(0, 10), 'مراجعة الكلمات الضعيفة');
@@ -547,7 +572,7 @@ const VIEWS = {
           <button class="btn alt big" id="quiz">📝 اختبرني</button></div>
         <div class="words">${l.words.map(wid => { const w = WORDS[wid]; return `
           <div class="wcard">${Store.mastered(wid) ? '<span class="done">⭐</span>' : ''}
-          <div class="em">${w.icon}</div><div class="fa">${esc(w.voc)}</div><div class="ar">${esc(w.ar)}</div>
+          <div class="em">${w.icon}</div><div class="fa">${esc(w.voc)}</div><div class="ar">${esc(w.ar)}</div>${w.verb ? verbRows(w) : ''}
           <div class="acts"><button class="say" data-say-w="${wid}" aria-label="استمع">🔊 استمع</button><button class="say alt" data-sing-w="${wid}" aria-label="غنِّ">🎵</button></div></div>`; }).join('')}</div>
         <div class="row center"><button class="btn alt sm" id="allW">🔊 استمع لكل الكلمات بالترتيب</button><button class="btn alt sm" id="allS">🔊 استمع لكل الجمل بالترتيب</button></div>
         <h2>🎶 الجمل (${n2a(l.sentences.length)})</h2>
@@ -563,11 +588,11 @@ const VIEWS = {
     const sg = $app.querySelector('#song'); if (sg) sg.onclick = () => go('song', SONGS.find(g => g.lesson === id).id);
     $app.querySelector('#quiz').onclick = () => go('practice', l.words, l.title, { lesson: id });
     // 🔊 استماع بسيط (نطق طبيعي بلا إيقاع) — 🎵 غناء على الإيقاع
-    $app.querySelectorAll('[data-say-w]').forEach(b => b.onclick = () => sayItems([{ fa: WORDS[+b.dataset.sayW].fa, ar: firstMeaning(WORDS[+b.dataset.sayW].ar), btn: b }]));
+    $app.querySelectorAll('[data-say-w]').forEach(b => b.onclick = () => sayItems(wordSayItems(+b.dataset.sayW, b)));
     $app.querySelectorAll('[data-say-s]').forEach(b => b.onclick = () => sayItems([{ fa: SENTS[+b.dataset.sayS].fa, ar: SENTS[+b.dataset.sayS].ar, btn: b }]));
     $app.querySelectorAll('[data-sing-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.singW], nullUI, false)));
     $app.querySelectorAll('[data-sing-s]').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.singS], nullUI, false)));
-    $app.querySelector('#allW').onclick = () => sayItems(l.words.map(w => ({ fa: WORDS[w].fa, ar: firstMeaning(WORDS[w].ar), btn: $app.querySelector(`[data-say-w="${w}"]`) })));
+    $app.querySelector('#allW').onclick = () => sayItems(l.words.flatMap(w => wordSayItems(w, $app.querySelector(`[data-say-w="${w}"]`))));
     $app.querySelector('#allS').onclick = () => sayItems(l.sentences.map(x => ({ fa: SENTS[x].fa, ar: SENTS[x].ar, btn: $app.querySelector(`[data-say-s="${x}"]`) })));
     const p = $app.querySelector('#prev'); if (p) p.onclick = () => go('lesson', id - 1);
     const n = $app.querySelector('#next'); if (n) n.onclick = () => go('lesson', id + 1);
@@ -739,6 +764,11 @@ const VIEWS = {
 };
 
 /* ---------- 🔊 استماع مباشر لكلمة/جملة (أو قائمة بالترتيب) ---------- */
+function wordSayItems(id, btn) {
+  const w = WORDS[id], items = [{ fa: w.fa, ar: firstMeaning(w.ar), btn }];
+  if (w.verb) items.push({ fa: w.verb.past[0], ar: w.verb.arPast, btn }, { fa: w.verb.pres[0], ar: w.verb.arPres, btn });
+  return items;
+}
 let sayToken = 0;
 async function sayItems(items) {
   const my = ++sayToken;
@@ -1137,6 +1167,24 @@ function qAnalogy({ a, b, rel }, label) {
     explain: `<div class="small" style="font-weight:600">${esc(rel)}: ${esc(firstMeaning(A.ar))} : ${esc(firstMeaning(B.ar))} :: ${esc(firstMeaning(C.ar))} : ${esc(firstMeaning(D.ar))}</div>` });
 }
 
+/** ⏳ الماضي والمضارع: من صيغة إلى الأخرى (مع ضمير عشوائي) */
+function qTense(id, label) {
+  const w = WORDS[id], v = w.verb, p = Math.random() * 6 | 0, toPres = Math.random() < 0.5;
+  const from = toPres ? v.past[p] : v.pres[p], ans = toPres ? v.pres[p] : v.past[p];
+  const others = shuffle(VERBS.filter(x => x !== id && Math.abs(WORDS[x].lesson - w.lesson) <= 20)).slice(0, 2)
+    .map(x => toPres ? WORDS[x].verb.pres[p] : WORDS[x].verb.past[p]);
+  const wrongPerson = (toPres ? v.pres : v.past)[(p + 1 + (Math.random() * 5 | 0)) % 6];
+  const opts = shuffle([...new Set([ans, wrongPerson, ...others])]).slice(0, 4);
+  if (!opts.includes(ans)) opts[0] = ans;
+  const [pf, pa] = PRONOUNS[p];
+  return askChoice({ label, tag: toPres ? '⏳ ما المضارع؟' : '⏳ ما الماضي؟',
+    prompt: `<div class="em" style="font-size:48px">${w.icon}</div><div class="small muted">${faHtml(w.voc, 18)} · ${esc(firstMeaning(w.ar))}</div>
+      <div class="fa" style="font-size:34px">${esc(pf)} ${esc(from)}</div><div class="small muted">(${esc(pa)} · ${toPres ? 'ماضٍ' : 'مضارع'}) ← ${toPres ? 'حوّلها للمضارع' : 'حوّلها للماضي'}</div>`,
+    options: shuffle(opts).map(o => ({ key: o, html: faHtml(o, 22) })), correct: ans, wait: 1800,
+    explain: `<div class="small" style="font-weight:600">${faHtml(pf + ' ' + v.past[p], 18)} ⏪ · ▶️ ${faHtml(pf + ' ' + v.pres[p], 18)} — الجذران ${faHtml(v.pastStem, 16)} ↔ ${faHtml(v.presStem, 16)}</div>`,
+    onAnswer: () => Voice.speak(ans) });
+}
+
 /** يشغّل قائمة أسئلة ويعيد النتيجة بالأقسام. q: {sec, word?, run(label)} */
 async function runQuiz(qs, title) {
   const res = { ok: 0, n: qs.length, secs: {}, wrong: [] };
@@ -1150,8 +1198,9 @@ async function runQuiz(qs, title) {
   }
   return res;
 }
-const SEC = { listen: '🎧 السمع', read: '📖 المعاني', reverse: '🔁 المفردات', fill: '✏️ إكمال الجمل', sent: '🎶 الاستيعاب المسموع', analogy: '🔗 التناظر اللفظي' };
+const SEC = { tense: '⏳ الماضي والمضارع', listen: '🎧 السمع', read: '📖 المعاني', reverse: '🔁 المفردات', fill: '✏️ إكمال الجمل', sent: '🎶 الاستيعاب المسموع', analogy: '🔗 التناظر اللفظي' };
 function wordQ(id) {
+  if (WORDS[id].verb && Math.random() < 0.5) return { sec: SEC.tense, word: id, run: l => qTense(id, l) };
   const t = ['listen', 'read', 'reverse'][Math.random() * 3 | 0];
   const run = t === 'listen' ? l => askListen(id, l) : t === 'read' ? l => qRead(id, l) : l => qReverse(id, l);
   return { sec: SEC[t], word: id, run };
@@ -1225,6 +1274,7 @@ function buildExam(scope) {
     ...take(6).map(id => ({ sec: SEC.read, word: id, run: l => qRead(id, l) })),
     ...take(6).map(id => ({ sec: SEC.reverse, word: id, run: l => qReverse(id, l) })),
     ...take(8).map(id => ({ sec: SEC.listen, word: id, run: l => askListen(id, l) })),
+    ...shuffle(scope.filter(id => WORDS[id].verb)).slice(0, 6).map(id => ({ sec: SEC.tense, word: id, run: l => qTense(id, l) })),
   ];
 }
 
@@ -1308,6 +1358,49 @@ VIEWS.stage = async function (stage) {
       ${r.wrong.length ? `<div class="row center"><button class="btn" id="redo">🔁 راجع أخطاءك بالغناء (${n2a(Math.min(10, r.wrong.length))})</button></div>` : ''}</div>`;
   $app.querySelector('#home').onclick = () => go('home');
   const rd = $app.querySelector('#redo'); if (rd) rd.onclick = () => go('practice', r.wrong.slice(0, 10), 'مراجعة المرحلة');
+};
+
+/* ---------- 📘 جدول الأفعال ---------- */
+VIEWS.verbs = function () {
+  const row = id => { const w = WORDS[id], v = w.verb; return `
+    <details class="card verb" data-v="${id}"><summary>
+      <span class="em" style="font-size:28px">${w.icon}</span>
+      <span style="flex:1"><b class="fa" style="font-size:20px">${esc(w.voc)}</b> <span class="muted small">${esc(w.ar)}</span><br>
+      <span class="small">⏪ ${faHtml(v.past[0], 17)} · ▶️ ${faHtml(v.pres[0], 17)} <span class="muted">(${faHtml(v.pastStem, 15)} ↔ ${faHtml(v.presStem, 15)})</span></span></span>
+      <button class="say" data-vsay="${id}" aria-label="استمع">🔊</button></summary>
+      <table class="conj"><tr><th></th><th>⏪ الماضي</th><th>▶️ المضارع</th></tr>
+      ${PRONOUNS.map(([pf, pa], p) => `<tr><td><b>${esc(pf)}</b><br><span class="small muted">${esc(pa)}</span></td>
+        <td><button class="cf" data-say="${esc(v.past[p])}">${esc(v.past[p])}</button></td><td><button class="cf" data-say="${esc(v.pres[p])}">${esc(v.pres[p])}</button></td></tr>`).join('')}</table>
+      <div class="small muted" style="margin-top:6px">💡 الماضي = جذر الماضي «${esc(v.pastStem)}» + النهاية. المضارع = «می‌» + جذر المضارع «${esc(v.presStem)}» + النهاية. اضغط أي صيغة لتسمعها.</div></details>`; };
+  $app.innerHTML = `
+    <div class="top"><button class="iconbtn" id="back" aria-label="رجوع">→</button><div style="flex:1"><h1>📘 الأفعال (${n2a(VERBS.length)})</h1>
+      <div class="muted small">لكل فعل فارسي جذران: جذر للماضي وجذر للمضارع، وقد يختلفان تماماً (رفت ↔ رو، دید ↔ بین). احفظهما معاً!</div></div></div>
+    <div class="stack">
+      <div class="card"><h3>🧩 النهايات (نفسها لكل الأفعال)</h3>
+        <table class="conj"><tr><th></th><th>الماضي</th><th>المضارع</th></tr>
+        ${PRONOUNS.map(([pf, pa], p) => `<tr><td><b>${esc(pf)}</b> <span class="small muted">${esc(pa)}</span></td><td>${['ـَم', 'ـی', '— (بلا نهاية)', 'ـیم', 'ـید', 'ـَند'][p]}</td><td>می‌…${['ـَم', 'ـی', 'ـَد', 'ـیم', 'ـید', 'ـَند'][p]}</td></tr>`).join('')}</table>
+        <div class="row" style="margin-top:10px"><button class="btn" id="tq">⏳ اختبرني على الماضي والمضارع</button></div></div>
+      ${VERBS.map(row).join('')}
+    </div>`;
+  $app.querySelector('#back').onclick = () => go('home');
+  $app.querySelector('#tq').onclick = () => go('tenseQuiz');
+  $app.querySelectorAll('[data-vsay]').forEach(b => b.onclick = e => { e.preventDefault(); sayItems(wordSayItems(+b.dataset.vsay, b)); });
+  $app.querySelectorAll('.cf').forEach(b => b.onclick = () => sayItems([{ fa: b.dataset.say, btn: b }]));
+};
+VIEWS.tenseQuiz = async function () {
+  const learned = VERBS.filter(id => Store.data.words[id]);
+  const pool = shuffle(learned.length >= 10 ? learned : VERBS.slice(0, 30)).slice(0, 15);
+  newSession({ kind: 'review', results: {}, sent: { ok: 0, n: 0 } });
+  let r;
+  try { r = await runQuiz(pool.map(id => ({ sec: SEC.tense, word: id, run: l => qTense(id, l) })), '⏳ الأزمنة'); }
+  catch (e) { if (!(e instanceof Abort)) console.error(e); return; }
+  session = null;
+  $app.innerHTML = `<div class="top"><h1>⏳ نتيجة الماضي والمضارع</h1><button class="iconbtn" id="home" aria-label="الرئيسية">🏠</button></div>
+    <div class="stack"><div class="card stage" style="min-height:0"><div class="bignum">${n2a(r.ok)}/${n2a(r.n)}</div></div>
+    <div class="row center"><button class="btn pink big" id="again">مرة أخرى</button><button class="btn alt" id="tbl">📘 جدول الأفعال</button></div></div>`;
+  $app.querySelector('#home').onclick = () => go('home');
+  $app.querySelector('#again').onclick = () => go('tenseQuiz');
+  $app.querySelector('#tbl').onclick = () => go('verbs');
 };
 
 /* ---------- 📅 المراجعة المتباعدة ---------- */

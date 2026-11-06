@@ -7,6 +7,14 @@ C.words.forEach(w => {
   out.push({ key: 'fa/w' + w.id, lang: 'fa', text: w.voc });
   out.push({ key: 'ar/w' + w.id, lang: 'ar', text: firstMeaning(w.ar) });
 });
+// تصريف الأفعال: الماضي والمضارع لكل الضمائر + معنى «أنا» بالعربية
+C.verbs.forEach(id => {
+  const v = C.words[id].verb;
+  v.past.forEach((t, p) => out.push({ key: `fa/v${id}_p${p}`, lang: 'fa', text: t }));
+  v.pres.forEach((t, p) => out.push({ key: `fa/v${id}_n${p}`, lang: 'fa', text: t }));
+  out.push({ key: `ar/v${id}_p`, lang: 'ar', text: v.arPast });
+  out.push({ key: `ar/v${id}_n`, lang: 'ar', text: v.arPres });
+});
 C.sentences.forEach(s => {
   out.push({ key: 'fa/s' + s.id, lang: 'fa', text: s.fa });
   out.push({ key: 'ar/s' + s.id, lang: 'ar', text: s.ar });
