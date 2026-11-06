@@ -106,6 +106,20 @@ h3{font-size:17px;margin:0 0 6px}
 .say.on{background:var(--brand2);color:#fff;animation:pulse 1s infinite}
 .stage{position:relative}
 .say.replay{position:absolute;top:10px;left:10px}
+.vrows{margin-top:6px;display:flex;flex-direction:column;gap:4px;align-items:stretch;width:100%}
+.vrow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;background:var(--chip);border-radius:10px;padding:4px 8px;font-size:14px;transition:all .15s}
+.vrow .vt{font-size:12px;font-weight:800;color:var(--brand)}
+.stage .vrow.sing{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;transform:scale(1.05)}
+.stage .vrow.sing .vt,.stage .vrow.sing .muted{color:#fff}
+.stage .vrows{max-width:360px}
+details.verb>summary{display:flex;gap:10px;align-items:center;cursor:pointer}
+table.conj{width:100%;border-collapse:collapse;margin-top:10px;text-align:center}
+table.conj th{font-size:13px;color:var(--muted);padding:4px}
+table.conj td{border-top:1px solid var(--border);padding:6px 4px;font-size:16px}
+.cf{appearance:none;border:0;background:var(--chip);border-radius:10px;padding:6px 10px;font-size:18px;font-weight:700;min-width:80px}
+.cf.on{background:var(--brand2);color:#fff}
+.features{grid-template-columns:repeat(2,1fr)}
+@media (min-width:700px){.features{grid-template-columns:repeat(4,1fr)}}
 .pausebtn{appearance:none;border:0;border-radius:14px;height:44px;padding:0 12px;font-weight:900;font-size:15px;background:var(--warn);color:#3b2a07;white-space:nowrap}
 .overlay{position:fixed;inset:0;z-index:20;background:rgba(20,13,36,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px}
 .tabs{display:flex;gap:6px;background:rgba(255,255,255,.15);padding:4px;border-radius:14px;margin-bottom:12px}
