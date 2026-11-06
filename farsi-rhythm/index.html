@@ -112,6 +112,11 @@ h3{font-size:17px;margin:0 0 6px}
 .stage .vrow.sing{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;transform:scale(1.05)}
 .stage .vrow.sing .vt,.stage .vrow.sing .muted{color:#fff}
 .stage .vrows{max-width:360px}
+.vex{margin-top:6px;padding:8px;border-radius:12px;border:1px dashed var(--brand);display:flex;flex-direction:column;gap:6px;text-align:center}
+.vex [data-k]{border-radius:10px;padding:2px 6px;transition:all .15s}
+.stage .vex [data-k].sing{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;transform:none}
+.stage .vex [data-k].sing .muted{color:#fff}
+.cf.wide{width:100%;font-size:17px}
 details.verb>summary{display:flex;gap:10px;align-items:center;cursor:pointer}
 table.conj{width:100%;border-collapse:collapse;margin-top:10px;text-align:center}
 table.conj th{font-size:13px;color:var(--muted);padding:4px}
