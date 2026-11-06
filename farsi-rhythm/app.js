@@ -52,6 +52,11 @@ const Music = {
       this.ctx = new AC();
       this.out = this.ctx.createGain();
       this.out.connect(this.ctx.destination);
+      // مسار اللحن: يُخفَض أكثر أثناء النطق، ومعه صدى خفيف يعطي إحساس «الأغنية»
+      this.lead = this.ctx.createGain(); this.lead.connect(this.out);
+      const dl = this.ctx.createDelay(1), fb = this.ctx.createGain(), wet = this.ctx.createGain();
+      dl.delayTime.value = 0.27; fb.gain.value = 0.28; wet.gain.value = 0.35;
+      this.lead.connect(dl); dl.connect(fb).connect(dl); dl.connect(wet).connect(this.out);
       this.noise = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.3, this.ctx.sampleRate);
       const ch = this.noise.getChannelData(0);
       for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
@@ -61,12 +66,31 @@ const Music = {
     return this.ctx;
   },
   setVolume() { if (this.out) this.out.gain.setTargetAtTime((Store.s.music / 100) * 0.6 * this.duck, this.ctx.currentTime, 0.05); },
-  setDuck(on) { this.duck = on ? 0.35 : 1; this.setVolume(); },
+  setDuck(on) {
+    this.duck = on ? 0.6 : 1; this.setVolume();
+    if (this.lead) this.lead.gain.setTargetAtTime(on ? 0.22 : 1, this.ctx.currentTime, 0.06);
+  },
+  tone(t, freq, { type = 'triangle', peak = 0.15, dur = 0.3, dest, cutoff } = {}) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    this.env(t, g, peak, dur);
+    let node = o;
+    if (cutoff) { const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff; node = o.connect(f); }
+    node.connect(g).connect(dest || this.out); o.start(t); o.stop(t + dur + 0.05);
+  },
+  bass(t, m, dur) { this.tone(t, midiHz(m), { type: 'sawtooth', peak: 0.32, dur, cutoff: 420 }); this.tone(t, midiHz(m), { type: 'sine', peak: 0.35, dur }); },
+  pad(t, ms, dur) { ms.forEach(m => this.tone(t, midiHz(m), { type: 'triangle', peak: 0.045, dur, cutoff: 1500 })); },
+  pluck(t, m, peak = 0.11) { this.tone(t, midiHz(m), { type: 'square', peak, dur: 0.18, cutoff: 2600, dest: this.lead }); },
+  leadNote(t, m, dur) { this.tone(t, midiHz(m), { type: 'triangle', peak: 0.26, dur, dest: this.lead }); this.tone(t, midiHz(m + 12), { type: 'sine', peak: 0.05, dur, dest: this.lead }); },
+  snare(t, peak = 0.4) { this.noiseHit(t, 1800, peak, 0.14, 'bandpass'); this.tone(t, 190, { type: 'triangle', peak: peak * 0.5, dur: 0.08 }); },
+  crash(t) { this.noiseHit(t, 6000, 0.16, 0.9, 'highpass'); },
+  dum(t) { const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.2); this.env(t, g, 0.5, 0.3); o.connect(g).connect(this.out); o.start(t); o.stop(t + 0.32); },
+  tek(t, peak = 0.35) { this.noiseHit(t, 3500, peak, 0.05, 'bandpass'); this.tone(t, 700, { type: 'sine', peak: peak * 0.4, dur: 0.05 }); },
   env(t, g, peak, dur) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); },
   kick(t) {
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.15);
-    this.env(t, g, 0.9, 0.22); o.connect(g).connect(this.out); o.start(t); o.stop(t + 0.25);
+    this.env(t, g, 0.7, 0.22); o.connect(g).connect(this.out); o.start(t); o.stop(t + 0.25);
   },
   noiseHit(t, freq, peak, dur, type) {
     const s = this.ctx.createBufferSource(), f = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
@@ -84,8 +108,35 @@ const Music = {
     });
   },
 };
-// لحن طفولي بسيط على السلّم الخماسي (يشبه «تلألأ يا نجم»)
-const MELODY = [523.3, 523.3, 784, 784, 880, 880, 784, 0, 698.5, 698.5, 659.3, 659.3, 587.3, 587.3, 523.3, 0];
+const midiHz = m => 440 * Math.pow(2, (m - 69) / 12);
+/* أنماط موسيقية: كل نمط فيه تتابع أكوردات (٤ مازورات)، باص، طبول بخطوات ١٦ في المازورة، ولحن «لازمة» يتكرر.
+   الأرقام = أنصاف درجات من القرار، و null = صمت */
+const _ = null;
+const STYLES = {
+  pop: { name: '🎧 بوب', root: 60, swing: 0,
+    chords: [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]],
+    bass: 'x.....x.x.......', k: 'x.....x...x.....', s: '....x.......x...', h: 'x.x.x.x.x.x.x.x.', stab: '..x...x...x...x.',
+    lead: [[12, _, 16, _, 19, _, 16, _, 14, _, 12, _, 9, _, 7, _], [7, _, 9, _, 12, _, 14, _, 16, _, 14, _, 12, _, _, _]] },
+  kids: { name: '🎈 أطفال مرح', root: 60, swing: 0,
+    chords: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]],
+    bass: 'x...x...x...x...', k: 'x.......x.......', s: '....x.......x...', h: '..x...x...x...x.', stab: 'x...x...x...x...',
+    lead: [[12, _, 12, _, 19, _, 19, _, 21, _, 21, _, 19, _, _, _], [17, _, 17, _, 16, _, 16, _, 14, _, 14, _, 12, _, _, _]] },
+  sharqi: { name: '🥁 شرقي (مقسوم)', root: 62, swing: 0,
+    chords: [[0, 4, 7], [-2, 1, 5], [0, 4, 7], [5, 8, 12]],
+    bass: 'x.......x.......', dum: 'x.......x.......', tek: '..x...x.....x...', h: '.x.x.x.x.x.x.x.x', stab: '',
+    lead: [[12, _, 13, _, 16, _, 13, _, 12, _, 10, _, 8, _, 7, _], [5, _, 7, _, 8, _, 7, _, 4, _, 1, _, 0, _, _, _]] },
+  khaleeji: { name: '🌴 خليجي', root: 62, swing: 0.22,
+    chords: [[0, 3, 7], [5, 8, 12], [-2, 2, 5], [0, 3, 7]],
+    bass: 'x.....x...x.....', dum: 'x.....x.x.......', clap: '...x..x....x..x.', tek: '.....x.......x..', h: '',
+    lead: [[12, _, 10, _, 12, _, 15, _, 14, _, 12, _, 10, _, _, _], [7, _, 8, _, 10, _, 8, _, 7, _, 5, _, 3, _, 2, _]] },
+};
+const STYLE_KEYS = Object.keys(STYLES);
+/** النمط المستخدم: اختيار المستخدم، أو «متنوّع» يتغير مع كل درس */
+function styleFor(lesson) {
+  const pref = Store.s.style || 'mix';
+  return STYLES[pref] || STYLES[STYLE_KEYS[(lesson || 0) % STYLE_KEYS.length]];
+}
+Music.style = STYLES.pop;
 
 class Groove {
   constructor(onBeat) { this.onBeat = onBeat; this.beat = 0; this.timer = null; }
@@ -102,16 +153,40 @@ class Groove {
   tick() {
     const ctx = Music.ctx;
     while (this.next < ctx.currentTime + 0.12) {
-      const b = this.beat, t = this.next, half = this.spb / 2;
-      if (b % 2 === 0) Music.kick(t); else Music.clap(t);
-      Music.hat(t + half);
-      Music.bell(t, MELODY[b % 16]);
+      const b = this.beat, t = this.next;
+      this.playBeat(b, t);
       // نستدعي قبل الضربة بقليل ليُجدوَل الصوت المسجّل على وقتها بالضبط
       setTimeout(() => { if (this.timer) this.onBeat(b, t); }, Math.max(0, (t - ctx.currentTime) * 1000 - 40));
       this.next += this.spb; this.beat++;
     }
   }
   stop() { clearInterval(this.timer); this.timer = null; }
+  /** يجدول أربع خطوات (١٦ـات) لهذه الضربة حسب النمط */
+  playBeat(b, t) {
+    const st = Music.style, M = Music, bar = b >> 2, sixteenth = this.spb / 4;
+    const ch = st.chords[bar % st.chords.length], root = st.root, fill = bar % 4 === 3 && b % 4 === 3;
+    for (let i = 0; i < 4; i++) {
+      const step = (b % 4) * 4 + i, at = t + i * sixteenth + (i % 2 ? st.swing * sixteenth : 0);
+      const on = pat => pat && pat[step] === 'x';
+      if (step === 0) {
+        M.pad(at, ch.map(x => root + x), this.spb * 4 * 0.95);
+        if (bar % 4 === 0 && bar > 0) M.crash(at);
+      }
+      if (on(st.k)) M.kick(at);
+      if (on(st.dum)) M.dum(at);
+      if (fill) { if (st.dum) M.tek(at, 0.3 + i * 0.08); else M.snare(at, 0.18 + i * 0.07); }
+      else {
+        if (on(st.s)) M.snare(at);
+        if (on(st.clap)) M.clap(at);
+        if (on(st.tek)) M.tek(at);
+      }
+      if (on(st.h)) M.hat(at);
+      if (on(st.bass)) M.bass(at, root + ch[0] - 24, sixteenth * 3);
+      if (on(st.stab)) ch.forEach(x => M.pluck(at, root + x + 12, 0.04));
+      const ln = st.lead[bar % st.lead.length][step];
+      if (ln != null) M.leadNote(at, root + ln, sixteenth * 1.8);
+    }
+  }
 }
 
 /* ---------- التسجيلات الصوتية الطبيعية (audio/*.mp3) ---------- */
@@ -125,6 +200,8 @@ VERBS.forEach(id => {
   v.past.forEach((t, p) => { if (!CLIP_KEYS.fa.has(t)) CLIP_KEYS.fa.set(t, `fa/v${id}_p${p}`); });
   v.pres.forEach((t, p) => { if (!CLIP_KEYS.fa.has(t)) CLIP_KEYS.fa.set(t, `fa/v${id}_n${p}`); });
   CLIP_KEYS.ar.set(v.arPast, `ar/v${id}_p`); CLIP_KEYS.ar.set(v.arPres, `ar/v${id}_n`);
+  CLIP_KEYS.fa.set(v.ex.presFa, `fa/ve${id}_n`); CLIP_KEYS.fa.set(v.ex.pastFa, `fa/ve${id}_p`);
+  CLIP_KEYS.ar.set(v.ex.presAr, `ar/ve${id}_n`); CLIP_KEYS.ar.set(v.ex.pastAr, `ar/ve${id}_p`);
 });
 SONGS.forEach(g => g.lines.forEach(l => { CLIP_KEYS.fa.set(l.fa, `fa/l${g.id}_${l.i}`); CLIP_KEYS.ar.set(l.ar, `ar/l${g.id}_${l.i}`); }));
 const Clips = {
@@ -379,6 +456,14 @@ function wordLines(w, ui, short) {
     if (ar && !short) lines.push({ text: v.arPast, lang: 'ar', pitch: 1.05, align: 2, on: () => ui.hl('vp') });
     lines.push({ text: v.pres[0], lang: 'fa', pitch: 1.55, align: 2, on: () => ui.hl('vn') });
     if (ar && !short) lines.push({ text: v.arPres, lang: 'ar', pitch: 1.05, align: 2, on: () => ui.hl('vn') });
+    if (!short) {
+      // المثال نفسه: مرة بالمضارع ومرة بالماضي
+      lines.push({ text: v.ex.presFa, lang: 'fa', pitch: 1.2, rate: 0.95, align: 4, on: () => ui.hl('en') });
+      if (ar) lines.push({ text: v.ex.presAr, lang: 'ar', align: 2, on: () => ui.hl('en') });
+      lines.push({ text: v.ex.pastFa, lang: 'fa', pitch: 1.2, rate: 0.95, align: 2, on: () => ui.hl('ep') });
+      if (ar) lines.push({ text: v.ex.pastAr, lang: 'ar', align: 2, on: () => ui.hl('ep') });
+      lines.push({ rest: 2, on: () => ui.hl(null) });
+    }
     return lines;
   }
   if (!short) lines.push({ text: w.fa, lang: 'fa', pitch: 0.95, align: 2, on: () => ui.hl('fa') });
@@ -389,7 +474,10 @@ function verbRows(w, keys) {
   const v = w.verb;
   return `<div class="vrows"><div class="vrow" ${keys ? 'data-k="vp"' : ''}><span class="vt">⏪ ماضٍ</span>${faHtml(v.past[0], 20)}<span class="muted">${esc(v.arPast)}</span></div>
     <div class="vrow" ${keys ? 'data-k="vn"' : ''}><span class="vt">▶️ مضارع</span>${faHtml(v.pres[0], 20)}<span class="muted">${esc(v.arPres)}</span></div>
-    <div class="small muted">الجذران: ${faHtml(v.pastStem, 15)} ↔ ${faHtml(v.presStem, 15)}</div></div>`;
+    <div class="small muted">الجذران: ${faHtml(v.pastStem, 15)} ↔ ${faHtml(v.presStem, 15)}</div>
+    <div class="vex"><div class="small tag">📝 المثال نفسه بالزمنين</div>
+      <div ${keys ? 'data-k="en"' : ''}>▶️ ${faHtml(v.ex.presFa, 17)}<div class="small muted">${esc(v.ex.presAr)}</div></div>
+      <div ${keys ? 'data-k="ep"' : ''}>⏪ ${faHtml(v.ex.pastFa, 17)}<div class="small muted">${esc(v.ex.pastAr)}</div></div></div></div>`;
 }
 function sentLines(s, ui, short) {
   const lines = [{ text: s.fa, lang: 'fa', pitch: 1.15, rate: 0.95, align: 4, on: () => ui.sentence(s, 'fa') }];
@@ -406,7 +494,8 @@ const readMs = t => 2500 + wordCount(t) * 450;
 /** يشغّل الإيقاع وينطق السطور واحداً تلو الآخر، كل سطر يبدأ على ضربة (align). */
 function sing(lines, ui) {
   return new Promise((resolve, reject) => {
-    let i = 0, busy = false, restUntil = -1, finished = false;
+    let i = 0, busy = false, finished = false;
+    let restUntil = session.kind === 'challenge' ? -1 : 4; // مقدمة موسيقية قصيرة
     const pre = k => { const l = lines[k]; if (l && l.text) Voice.preload(l.text, l.lang); };
     pre(0); pre(1);
     const groove = new Groove((beat, t) => {
@@ -590,8 +679,8 @@ const VIEWS = {
     // 🔊 استماع بسيط (نطق طبيعي بلا إيقاع) — 🎵 غناء على الإيقاع
     $app.querySelectorAll('[data-say-w]').forEach(b => b.onclick = () => sayItems(wordSayItems(+b.dataset.sayW, b)));
     $app.querySelectorAll('[data-say-s]').forEach(b => b.onclick = () => sayItems([{ fa: SENTS[+b.dataset.sayS].fa, ar: SENTS[+b.dataset.sayS].ar, btn: b }]));
-    $app.querySelectorAll('[data-sing-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.singW], nullUI, false)));
-    $app.querySelectorAll('[data-sing-s]').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.singS], nullUI, false)));
+    $app.querySelectorAll('[data-sing-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.singW], nullUI, false), id));
+    $app.querySelectorAll('[data-sing-s]').forEach(b => b.onclick = () => quickSing(sentLines(SENTS[+b.dataset.singS], nullUI, false), id));
     $app.querySelector('#allW').onclick = () => sayItems(l.words.flatMap(w => wordSayItems(w, $app.querySelector(`[data-say-w="${w}"]`))));
     $app.querySelector('#allS').onclick = () => sayItems(l.sentences.map(x => ({ fa: SENTS[x].fa, ar: SENTS[x].ar, btn: $app.querySelector(`[data-say-s="${x}"]`) })));
     const p = $app.querySelector('#prev'); if (p) p.onclick = () => go('lesson', id - 1);
@@ -725,6 +814,10 @@ const VIEWS = {
       <div class="top"><button class="iconbtn" id="back" aria-label="رجوع">→</button><h1 style="flex:1">⚙️ الإعدادات</h1></div>
       <div class="stack"><div class="card">
         <label class="set"><span>🥁 سرعة الإيقاع: <b id="bpmv">${n2a(S.bpm)}</b> نبضة/دقيقة</span><input type="range" id="bpm" min="80" max="132" step="4" value="${S.bpm}"></label>
+        <label class="set"><span>🎼 نمط الموسيقى</span><select id="style">
+          <option value="mix" ${(S.style || 'mix') === 'mix' ? 'selected' : ''}>🎲 متنوّع (يتغيّر مع كل درس)</option>
+          ${STYLE_KEYS.map(k => `<option value="${k}" ${S.style === k ? 'selected' : ''}>${STYLES[k].name}</option>`).join('')}</select></label>
+        <div class="row" style="padding:6px 0"><button class="btn sm alt" id="demo">▶️ اسمع النمط</button></div>
         <label class="set"><span>🎹 مستوى الموسيقى</span><input type="range" id="music" min="0" max="100" step="5" value="${S.music}"></label>
         <label class="set"><span>🗣️ مصدر الصوت</span><select id="voice">
           <option value="auto" ${S.voice === 'auto' ? 'selected' : ''}>تلقائي (تسجيلات طبيعية)</option>
@@ -749,6 +842,8 @@ const VIEWS = {
     el('voice').onchange = e => { upd('voice', e.target.value); Voice.onlineFailed = { fa: false, ar: false }; el('vstat').textContent = Voice.statusText(); };
     if (el('faVoice')) el('faVoice').onchange = e => { upd('faVoice', e.target.value); el('vstat').textContent = Voice.statusText(); };
     el('arabic').onchange = e => upd('arabic', e.target.checked);
+    el('style').onchange = e => upd('style', e.target.value);
+    el('demo').onclick = () => quickSing([{ rest: 16 }], Math.random() * 60 | 0);
     el('speak').onchange = e => upd('speak', e.target.checked);
     el('theme').onchange = e => { upd('theme', e.target.value); applyTheme(); };
     el('tv').onclick = async () => { await Voice.speak('سلام! من فارسی یاد می‌گیرم.', { pitch: 1.2 }); el('vstat').textContent = Voice.statusText(); };
@@ -766,7 +861,8 @@ const VIEWS = {
 /* ---------- 🔊 استماع مباشر لكلمة/جملة (أو قائمة بالترتيب) ---------- */
 function wordSayItems(id, btn) {
   const w = WORDS[id], items = [{ fa: w.fa, ar: firstMeaning(w.ar), btn }];
-  if (w.verb) items.push({ fa: w.verb.past[0], ar: w.verb.arPast, btn }, { fa: w.verb.pres[0], ar: w.verb.arPres, btn });
+  if (w.verb) items.push({ fa: w.verb.past[0], ar: w.verb.arPast, btn }, { fa: w.verb.pres[0], ar: w.verb.arPres, btn },
+    { fa: w.verb.ex.presFa, ar: w.verb.ex.presAr, btn }, { fa: w.verb.ex.pastFa, ar: w.verb.ex.pastAr, btn });
   return items;
 }
 let sayToken = 0;
@@ -786,8 +882,9 @@ async function sayItems(items) {
 
 /* ---------- مراحل التعلّم والاختبار ---------- */
 const nullUI = { beat() {}, word() {}, sentence() {}, hl() {} };
-async function quickSing(lines) {
+async function quickSing(lines, lesson) {
   newSession({ kind: 'quick' });
+  Music.style = styleFor(lesson);
   try { await sing(lines, nullUI); } catch (e) { /* أُلغي */ }
 }
 
@@ -822,6 +919,7 @@ async function countdown(msg) {
 
 async function learn(ids, sids, label, challenge) {
   check();
+  Music.style = styleFor(WORDS[ids[0]].lesson);
   $app.innerHTML = hud(label) + `
     <div class="chips" id="prog" style="margin-bottom:10px">${ids.map(id => `<span class="chip" data-p="${id}">${WORDS[id].icon}</span>`).join('')}</div>
     <div class="card"><div class="dots"><span></span><span></span><span></span><span></span></div><div class="stage"></div></div>
@@ -1169,6 +1267,7 @@ function qAnalogy({ a, b, rel }, label) {
 
 /** ⏳ الماضي والمضارع: من صيغة إلى الأخرى (مع ضمير عشوائي) */
 function qTense(id, label) {
+  if (Math.random() < 0.45) return qTenseSentence(id, label);
   const w = WORDS[id], v = w.verb, p = Math.random() * 6 | 0, toPres = Math.random() < 0.5;
   const from = toPres ? v.past[p] : v.pres[p], ans = toPres ? v.pres[p] : v.past[p];
   const others = shuffle(VERBS.filter(x => x !== id && Math.abs(WORDS[x].lesson - w.lesson) <= 20)).slice(0, 2)
@@ -1183,6 +1282,26 @@ function qTense(id, label) {
     options: shuffle(opts).map(o => ({ key: o, html: faHtml(o, 22) })), correct: ans, wait: 1800,
     explain: `<div class="small" style="font-weight:600">${faHtml(pf + ' ' + v.past[p], 18)} ⏪ · ▶️ ${faHtml(pf + ' ' + v.pres[p], 18)} — الجذران ${faHtml(v.pastStem, 16)} ↔ ${faHtml(v.presStem, 16)}</div>`,
     onAnswer: () => Voice.speak(ans) });
+}
+
+/** ⏳ حوّل الجملة نفسها من زمن إلى آخر */
+function qTenseSentence(id, label) {
+  const w = WORDS[id], v = w.verb, toPast = Math.random() < 0.5;
+  const from = toPast ? v.ex.presFa : v.ex.pastFa, ans = toPast ? v.ex.pastFa : v.ex.presFa;
+  const fromAr = toPast ? v.ex.presAr : v.ex.pastAr;
+  const forms = toPast ? v.past : v.pres;
+  const opts = new Set([ans]);
+  // خطأ في الضمير: الجملة نفسها بفعل لضمير آخر
+  for (const k of shuffle([1, 2, 3, 4, 5])) { if (ans.includes(forms[0])) { opts.add(ans.replace(forms[0], forms[k])); break; } }
+  // خطأ في الزمن: الجملة بالكلمة الزمنية الصحيحة لكن الفعل بالزمن الخطأ
+  const other = toPast ? v.pres[0] : v.past[0], mine = toPast ? v.past[0] : v.pres[0];
+  if (ans.includes(mine)) opts.add(ans.replace(mine, other));
+  for (const x of shuffle(VERBS.filter(x => x !== id))) { if (opts.size >= 4) break; opts.add(toPast ? WORDS[x].verb.ex.pastFa : WORDS[x].verb.ex.presFa); }
+  return askChoice({ label, tag: toPast ? '⏳ حوّل الجملة إلى الماضي' : '⏳ حوّل الجملة إلى المضارع',
+    prompt: `<div class="em" style="font-size:48px">${w.icon}</div><div class="sfa">${toPast ? '▶️' : '⏪'} ${esc(from)}</div><div class="sar">${esc(fromAr)}</div>`,
+    options: shuffle([...opts]).map(o => ({ key: o, html: faHtml(o, 18) })), correct: ans, wide: true, wait: readMs(ans),
+    explain: `<div class="small" style="font-weight:600">▶️ ${faHtml(v.ex.presFa, 17)} = ${esc(v.ex.presAr)}<br>⏪ ${faHtml(v.ex.pastFa, 17)} = ${esc(v.ex.pastAr)}</div>`,
+    onAnswer: () => Voice.speak(ans, { rate: 0.95 }) });
 }
 
 /** يشغّل قائمة أسئلة ويعيد النتيجة بالأقسام. q: {sec, word?, run(label)} */
@@ -1371,6 +1490,9 @@ VIEWS.verbs = function () {
       <table class="conj"><tr><th></th><th>⏪ الماضي</th><th>▶️ المضارع</th></tr>
       ${PRONOUNS.map(([pf, pa], p) => `<tr><td><b>${esc(pf)}</b><br><span class="small muted">${esc(pa)}</span></td>
         <td><button class="cf" data-say="${esc(v.past[p])}">${esc(v.past[p])}</button></td><td><button class="cf" data-say="${esc(v.pres[p])}">${esc(v.pres[p])}</button></td></tr>`).join('')}</table>
+      <div class="vex"><div class="small tag">📝 المثال نفسه بالزمنين</div>
+        <button class="cf wide" data-say="${esc(v.ex.presFa)}">▶️ ${esc(v.ex.presFa)}</button><div class="small muted">${esc(v.ex.presAr)}</div>
+        <button class="cf wide" data-say="${esc(v.ex.pastFa)}">⏪ ${esc(v.ex.pastFa)}</button><div class="small muted">${esc(v.ex.pastAr)}</div></div>
       <div class="small muted" style="margin-top:6px">💡 الماضي = جذر الماضي «${esc(v.pastStem)}» + النهاية. المضارع = «می‌» + جذر المضارع «${esc(v.presStem)}» + النهاية. اضغط أي صيغة لتسمعها.</div></details>`; };
   $app.innerHTML = `
     <div class="top"><button class="iconbtn" id="back" aria-label="رجوع">→</button><div style="flex:1"><h1>📘 الأفعال (${n2a(VERBS.length)})</h1>
@@ -1513,6 +1635,7 @@ const sentOk = sc => sc === null || sc === true || (typeof sc === 'number' && sc
 
 async function learnSents(sids, label) {
   check();
+  Music.style = styleFor(SENTS[sids[0]].lesson);
   $app.innerHTML = hud(label) + `
     <div class="chips" id="prog" style="margin-bottom:10px">${sids.map(id => `<span class="chip" data-p="${id}">${SENTS[id].icon}</span>`).join('')}</div>
     <div class="card"><div class="dots"><span></span><span></span><span></span><span></span></div><div class="stage"></div></div>
@@ -1700,7 +1823,7 @@ VIEWS.song = async function (id) {
   q('#cpL').onclick = e => copyText(sunoLyrics(g), e.target);
   q('#cpS').onclick = e => copyText(g.style, e.target);
   q('#quiz').onclick = () => go('practice', l.words, g.fa, { lesson: g.lesson });
-  $app.querySelectorAll('.chip[data-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.w], nullUI, true)));
+  $app.querySelectorAll('.chip[data-w]').forEach(b => b.onclick = () => quickSing(wordLines(WORDS[+b.dataset.w], nullUI, true), g.lesson));
 
   const src = await SongFiles.source(id);
   if (!src) q('#suno').open = true;

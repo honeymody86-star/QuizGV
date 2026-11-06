@@ -14,6 +14,8 @@ C.verbs.forEach(id => {
   v.pres.forEach((t, p) => out.push({ key: `fa/v${id}_n${p}`, lang: 'fa', text: t }));
   out.push({ key: `ar/v${id}_p`, lang: 'ar', text: v.arPast });
   out.push({ key: `ar/v${id}_n`, lang: 'ar', text: v.arPres });
+  out.push({ key: `fa/ve${id}_n`, lang: 'fa', text: v.ex.presFa }, { key: `fa/ve${id}_p`, lang: 'fa', text: v.ex.pastFa });
+  out.push({ key: `ar/ve${id}_n`, lang: 'ar', text: v.ex.presAr }, { key: `ar/ve${id}_p`, lang: 'ar', text: v.ex.pastAr });
 });
 C.sentences.forEach(s => {
   out.push({ key: 'fa/s' + s.id, lang: 'fa', text: s.fa });
