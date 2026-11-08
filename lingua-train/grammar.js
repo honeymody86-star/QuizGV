@@ -1,0 +1,314 @@
+/* قطار اللغات — محرّك القواعد
+   يبني لكل جملة ٣ أزمنة × ١٠ صيغ. كل صيغة = سطر (سؤال/جملة) + سطر جواب اختياري.
+   كل سطر = مصفوفة كلمات {w, r} حيث r هو دور الكلمة (فاعل، فعل مساعد، ...) لتلوينها. */
+(function () {
+  const LT = window.LT;
+  const tk = (w, r = 'x', o) => Object.assign({ w, r }, o || {});
+  const words = (str, r) => str.split(' ').filter(Boolean).map(w => tk(w, r));
+  const P_ = (w) => tk(w, 'p', { jl: 1 });          // علامة ترقيم ملتصقة بما قبلها
+  const DOT = () => P_('.');
+  const COMMA = () => P_(',');
+  const QM = (L) => (L === 'fr' ? P_('\u00a0?') : P_('?'));   // الفرنسية: مسافة غير منكسرة قبل ؟
+  const INV = () => tk('¿', 'p', { jr: 1 });          // علامة الاستفهام الإسبانية المقلوبة
+  const pick = (csv, i) => csv.split(',')[i];
+
+  /* أي ضمير يُسأل به وأي ضمير يجيب: أنا ← يُسأل «أنتَ» ويجيب «أنا» */
+  const Q_PRON = { i: 'you', you: 'you', he: 'he', she: 'she', we: 'youpl', they: 'they' };
+  const A_PRON = { i: 'i', you: 'i', he: 'he', she: 'she', we: 'we', they: 'they' };
+
+  /* ---------- التصريف ---------- */
+  const EN = {
+    s3(b) {
+      if (b === 'do') return 'does';
+      if (b === 'have') return 'has';
+      if (/(s|sh|ch|x|z|o)$/.test(b)) return b + 'es';
+      if (/[^aeiou]y$/.test(b)) return b.slice(0, -1) + 'ies';
+      return b + 's';
+    },
+  };
+  const ES = {
+    pres(v, s) {
+      if (v[1]) return pick(v[1], s);
+      const st = v[0].slice(0, -2), e = v[0].slice(-2);
+      return st + { ar: ['o', 'as', 'a', 'amos', 'áis', 'an'], er: ['o', 'es', 'e', 'emos', 'éis', 'en'], ir: ['o', 'es', 'e', 'imos', 'ís', 'en'] }[e][s];
+    },
+    pret(v, s) {
+      if (v[2]) return pick(v[2], s);
+      const st = v[0].slice(0, -2), e = v[0].slice(-2);
+      if (e === 'ar') {
+        if (s === 0) {
+          if (st.endsWith('c')) return st.slice(0, -1) + 'qué';
+          if (st.endsWith('g')) return st + 'ué';
+          if (st.endsWith('z')) return st.slice(0, -1) + 'cé';
+        }
+        return st + ['é', 'aste', 'ó', 'amos', 'asteis', 'aron'][s];
+      }
+      return st + ['í', 'iste', 'ió', 'imos', 'isteis', 'ieron'][s];
+    },
+    IR: ['voy', 'vas', 'va', 'vamos', 'vais', 'van'],
+  };
+  const FR = {
+    pres(v, s) {
+      if (v[1]) return pick(v[1], s);
+      const st = v[0].slice(0, -2);
+      if (s === 3 && st.endsWith('g')) return st + 'eons';
+      if (s === 3 && st.endsWith('c')) return st.slice(0, -1) + 'çons';
+      return st + ['e', 'es', 'e', 'ons', 'ez', 'ent'][s];
+    },
+    pp(v) { return v[2] || v[0].slice(0, -2) + 'é'; },
+    AVOIR: ['ai', 'as', 'a', 'avons', 'avez', 'ont'],
+    ALLER: ['vais', 'vas', 'va', 'allons', 'allez', 'vont'],
+  };
+  const IT = {
+    pres(v, s) {
+      if (v[1]) return pick(v[1], s);
+      const e = v[0].slice(-3);
+      let st = v[0].slice(0, -3);
+      let end = { are: ['o', 'i', 'a', 'iamo', 'ate', 'ano'], ere: ['o', 'i', 'e', 'iamo', 'ete', 'ono'], ire: ['o', 'i', 'e', 'iamo', 'ite', 'ono'] }[e][s];
+      if (e === 'are' && /[cg]$/.test(st) && /^[ie]/.test(end)) st += 'h';
+      if (st.endsWith('i') && end.startsWith('i')) end = end.slice(1);
+      return st + end;
+    },
+    pp(v) { return v[2] || v[0].slice(0, -3) + { are: 'ato', ere: 'uto', ire: 'ito' }[v[0].slice(-3)]; },
+    fut(v, s) {
+      if (v[3]) return pick(v[3], s);
+      const e = v[0].slice(-3);
+      let b = v[0].slice(0, -3);
+      if (e === 'are') {
+        if (/[cg]$/.test(b)) b += 'h';
+        else if (/[cg]i$/.test(b)) b = b.slice(0, -1);
+        b += 'er';
+      } else b += e === 'ere' ? 'er' : 'ir';
+      return b + ['ò', 'ai', 'à', 'emo', 'ete', 'anno'][s];
+    },
+    AVERE: ['ho', 'hai', 'ha', 'abbiamo', 'avete', 'hanno'],
+  };
+  const PT = {
+    pres(v, s) {
+      if (v[1]) return pick(v[1], s);
+      const st = v[0].slice(0, -2), e = v[0].slice(-2);
+      return st + { ar: ['o', 'as', 'a', 'amos', 'ais', 'am'], er: ['o', 'es', 'e', 'emos', 'eis', 'em'], ir: ['o', 'es', 'e', 'imos', 'is', 'em'] }[e][s];
+    },
+    pret(v, s) {
+      if (v[2]) return pick(v[2], s);
+      const st = v[0].slice(0, -2), e = v[0].slice(-2);
+      if (e === 'ar') {
+        if (s === 0) {
+          if (st.endsWith('c')) return st.slice(0, -1) + 'quei';
+          if (st.endsWith('g')) return st + 'uei';
+          if (st.endsWith('ç')) return st.slice(0, -1) + 'cei';
+        }
+        return st + ['ei', 'aste', 'ou', 'amos', 'astes', 'aram'][s];
+      }
+      if (e === 'er') return st + ['i', 'este', 'eu', 'emos', 'estes', 'eram'][s];
+      return st + ['i', 'iste', 'iu', 'imos', 'istes', 'iram'][s];
+    },
+    IR: ['vou', 'vais', 'vai', 'vamos', 'ides', 'vão'],
+  };
+  const DE = {
+    pres(v, s) {
+      if (v[1]) return pick(v[1], s);
+      const inf = v[0];
+      const st = inf.endsWith('en') ? inf.slice(0, -2) : inf.slice(0, -1);
+      if (s === 3 || s === 5) return inf;
+      let e = ['e', 'st', 't', '', 't', ''][s];
+      if (/(d|t|chn|fn|gn|dm|tm)$/.test(st) && /^[st]/.test(e)) e = 'e' + e;
+      else if (/(s|ß|z|x)$/.test(st) && e === 'st') e = 't';
+      return st + e;
+    },
+    HABEN: ['habe', 'hast', 'hat', 'haben', 'habt', 'haben'],
+    WERDEN: ['werde', 'wirst', 'wird', 'werden', 'werdet', 'werden'],
+    NOM: { m: 'der', f: 'die', n: 'das', p: 'die' },
+    ACC: { m: 'den', f: 'die', n: 'das', p: 'die' },
+  };
+
+  /* ---------- قراءة بيانات الجملة ---------- */
+  const LIDX = { en: 3, es: 4, fr: 5, it: 6, pt: 7, de: 8 };
+  const POOL_IDX = { en: 0, es: 1, fr: 2, it: 3, pt: 4, de: 5, ar: 6 };
+
+  function sentenceInfo(u, i) {
+    const row = LT.UNITS[u].s[i];
+    return {
+      u, i, verb: row[0], emoji: row[1], ar: row[2], raw: row,
+      place: row[9], reason: row[10], manner: row[11], poss: row[12], timeVar: i % 3,
+    };
+  }
+  function objectOf(L, S) {
+    const parts = S.raw[LIDX[L]].split('|');
+    if (L === 'en') return { np: parts[0], n: parts[1] };
+    if (L === 'fr') return { np: parts[0], g: parts[1], pl: parts[2] === 'pl' };
+    if (L === 'de') return { g: parts[0], n: parts[1], pl: parts[0] === 'p' };
+    return { np: parts[0], pl: parts[1] === 'pl' };
+  }
+  const pool = (arr, i, L) => arr[i][POOL_IDX[L]];
+
+  /* ---------- بناء الصيغ ---------- */
+  function build(L, S, pk, t) {
+    const V = LT.VERBS[S.verb][L];
+    const O = objectOf(L, S);
+    const PR = LT.PRON[L];
+    const qk = Q_PRON[pk], ak = A_PRON[pk];
+    const P = (k) => tk(PR[k][0], 'subj', L === 'fr' && PR[k][0] === 'je' ? { el: 1 } : null);
+    const slot = (k) => PR[k][1];
+    const T = () => words(LT.TIME[L][t][S.timeVar], 'time');
+    const PLACE = () => words(pool(LT.PLACES, S.place, L), 'place');
+    const REASON = () => words(pool(LT.REASONS, S.reason, L), 'reason');
+    const MANNER = () => words(pool(LT.MANNERS, S.manner, L), 'manner');
+    const POSS = () => words(pool(LT.POSS, S.poss, L), 'poss');
+    const rows = {};
+
+    if (L === 'en') {
+      const [base, ...part] = V[0].split(' ');
+      const prt = () => part.map(w => tk(w, 'verb'));
+      const OBJ = () => words(O.np, 'obj');
+      const is3 = (k) => slot(k) === 2;
+      const fin = (k) => t === 0 ? [tk(V[1], 'verb'), ...prt()]
+        : t === 1 ? [tk(is3(k) ? EN.s3(base) : base, 'verb'), ...prt()]
+          : [tk('will', 'aux'), tk(base, 'verb'), ...prt()];
+      const aux = (k) => tk(t === 0 ? 'did' : t === 1 ? (is3(k) ? 'does' : 'do') : 'will', 'aux');
+      const bare = () => [tk(base, 'verb'), ...prt()];
+      const wh = (q) => [[tk(q, 'qw'), aux(qk), P(qk), ...bare(), ...OBJ(), ...T(), QM(L)]];
+      rows.aff = [[P(pk), ...fin(pk), ...OBJ(), ...T(), DOT()]];
+      rows.neg = [[P(pk), aux(pk), tk('not', 'neg'), ...bare(), ...OBJ(), ...T(), DOT()]];
+      rows.yn = [[aux(qk), P(qk), ...bare(), ...OBJ(), ...T(), QM(L)], [tk('Yes', 'ans'), COMMA(), P(ak), aux(ak), DOT()]];
+      rows.who = [[tk('Who', 'qw'), ...fin('he'), ...OBJ(), ...T(), QM(L)], [P(ak), aux(ak), DOT()]];
+      rows.what = [[tk('What', 'qw'), aux(qk), P(qk), ...bare(), ...T(), QM(L)], [...OBJ(), DOT()]];
+      rows.when = [[tk('When', 'qw'), aux(qk), P(qk), ...bare(), ...OBJ(), QM(L)], [...T(), DOT()]];
+      rows.where = [...wh('Where'), [...PLACE(), DOT()]];
+      rows.why = [...wh('Why'), [...REASON(), DOT()]];
+      rows.how = [...wh('How'), [...MANNER(), DOT()]];
+      rows.whose = [[tk('Whose', 'qw'), tk(O.n, 'obj'), aux(qk), P(qk), ...bare(), ...T(), QM(L)], [...POSS(), DOT()]];
+    }
+
+    if (L === 'es' || L === 'pt') {
+      const C = L === 'es' ? ES : PT;
+      const OBJ = () => words(O.np, 'obj');
+      const vf = (s) => t === 0 ? [tk(C.pret(V, s), 'verb')] : t === 1 ? [tk(C.pres(V, s), 'verb')]
+        : L === 'es' ? [tk(C.IR[s], 'aux'), tk('a', 'aux'), tk(V[0], 'verb')] : [tk(C.IR[s], 'aux'), tk(V[0], 'verb')];
+      const open = L === 'es' ? () => [INV()] : () => [];
+      const NO = L === 'es' ? 'no' : 'não', YES = L === 'es' ? 'Sí' : 'Sim';
+      const qWithPron = L === 'pt';  // البرتغالية تذكر الضمير في السؤال، الإسبانية تحذفه
+      const QW = { es: { who: ['Quién'], what: ['Qué'], when: ['Cuándo'], where: ['Dónde'], why: ['Por', 'qué'], how: ['Cómo'], whose: ['De', 'quién'] }, pt: { who: ['Quem'], what: ['O', 'que'], when: ['Quando'], where: ['Onde'], why: ['Por', 'que'], how: ['Como'], whose: ['De', 'quem'] } }[L];
+      const q = (id) => QW[id].map(w => tk(w, 'qw'));
+      const qp = () => qWithPron ? [P(qk)] : [];
+      const wh = (id) => [[...open(), ...q(id), ...qp(), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)]];
+      const cop = O.pl ? (L === 'es' ? 'son' : 'são') : (L === 'es' ? 'es' : 'é');
+      rows.aff = [[P(pk), ...vf(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.neg = [[P(pk), tk(NO, 'neg'), ...vf(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.yn = [[...open(), P(qk), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)], [tk(YES, 'ans'), COMMA(), P(ak), ...vf(slot(ak)), ...OBJ(), ...T(), DOT()]];
+      rows.who = [[...open(), ...q('who'), ...vf(2), ...OBJ(), ...T(), QM(L)], [P(ak), DOT()]];
+      rows.what = [[...open(), ...q('what'), ...qp(), ...vf(slot(qk)), ...T(), QM(L)], [...OBJ(), DOT()]];
+      rows.when = [[...open(), ...q('when'), ...qp(), ...vf(slot(qk)), ...OBJ(), QM(L)], [...T(), DOT()]];
+      rows.where = [...wh('where'), [...PLACE(), DOT()]];
+      rows.why = [...wh('why'), [...REASON(), DOT()]];
+      rows.how = [...wh('how'), [...MANNER(), DOT()]];
+      rows.whose = [[...open(), ...q('whose'), tk(cop, 'aux'), ...OBJ(), tk('que', 'x'), ...qp(), ...vf(slot(qk)), ...T(), QM(L)], [...POSS(), DOT()]];
+    }
+
+    if (L === 'fr') {
+      const OBJ = () => words(O.np, 'obj');
+      const agr = (O.g === 'f' ? 'e' : '') + (O.pl ? 's' : '');
+      const ppA = (pp) => (pp.endsWith('s') && O.g !== 'f') ? pp : pp + agr;
+      const vf = (s, agree) => t === 0 ? [tk(FR.AVOIR[s], 'aux'), tk(agree ? ppA(FR.pp(V)) : FR.pp(V), 'verb')]
+        : t === 1 ? [tk(FR.pres(V, s), 'verb')] : [tk(FR.ALLER[s], 'aux'), tk(V[0], 'verb')];
+      const ESTCE = () => [tk('est-ce', 'qw'), tk('que', 'qw', { el: 1 })];
+      const wh = (w) => [[tk(w, 'qw'), ...ESTCE(), P(qk), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)]];
+      const neg = (s) => { const v = vf(s); return [tk('ne', 'neg', { el: 1 }), v[0], tk('pas', 'neg'), ...v.slice(1)]; };
+      rows.aff = [[P(pk), ...vf(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.neg = [[P(pk), ...neg(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.yn = [[tk('Est-ce', 'qw'), tk('que', 'qw', { el: 1 }), P(qk), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)], [tk('Oui', 'ans'), COMMA(), P(ak), ...vf(slot(ak)), ...OBJ(), ...T(), DOT()]];
+      rows.who = [[tk('Qui', 'qw'), ...vf(2), ...OBJ(), ...T(), QM(L)], [tk(LT.FR_STRESSED[ak], 'subj'), DOT()]];
+      rows.what = [[tk("Qu'est-ce", 'qw'), tk('que', 'qw', { el: 1 }), P(qk), ...vf(slot(qk)), ...T(), QM(L)], [...OBJ(), DOT()]];
+      rows.when = [[tk('Quand', 'qw'), ...ESTCE(), P(qk), ...vf(slot(qk)), ...OBJ(), QM(L)], [...T(), DOT()]];
+      rows.where = [...wh('Où'), [...PLACE(), DOT()]];
+      rows.why = [...wh('Pourquoi'), [...REASON(), DOT()]];
+      rows.how = [...wh('Comment'), [...MANNER(), DOT()]];
+      rows.whose = [[tk('À', 'qw'), tk('qui', 'qw'), tk(O.pl ? 'sont' : 'est', 'aux'), ...OBJ(), tk('que', 'x', { el: 1 }), P(qk), ...vf(slot(qk), true), ...T(), QM(L)], [...POSS(), DOT()]];
+    }
+
+    if (L === 'it') {
+      const OBJ = () => words(O.np, 'obj');
+      const vf = (s) => t === 0 ? [tk(IT.AVERE[s], 'aux'), tk(IT.pp(V), 'verb')] : t === 1 ? [tk(IT.pres(V, s), 'verb')] : [tk(IT.fut(V, s), 'verb')];
+      const QW = { who: ['Chi'], what: ['Che', 'cosa'], when: ['Quando'], where: ['Dove'], why: ['Perché'], how: ['Come'], whose: ['Di', 'chi'] };
+      const q = (id) => QW[id].map(w => tk(w, 'qw'));
+      const wh = (id) => [[...q(id), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)]];
+      rows.aff = [[P(pk), ...vf(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.neg = [[P(pk), tk('non', 'neg'), ...vf(slot(pk)), ...OBJ(), ...T(), DOT()]];
+      rows.yn = [[P(qk), ...vf(slot(qk)), ...OBJ(), ...T(), QM(L)], [tk('Sì', 'ans'), COMMA(), P(ak), ...vf(slot(ak)), ...OBJ(), ...T(), DOT()]];
+      rows.who = [[...q('who'), ...vf(2), ...OBJ(), ...T(), QM(L)], [P(ak), DOT()]];
+      rows.what = [[...q('what'), ...vf(slot(qk)), ...T(), QM(L)], [...OBJ(), DOT()]];
+      rows.when = [[...q('when'), ...vf(slot(qk)), ...OBJ(), QM(L)], [...T(), DOT()]];
+      rows.where = [...wh('where'), [...PLACE(), DOT()]];
+      rows.why = [...wh('why'), [...REASON(), DOT()]];
+      rows.how = [...wh('how'), [...MANNER(), DOT()]];
+      rows.whose = [[...q('whose'), tk(O.pl ? 'sono' : 'è', 'aux'), ...OBJ(), tk('che', 'x'), ...vf(slot(qk)), ...T(), QM(L)], [...POSS(), DOT()]];
+    }
+
+    if (L === 'de') {
+      const acc = () => [tk(DE.ACC[O.g], 'obj'), tk(O.n, 'obj')];
+      const parts = (s) => t === 0 ? { fin: tk(DE.HABEN[s], 'aux'), end: tk(V[2], 'verb') }
+        : t === 1 ? { fin: tk(DE.pres(V, s), 'verb'), end: null } : { fin: tk(DE.WERDEN[s], 'aux'), end: tk(V[0], 'verb') };
+      const E = (p) => p.end ? [p.end] : [];
+      const p0 = parts(slot(pk)), pq = parts(slot(qk)), pa = parts(slot(ak)), p3 = parts(2);
+      const NICHT = () => tk('nicht', 'neg');
+      const wh = (w) => [[tk(w, 'qw'), pq.fin, P(qk), ...acc(), ...T(), ...E(pq), QM(L)]];
+      rows.aff = [[P(pk), p0.fin, ...acc(), ...T(), ...E(p0), DOT()]];
+      rows.neg = [t === 1 ? [P(pk), p0.fin, ...acc(), NICHT(), ...T(), DOT()] : [P(pk), p0.fin, ...acc(), ...T(), NICHT(), ...E(p0), DOT()]];
+      rows.yn = [[pq.fin, P(qk), ...acc(), ...T(), ...E(pq), QM(L)], [tk('Ja', 'ans'), COMMA(), P(ak), pa.fin, ...acc(), ...T(), ...E(pa), DOT()]];
+      rows.who = [[tk('Wer', 'qw'), p3.fin, ...acc(), ...T(), ...E(p3), QM(L)], [P(ak), DOT()]];
+      rows.what = [[tk('Was', 'qw'), pq.fin, P(qk), ...T(), ...E(pq), QM(L)], [...acc(), DOT()]];
+      rows.when = [[tk('Wann', 'qw'), pq.fin, P(qk), ...acc(), ...E(pq), QM(L)], [...T(), DOT()]];
+      rows.where = [...wh('Wo'), [...PLACE(), DOT()]];
+      rows.why = [...wh('Warum'), [...REASON(), DOT()]];
+      rows.how = [...wh('Wie'), [...MANNER(), DOT()]];
+      rows.whose = [[tk('Wessen', 'qw'), tk(O.n, 'obj'), pq.fin, P(qk), ...T(), ...E(pq), QM(L)], [tk(DE.NOM[O.g], 'obj'), tk(O.n, 'obj'), ...POSS(), DOT()]];
+    }
+
+    return LT.ROWS.map(r => rows[r.id].map(line => finishLine(L, line)));
+  }
+
+  /* الحذف الفرنسي (je → j'، que → qu'، ne → n') وتكبير أول حرف */
+  function finishLine(L, line) {
+    const out = line.map(t => Object.assign({}, t));
+    if (L === 'fr') {
+      for (let i = 0; i < out.length - 1; i++) {
+        if (out[i].el && /^[aeiouyàâéèêëîïôûœ]/i.test(out[i + 1].w)) {
+          out[i].w = out[i].w.slice(0, -1) + "'";
+          out[i].jr = 1;
+        }
+      }
+    }
+    const first = out.find(t => /\p{L}/u.test(t.w));
+    if (first) first.w = first.w.charAt(0).toLocaleUpperCase() + first.w.slice(1);
+    return out;
+  }
+
+  /* تجميع الكلمات الملتصقة (j' + ai) في وحدة عرض واحدة */
+  function units(line) {
+    const out = [];
+    line.forEach((t, i) => {
+      const prev = line[i - 1];
+      if (out.length && (t.jl || (prev && prev.jr))) out[out.length - 1].push(t);
+      else out.push([t]);
+    });
+    return out;
+  }
+  const unitText = (u) => u.map(t => t.w).join('');
+  const lineText = (line) => units(line).map(unitText).join(' ');
+
+  /* كل صيغ الدرس: مصفوفة ٣٠ خلية بترتيب العرض (صفاً صفاً، من الماضي إلى المستقبل) */
+  function lesson(L, u, i, pk) {
+    const S = sentenceInfo(u, i);
+    const byTense = [0, 1, 2].map(t => build(L, S, pk, t));
+    const cells = [];
+    LT.ROWS.forEach((row, r) => [0, 1, 2].forEach(t => cells.push({ r, t, row, tense: LT.TENSES[t], lines: byTense[t][r] })));
+    return { S, cells };
+  }
+
+  function pronounFor(round, i) {
+    const pr = LT.ROUNDS[round].pr;
+    return pr[i % pr.length];
+  }
+
+  LT.G = { lesson, build, sentenceInfo, units, unitText, lineText, pronounFor, objectOf, POOL_IDX };
+})();
