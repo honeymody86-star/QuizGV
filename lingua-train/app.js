@@ -15,7 +15,7 @@
     get(k, d) { try { const v = localStorage.getItem('lt.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem('lt.' + k, JSON.stringify(v)); } catch (e) { /* التخزين غير متاح */ } },
   };
-  const SET = Object.assign({ speed: 'tr:mid', passes: 3, auto: true, sound: true, wordFirst: true, voices: {}, theme: 'auto' }, store.get('settings', {}));
+  const SET = Object.assign({ speed: 'tr:mid', passes: 3, auto: true, sound: true, wordFirst: true, voices: {}, theme: 'auto', layout: 'grid' }, store.get('settings', {}));
   const PROG = Object.assign({ xp: 0, streak: { d: '', n: 0 }, langs: {} }, store.get('progress', {}));
   const saveSet = () => store.set('settings', SET);
   const saveProg = () => store.set('progress', PROG);
@@ -65,31 +65,61 @@
   /* ---------- النطق ---------- */
   const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
   let VOICES = [];
-  function loadVoices() { if (TTS) VOICES = TTS.getVoices(); }
+  function loadVoices() { if (TTS) VOICES = TTS.getVoices(); setTimeout(() => { if (NAV.view === 'lesson') voiceHint(); }); }
   if (TTS) { loadVoices(); TTS.onvoiceschanged = loadVoices; }
   const langOf = (L) => LT.LANGS.find(x => x.id === L);
   function voicesFor(L) {
     const norm = (v) => v.lang.replace('_', '-').toLowerCase();
     return VOICES.filter(v => norm(v).startsWith(L));
   }
+  /* جودة الصوت: سفاري يضع أصواتاً «ترفيهية» وآلية (Albert، Zarvox، Fred…) بجانب الأصوات الجيدة،
+     فنستبعدها ونقدّم أصوات Premium ثم Enhanced ثم Siri والأصوات العصبية (Natural / Neural). */
+  const NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Pipe Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Kathy|Ralph|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley|Deranged|Hysterical)\b/i;
+  function voiceQuality(v) {
+    const id = (v.voiceURI || '') + ' ' + v.name;
+    if (NOVELTY.test(v.name) || /eloquence|speech\.synthesis\.voice/i.test(v.voiceURI || '')) return -100;
+    let q = 0;
+    if (/premium/i.test(id)) q += 40; else if (/enhanced|verbessert|mejorada|améliorée|migliorata|aprimorada/i.test(id)) q += 30;
+    if (/siri/i.test(id)) q += 25;
+    if (/neural|natural|online/i.test(id)) q += 32;
+    if (/google/i.test(id)) q += 15;
+    if (/compact/i.test(id)) q -= 5;
+    return q;
+  }
+  function voiceScore(v, L) {
+    const codes = langOf(L).tts.map(c => c.toLowerCase());
+    const ci = codes.indexOf(v.lang.replace('_', '-').toLowerCase());
+    return voiceQuality(v) + (ci >= 0 ? 12 - ci * 3 : 0) + (v.default ? 1 : 0);
+  }
+  const ranked = (L) => voicesFor(L).slice().sort((a, b) => voiceScore(b, L) - voiceScore(a, L));
+  const stars = (v) => { const q = voiceQuality(v); return q >= 30 ? '⭐⭐⭐' : q >= 15 ? '⭐⭐' : q >= 0 ? '⭐' : '🤖'; };
   function voiceFor(L) {
-    const list = voicesFor(L);
+    const list = ranked(L);
     if (!list.length) return null;
     const saved = SET.voices[L] && list.find(v => v.voiceURI === SET.voices[L]);
-    if (saved) return saved;
-    const codes = langOf(L).tts.map(c => c.toLowerCase());
-    const score = (v) => {
-      const lang = v.lang.replace('_', '-').toLowerCase();
-      let s = 0;
-      const ci = codes.indexOf(lang); if (ci >= 0) s += 20 - ci * 3;
-      if (/natural|neural|premium|enhanced|google/i.test(v.name)) s += 6;
-      if (v.localService) s += 1;
-      return s;
-    };
-    return list.slice().sort((a, b) => score(b) - score(a))[0];
+    return saved || list[0];
+  }
+  const IS_APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+  const needsBetterVoice = (L) => { const v = voiceFor(L); return !!(TTS && VOICES.length && (!v || voiceQuality(v) < 15)); };
+  function voiceTip(L) {
+    const ar = langOf(L).ar;
+    if (IS_IOS) return `لصوت طبيعي وواضح على iPhone/iPad: <b>الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← ${ar}</b> ثم نزّل صوتاً مكتوباً بجانبه <b>(محسّن)</b> أو <b>(Premium)</b>، وبعدها أعد فتح الصفحة واختره من ⚙️.`;
+    if (IS_APPLE) return `لصوت طبيعي على الماك: <b>إعدادات النظام ← تسهيلات الاستخدام ← المحتوى المنطوق ← صوت النظام ← إدارة الأصوات</b> ثم نزّل صوت ${ar} من نوع <b>Premium</b> أو <b>Enhanced</b>، وأعد فتح الصفحة.`;
+    return `لصوت أوضح جرّب متصفح Chrome أو Edge (فيهما أصوات Google و Natural عالية الجودة)، أو ثبّت صوت ${ar} من إعدادات الجهاز.`;
+  }
+  function voiceHint() {
+    const box = $('#voiceHint'); if (!box) return;
+    const L = NAV.L, show = SET.sound && needsBetterVoice(L) && !SET['hideTip_' + L];
+    box.hidden = !show;
+    if (show) {
+      box.innerHTML = `<span style="font-size:22px">🔈</span><div style="flex:1;min-width:0">الصوت الحالي في جهازك منخفض الجودة. ${voiceTip(L)}</div><button class="iconbtn" id="tipX" aria-label="إخفاء">✕</button>`;
+      $('#tipX').onclick = () => { SET['hideTip_' + L] = 1; saveSet(); box.hidden = true; };
+    }
   }
   const estimate = (text, rate) => (text.length * 68 + 320) / rate;
   let warnedNoVoice = false;
+  const LIVE = new Set();
   function speak(text, rate, L, onBoundary) {
     return new Promise(res => {
       const v = TTS && SET.sound ? voiceFor(L) : null;
@@ -100,11 +130,12 @@
         setTimeout(res, estimate(text, rate)); return;
       }
       const u = new SpeechSynthesisUtterance(text);
+      LIVE.add(u);   // نحتفظ بمرجع للنطق حتى لا يضيع حدث النهاية في سفاري
       u.lang = v ? v.lang : langOf(L).tts[0];
       if (v) u.voice = v;
       u.rate = Math.max(0.1, Math.min(2, rate));
       let done = false;
-      const fin = () => { if (!done) { done = true; clearTimeout(to); res(); } };
+      const fin = () => { if (!done) { done = true; clearTimeout(to); LIVE.delete(u); res(); } };
       const to = setTimeout(fin, estimate(text, rate) * 2.5 + 2500);
       u.onend = fin; u.onerror = fin;
       if (onBoundary) u.onboundary = onBoundary;
@@ -223,7 +254,7 @@
   }
 
   /* ---------- الدرس (لوحة الصيغ) ---------- */
-  const P = { cells: [], els: [], i: 0, playing: false, run: 0, revealed: [], express: false };
+  const P = { cells: [], els: [], order: [], groups: [], i: 0, playing: false, run: 0, revealed: [], express: false };
 
   function renderLesson() {
     const { L, u, r, i } = NAV;
@@ -263,22 +294,18 @@
 
       <div class="legend">${roles.map(k => `<span><i style="background:var(--r-${k})"></i>${LT.ROLES[k]}</span>`).join('')}</div>
 
-      <div class="tabs" id="tabs">${LT.TENSES.map((t, k) => `<button data-t="${k}" class="${k === 0 ? 'on' : ''}">${t.icon} ${t.ar}</button>`).join('')}</div>
+      <div class="voicehint" id="voiceHint" hidden></div>
 
-      <div class="board" id="board" data-tense="0">
-        <div class="corner"></div>
-        ${LT.TENSES.map(t => `<div class="th">${t.icon} ${t.ar}</div>`).join('')}
-        ${LT.ROWS.map((row, rI) => `
-          <div class="rowlab"><span class="ic">${row.icon}</span><span>${row.ar}</span></div>
-          ${[0, 1, 2].map(t => {
-      const idx = rI * 3 + t, c = cells[idx];
-      return `<div class="cell idle" data-idx="${idx}" data-t="${t}" tabindex="0" role="button" aria-label="${row.ar} — ${LT.TENSES[t].ar}">
-              <div class="clab">${row.icon} ${row.ar} · ${LT.TENSES[t].ar}</div>
-              ${c.lines.map((ln, k) => lineHTML(ln, k, { off: true })).join('')}
-              <div class="rail"><span class="loco">🚆</span></div>
-            </div>`;
-    }).join('')}`).join('')}
+      <div class="layoutbar">
+        <div class="seg" id="layoutSeg" role="group" aria-label="طريقة العرض">
+          ${LAYOUTS.map(l => `<button data-l="${l.id}" class="${SET.layout === l.id ? 'on' : ''}">${l.ar}</button>`).join('')}
+        </div>
+        <div class="muted layoutdesc">${(LAYOUTS.find(l => l.id === SET.layout) || LAYOUTS[0]).desc}</div>
       </div>
+
+      <div class="tabs" id="tabs"${SET.layout === 'grid' ? '' : ' hidden'}>${LT.TENSES.map((t, k) => `<button data-t="${k}" class="${k === 0 ? 'on' : ''}">${t.icon} ${t.ar}</button>`).join('')}</div>
+
+      ${boardHTML(cells)}
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="btn btn-main" id="toPractice">🎯 تمارين الإتقان</button>
@@ -286,16 +313,65 @@
       </div>
     </section>`;
 
-    P.els = $$('.cell', app);
+    P.els = cells.map((_, k) => $(`.cell[data-idx="${k}"]`, app));
+    setOrder();
     P.els.forEach((el, k) => {
       el.onclick = () => jumpTo(k);
       el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jumpTo(k); } };
     });
+    $$('#layoutSeg button').forEach(b => b.onclick = () => {
+      if (SET.layout === b.dataset.l) return;
+      stopPlayback(); SET.layout = b.dataset.l; saveSet(); renderLesson();
+      toast((LAYOUTS.find(l => l.id === SET.layout)).ar);
+    });
+    voiceHint();
     $$('#tabs button').forEach(b => b.onclick = () => setTab(+b.dataset.t));
     $('#toPractice').onclick = () => go('practice');
     $('#toNext').onclick = () => goNextLesson();
     setGauge(0, -1);
     syncDock();
+  }
+
+  /* طرق العرض الثلاث */
+  const LAYOUTS = [
+    { id: 'grid', ar: '🧱 كل الصيغ', desc: 'لوحة كاملة: الأزمنة أعمدة والصيغ صفوف، وتُعرض صفاً بعد صف.' },
+    { id: 'form', ar: '📑 حسب الصيغة', desc: 'كل صيغة في الأزمنة الثلاثة تحت بعضها مباشرة، ثم تُنطق الجمل الثلاث معاً.' },
+    { id: 'tense', ar: '⏳ حسب الزمن', desc: 'كل زمن بصيغه العشر تحت بعضها، ثم تُنطق صيغ الزمن كلها معاً.' },
+  ];
+  const cellHTML = (c, idx, lab, flat) => `<div class="cell idle${flat ? ' flat' : ''}" data-idx="${idx}" data-t="${c.t}" tabindex="0" role="button" aria-label="${c.row.ar} — ${c.tense.ar}">
+      ${lab}${c.lines.map((ln, k) => lineHTML(ln, k, { off: true })).join('')}
+      <div class="rail"><span class="loco">🚆</span></div>
+    </div>`;
+  function boardHTML(cells) {
+    if (SET.layout === 'form') {
+      return `<div class="stacks">${LT.ROWS.map((row, r) => `
+        <div class="sblock"><div class="sbh"><span class="ic">${row.icon}</span>${row.ar}<span class="muted sbn">الماضي ← الحاضر ← المستقبل</span></div>
+          <div class="stack" data-g="${r}">${[0, 1, 2].map(t => cellHTML(cells[r * 3 + t], r * 3 + t, `<span class="tag tg${t}">${LT.TENSES[t].icon} ${LT.TENSES[t].ar}</span>`, true)).join('')}</div>
+        </div>`).join('')}</div>`;
+    }
+    if (SET.layout === 'tense') {
+      return `<div class="stacks">${LT.TENSES.map((te, t) => `
+        <div class="sblock"><div class="sbh tense tg${t}"><span class="ic">${te.icon}</span>${te.ar}<span class="sbn">١٠ صيغ</span></div>
+          <div class="stack" data-g="${t}">${LT.ROWS.map((row, r) => cellHTML(cells[r * 3 + t], r * 3 + t, `<span class="tag">${row.icon} ${row.ar}</span>`, true)).join('')}</div>
+        </div>`).join('')}</div>`;
+    }
+    return `<div class="board" id="board" data-tense="0">
+        <div class="corner"></div>
+        ${LT.TENSES.map(t => `<div class="th">${t.icon} ${t.ar}</div>`).join('')}
+        ${LT.ROWS.map((row, r) => `
+          <div class="rowlab"><span class="ic">${row.icon}</span><span>${row.ar}</span></div>
+          ${[0, 1, 2].map(t => cellHTML(cells[r * 3 + t], r * 3 + t, `<div class="clab">${row.icon} ${row.ar} · ${LT.TENSES[t].ar}</div>`, false)).join('')}`).join('')}
+      </div>`;
+  }
+  /* ترتيب التشغيل والمجموعات التي تُعاد معاً بعد اكتمالها */
+  function setOrder() {
+    const R = LT.ROWS.length;
+    if (SET.layout === 'tense') {
+      P.groups = [0, 1, 2].map(t => Array.from({ length: R }, (_, r) => r * 3 + t));
+    } else {
+      P.groups = SET.layout === 'form' ? Array.from({ length: R }, (_, r) => [r * 3, r * 3 + 1, r * 3 + 2]) : [];
+    }
+    P.order = SET.layout === 'tense' ? P.groups.flat() : P.cells.map((_, k) => k);
   }
 
   function goNextLesson() {
@@ -308,7 +384,7 @@
   }
 
   function setTab(t) {
-    const b = $('#board'); if (!b) return;
+    const b = $('#board'); if (!b) return;   // الأعمدة/التبويبات في وضع «كل الصيغ» فقط
     b.dataset.tense = t;
     $$('#tabs button').forEach(x => x.classList.toggle('on', +x.dataset.t === t));
   }
@@ -367,10 +443,10 @@
     us.forEach(u => u.classList.remove('hot'));
   }
 
-  async function sweepLine(k, li, rate, id) {
+  async function sweepLine(k, li, rate, id, reveal) {
     const el = P.els[k], lineEl = $$('.sent', el)[li];
     const us = $$('.u', lineEl), groups = G.units(P.cells[k].lines[li]);
-    us.forEach(u => u.classList.remove('off'));
+    if (!reveal) us.forEach(u => u.classList.remove('off'));
     const texts = groups.map(G.unitText);
     const text = texts.join(' ');
     const starts = []; let pos = 0;
@@ -379,7 +455,7 @@
     let gotB = false, cur = -1, t0 = performance.now();
     const hot = (j) => {
       if (j === cur || j < 0 || j >= us.length) return;
-      cur = j; us.forEach(u => u.classList.remove('hot')); us[j].classList.add('hot'); moveLoco(el, us[j]);
+      cur = j; us.forEach((u, x) => { u.classList.remove('hot'); if (x <= j) u.classList.remove('off'); }); us[j].classList.add('hot'); moveLoco(el, us[j]);
     };
     hot(0);
     const timer = setInterval(() => {
@@ -396,7 +472,7 @@
     });
     clearInterval(timer);
     if (!SET.sound || !TTS) await sleep(150);
-    us.forEach(u => u.classList.remove('hot'));
+    us.forEach(u => u.classList.remove('hot', 'off'));
   }
 
   async function playCell(k, id) {
@@ -408,8 +484,10 @@
       for (let li = 0; li < c.lines.length; li++) {
         if (id !== P.run) return false;
         if (p === 0 && !P.revealed[k] && !P.express) {
-          await revealLine(k, li, rates[p], id);
-          if (rates.length === 1 && id === P.run) await sweepLine(k, li, rates[p], id);
+          if (SET.wordFirst) {
+            await revealLine(k, li, rates[p], id);
+            if (rates.length === 1 && id === P.run) await sweepLine(k, li, rates[p], id);
+          } else await sweepLine(k, li, rates[p], id, true);   // تظهر الكلمات مع نطق الجملة البطيء
         } else await sweepLine(k, li, rates[p], id);
         if (id !== P.run) return false;
         await sleep(c.lines.length > 1 && li === 0 ? 260 : 120);
@@ -421,15 +499,40 @@
     return true;
   }
 
-  async function playFrom(k) {
+  /* إعادة نطق مجموعة كاملة معاً (الأزمنة الثلاثة للصيغة، أو صيغ الزمن كلها) */
+  async function chorus(group, id) {
+    const rate = ladder(SET.passes).slice(-1)[0];
+    const blk = P.els[group[0]].closest('.stack');
+    if (blk) blk.classList.add('chorus');
+    await sleep(350);
+    for (const k of group) {
+      if (id !== P.run) break;
+      setActive(k);
+      setGauge(rate, SET.passes - 1);
+      $('#stage').textContent = '🔗 الصيغ معاً';
+      for (let li = 0; li < P.cells[k].lines.length; li++) {
+        if (id !== P.run) break;
+        await sweepLine(k, li, rate, id);
+        await sleep(90);
+      }
+    }
+    if (blk) blk.classList.remove('chorus');
+    return id === P.run;
+  }
+
+  async function playFrom(pos) {
     hush();
     const id = ++P.run;
     P.playing = true; syncDock();
     touchStreak(); saveProg(); renderStats();
-    for (let j = k; j < P.cells.length; j++) {
+    for (let j = pos; j < P.order.length; j++) {
+      if (id !== P.run) return;   // أُوقف التشغيل أثناء الانتظار
       P.i = j;
-      const ok = await playCell(j, id);
+      const k = P.order[j];
+      const ok = await playCell(k, id);
       if (!ok || id !== P.run) return;
+      const g = !P.express && P.groups.find(gr => gr[gr.length - 1] === k);
+      if (g && !(await chorus(g, id))) return;
       if (!SET.auto && !P.express) { P.i = j + 1; P.playing = false; syncDock(); setGauge(0, -1); return; }
       await sleep(P.express ? 200 : 420);
     }
@@ -441,7 +544,8 @@
   }
 
   function stopPlayback() { P.run++; hush(); P.playing = false; syncDock(); }
-  function jumpTo(k) { stopPlayback(); P.express = false; P.i = k; playFrom(k); }
+  function jumpPos(pos) { stopPlayback(); P.express = false; P.i = pos; playFrom(pos); }
+  function jumpTo(k) { jumpPos(Math.max(0, P.order.indexOf(k))); }
 
   function finishBoard(wasExpress) {
     const { L, u, r, i } = NAV, k = key(u, r, i), p = lp(L);
@@ -486,10 +590,10 @@
   }
   $('#playBtn').onclick = () => {
     if (P.playing) { stopPlayback(); setGauge(0, -1); }
-    else { P.express = false; playFrom(Math.min(P.i, P.cells.length - 1)); }
+    else { P.express = false; playFrom(P.i >= P.order.length ? 0 : P.i); }
   };
-  $('#prevCell').onclick = () => jumpTo(Math.max(0, P.i - 1));
-  $('#nextCell').onclick = () => jumpTo(Math.min(P.cells.length - 1, P.i + (P.playing ? 1 : 0)));
+  $('#prevCell').onclick = () => jumpPos(Math.max(0, P.i - 1));
+  $('#nextCell').onclick = () => jumpPos(Math.min(P.order.length - 1, P.i + (P.playing ? 1 : 0)));
   $('#speedSel').onchange = (e) => { SET.speed = e.target.value; saveSet(); };
   $('#passSel').onchange = (e) => { SET.passes = +e.target.value; saveSet(); };
   $('#autoBtn').onclick = () => { SET.auto = !SET.auto; saveSet(); syncDock(); toast(SET.auto ? '🔁 العرض التلقائي: ينتقل القطار للصيغة التالية وحده' : '✋ العرض اليدوي: اضغط ▶ لكل صيغة'); };
@@ -739,14 +843,15 @@
   /* ---------- الإعدادات ---------- */
   $('#openSettings').onclick = () => {
     const L = NAV.L || 'en';
-    const vs = voicesFor(L), cur = voiceFor(L);
+    const vs = ranked(L), cur = voiceFor(L);
     modal(`<div class="sheet settings" style="padding:0;box-shadow:none">
       <h2>⚙️ الإعدادات</h2>
       <div class="field"><label for="setTheme">المظهر</label>
         <select id="setTheme"><option value="auto">حسب الجهاز</option><option value="light">فاتح</option><option value="dark">داكن</option></select></div>
       <div class="field"><label for="setVoice">صوت ${langOf(L).ar}</label>
-        <select id="setVoice">${vs.length ? vs.map(v => `<option value="${esc(v.voiceURI)}"${cur && cur.voiceURI === v.voiceURI ? ' selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('') : '<option value="">لا يوجد صوت مثبّت لهذه اللغة</option>'}</select>
-        <button class="btn btn-ghost" id="testVoice">🔊 جرّب الصوت</button></div>
+        <select id="setVoice">${vs.length ? vs.map(v => `<option value="${esc(v.voiceURI)}"${cur && cur.voiceURI === v.voiceURI ? ' selected' : ''}>${stars(v)} ${esc(v.name)} (${esc(v.lang)})</option>`).join('') : '<option value="">لا يوجد صوت مثبّت لهذه اللغة</option>'}</select>
+        <button class="btn btn-ghost" id="testVoice">🔊 جرّب الصوت</button>
+        <div class="muted" style="font-size:13px;line-height:1.7">⭐⭐⭐ صوت طبيعي · ⭐ صوت عادي · 🤖 صوت آلي. ${voiceTip(L)}</div></div>
       <div class="field"><label><input type="checkbox" id="setWord"${SET.wordFirst ? ' checked' : ''}> نطق كل كلمة وحدها في الجولة الأولى (الأبطأ)</label></div>
       <div class="field"><label for="setSpeed">السرعة</label><select id="setSpeed">${$('#speedSel').innerHTML}</select></div>
       <div class="field"><label for="setPasses">عدد مرات تكرار كل صيغة (عربات القطار)</label><select id="setPasses">${$('#passSel').innerHTML}</select></div>
@@ -755,7 +860,7 @@
     </div>`);
     $('#setTheme').value = SET.theme; $('#setSpeed').value = SET.speed; $('#setPasses').value = String(SET.passes);
     $('#setTheme').onchange = (e) => { SET.theme = e.target.value; saveSet(); applyTheme(); };
-    $('#setVoice').onchange = (e) => { SET.voices[L] = e.target.value; saveSet(); };
+    $('#setVoice').onchange = (e) => { SET.voices[L] = e.target.value; saveSet(); voiceHint(); speak(G.lineText(G.lesson(L, 0, 0, 'i').cells[0].lines[0]), 1, L); };
     $('#testVoice').onclick = () => speak(G.lineText(G.lesson(L, 0, 0, 'i').cells[0].lines[0]), 1, L);
     $('#setWord').onchange = (e) => { SET.wordFirst = e.target.checked; saveSet(); };
     $('#setSpeed').onchange = (e) => { SET.speed = e.target.value; saveSet(); syncDock(); };
