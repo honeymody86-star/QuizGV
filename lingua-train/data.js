@@ -97,6 +97,16 @@ LT.PLACES = [
   ['in the bedroom', 'en la recámara', 'dans la chambre', 'in camera', 'no quarto', 'im Schlafzimmer', 'في غرفة النوم', '🛏️'],
   ['at the supermarket', 'en el supermercado', 'au supermarché', 'al supermercato', 'no supermercado', 'im Supermarkt', 'في السوبرماركت', '🏪'],
   ['at the airport', 'en el aeropuerto', "à l'aéroport", "all'aeroporto", 'no aeroporto', 'am Flughafen', 'في المطار', '🛫'],
+  ['on the bus', 'en el autobús', 'dans le bus', "sull'autobus", 'no ônibus', 'im Bus', 'في الحافلة', '🚌'],
+  ['on the train', 'en el tren', 'dans le train', 'sul treno', 'no trem', 'im Zug', 'في القطار', '🚆'],
+  ['at the post office', 'en la oficina de correos', 'à la poste', 'alla posta', 'nos correios', 'auf der Post', 'في مكتب البريد', '🏤'],
+  ['at the hotel', 'en el hotel', "à l'hôtel", 'in albergo', 'no hotel', 'im Hotel', 'في الفندق', '🏨'],
+  ['in the garage', 'en el garaje', 'au garage', 'in garage', 'na garagem', 'in der Garage', 'في المرآب', '🧰'],
+  ['at the laundromat', 'en la lavandería', 'à la laverie', 'in lavanderia', 'na lavanderia', 'im Waschsalon', 'في مغسلة الملابس', '🧺'],
+  ['on the balcony', 'en el balcón', 'sur le balcon', 'sul balcone', 'na varanda', 'auf dem Balkon', 'في الشرفة', '🌇'],
+  ['at the university', 'en la universidad', "à l'université", "all'università", 'na universidade', 'an der Uni', 'في الجامعة', '🎓'],
+  ['at the gym', 'en el gimnasio', 'à la salle de sport', 'in palestra', 'na academia', 'im Fitnessstudio', 'في النادي الرياضي', '🏋️'],
+  ['at the bank', 'en el banco', 'à la banque', 'in banca', 'no banco', 'in der Bank', 'في البنك', '🏦'],
 ];
 
 LT.REASONS = [
@@ -114,6 +124,12 @@ LT.REASONS = [
   ['for the birthday', 'para el cumpleaños', "pour l'anniversaire", 'per il compleanno', 'para o aniversário', 'für den Geburtstag', 'من أجل عيد الميلاد', '🎂'],
   ['for dinner', 'para la cena', 'pour le dîner', 'per la cena', 'para o jantar', 'für das Abendessen', 'من أجل العشاء', '🍲'],
   ['for the children', 'para los niños', 'pour les enfants', 'per i bambini', 'para as crianças', 'für die Kinder', 'من أجل الأطفال', '🧒'],
+  ['for my neighbor', 'para mi vecino', 'pour mon voisin', 'per il mio vicino', 'para o meu vizinho', 'für meinen Nachbarn', 'من أجل جاري', '🏘️'],
+  ['for the meeting', 'para la reunión', 'pour la réunion', 'per la riunione', 'para a reunião', 'für das Meeting', 'من أجل الاجتماع', '🗓️'],
+  ['for my brother', 'para mi hermano', 'pour mon frère', 'per mio fratello', 'para o meu irmão', 'für meinen Bruder', 'من أجل أخي', '👦'],
+  ['for the game', 'para el partido', 'pour le match', 'per la partita', 'para o jogo', 'für das Spiel', 'من أجل المباراة', '⚽'],
+  ['for my sister', 'para mi hermana', 'pour ma sœur', 'per mia sorella', 'para a minha irmã', 'für meine Schwester', 'من أجل أختي', '👧'],
+  ['for my grandmother', 'para mi abuela', 'pour ma grand-mère', 'per mia nonna', 'para a minha avó', 'für meine Oma', 'من أجل جدتي', '👵'],
 ];
 
 LT.MANNERS = [
@@ -133,6 +149,13 @@ LT.MANNERS = [
   ['in cash', 'en efectivo', 'en espèces', 'in contanti', 'em dinheiro', 'bar', 'نقدًا', '💵'],
   ['by card', 'con tarjeta', 'par carte', 'con la carta', 'no cartão', 'mit Karte', 'بالبطاقة', '💳'],
   ['with water', 'con agua', "avec de l'eau", "con l'acqua", 'com água', 'mit Wasser', 'بالماء', '💧'],
+  ['with a cable', 'con un cable', 'avec un câble', 'con un cavo', 'com um cabo', 'mit einem Kabel', 'بسلك', '🔌'],
+  ['in color', 'a color', 'en couleur', 'a colori', 'em cores', 'in Farbe', 'بالألوان', '🌈'],
+  ['with a cloth', 'con un trapo', 'avec un chiffon', 'con un panno', 'com um pano', 'mit einem Tuch', 'بقطعة قماش', '🧽'],
+  ['with a needle', 'con una aguja', 'avec une aiguille', 'con un ago', 'com uma agulha', 'mit einer Nadel', 'بإبرة', '🪡'],
+  ['with my laptop', 'con mi laptop', 'avec mon ordinateur portable', 'con il mio portatile', 'com o meu notebook', 'mit meinem Laptop', 'بحاسوبي المحمول', '💻'],
+  ['in the sun', 'al sol', 'au soleil', 'al sole', 'ao sol', 'in der Sonne', 'في الشمس', '☀️'],
+  ['on my back', 'en la espalda', 'sur le dos', 'sulle spalle', 'nas costas', 'auf dem Rücken', 'على ظهري', '🎒'],
 ];
 
 /* أجوبة «لِمَن؟» — الألمانية بصيغة المضاف إليه (Genitiv) */
@@ -149,6 +172,7 @@ LT.POSS = [
   ["my uncle's", 'De mi tío', 'À mon oncle', 'Di mio zio', 'Do meu tio', 'meines Onkels', 'عمي', '🧔'],
   ["my cousin's", 'De mi primo', 'À mon cousin', 'Di mio cugino', 'Do meu primo', 'meines Cousins', 'ابن عمي', '🧑‍🦱'],
   ["my colleague's", 'De mi colega', 'À mon collègue', 'Del mio collega', 'Do meu colega', 'meines Kollegen', 'زميلي', '🧑‍💼'],
+  ["my student's", 'De mi alumno', 'À mon élève', 'Del mio studente', 'Do meu aluno', 'meines Schülers', 'طالبي', '🧑‍🎓'],
 ];
 
 /* كلمات الربط لبناء الجمل المركبة والقصص والحوارات
@@ -235,9 +259,16 @@ LT.VERBS = {
   charge: { ar: 'يشحن', e: '🔌', en: ['charge', 'charged'], es: ['cargar'], fr: ['charger'], it: ['caricare'], pt: ['carregar'], de: ['laden', 'lade,lädst,lädt,laden,ladet,laden', 'geladen'] },
   sign: { ar: 'يوقّع', e: '🖋️', en: ['sign', 'signed'], es: ['firmar'], fr: ['signer'], it: ['firmare'], pt: ['assinar'], de: ['unterschreiben', 0, 'unterschrieben'] },
   explain: { ar: 'يشرح', e: '🗣️', en: ['explain', 'explained'], es: ['explicar'], fr: ['expliquer'], it: ['spiegare'], pt: ['explicar'], de: ['erklären', 0, 'erklärt'] },
-  teach: { ar: 'يدرّس', e: '🧑‍🏫', en: ['teach', 'taught', 'taught'], es: ['enseñar'], fr: ['enseigner'], it: ['insegnare'], pt: ['ensinar'], de: ['unterrichten', 0, 'unterrichtet'] },
+  teach: { ar: 'يدرّس', e: '🧑‍🏫', en: ['teach', 'taught', 'taught'], es: ['dar', 'doy,das,da,damos,dais,dan', 'di,diste,dio,dimos,disteis,dieron', 'dado'], fr: ['enseigner'], it: ['insegnare'], pt: ['dar', 'dou,dás,dá,damos,dais,dão', 'dei,deste,deu,demos,destes,deram', 'dado'], de: ['unterrichten', 0, 'unterrichtet'] },
   repeat: { ar: 'يكرّر', e: '🔁', en: ['repeat', 'repeated'], es: ['repetir', 'repito,repites,repite,repetimos,repetís,repiten', 'repetí,repetiste,repitió,repetimos,repetisteis,repitieron'], fr: ['répéter', 'répète,répètes,répète,répétons,répétez,répètent', 'répété'], it: ['ripetere'], pt: ['repetir', 'repito,repetes,repete,repetimos,repetis,repetem'], de: ['wiederholen', 0, 'wiederholt'] },
   show: { ar: 'يعرض', e: '👁️', en: ['show', 'showed', 'shown'], es: ['mostrar', 'muestro,muestras,muestra,mostramos,mostráis,muestran'], fr: ['montrer'], it: ['mostrare'], pt: ['mostrar'], de: ['zeigen', 0, 'gezeigt'] },
+  washcup: { ar: 'يغسل', e: '🫧', en: ['wash', 'washed'], es: ['lavar'], fr: ['laver'], it: ['lavare'], pt: ['lavar'], de: ['spülen', 0, 'gespült'] },
+  correct: { ar: 'يصحّح', e: '🖍️', en: ['correct', 'corrected'], es: ['corregir', 'corrijo,corriges,corrige,corregimos,corregís,corrigen', 'corregí,corregiste,corrigió,corregimos,corregisteis,corrigieron'], fr: ['corriger'], it: ['correggere', 0, 'corretto'], pt: ['corrigir', 'corrijo,corriges,corrige,corrigimos,corrigis,corrigem'], de: ['korrigieren', 0, 'korrigiert'] },
+  dry: { ar: 'يجفّف', e: '☀️', en: ['dry', 'dried'], es: ['secar'], fr: ['sécher', 'sèche,sèches,sèche,séchons,séchez,sèchent', 'séché'], it: ['asciugare'], pt: ['secar'], de: ['trocknen', 'trockne,trocknest,trocknet,trocknen,trocknet,trocknen', 'getrocknet'] },
+  edit: { ar: 'يعدّل', e: '✂️', en: ['edit', 'edited'], es: ['editar'], fr: ['retoucher'], it: ['modificare'], pt: ['editar'], de: ['bearbeiten', 0, 'bearbeitet'] },
+  wrap: { ar: 'يغلّف', e: '🎀', en: ['wrap', 'wrapped'], es: ['envolver', 'envuelvo,envuelves,envuelve,envolvemos,envolvéis,envuelven', 0, 'envuelto'], fr: ['emballer'], it: ['incartare'], pt: ['embrulhar'], de: ['verpacken', 0, 'verpackt'] },
+  sew: { ar: 'يخيط', e: '🪡', en: ['sew', 'sewed', 'sewn'], es: ['coser'], fr: ['coudre', 'couds,couds,coud,cousons,cousez,cousent', 'cousu'], it: ['cucire', 'cucio,cuci,cuce,cuciamo,cucite,cuciono'], pt: ['costurar'], de: ['nähen', 0, 'genäht'] },
+  prepare: { ar: 'يجهّز', e: '📊', en: ['prepare', 'prepared'], es: ['preparar'], fr: ['préparer'], it: ['preparare'], pt: ['preparar'], de: ['erstellen', 0, 'erstellt'] },
   save: { ar: 'يحفظ', e: '💾', en: ['save', 'saved'], es: ['guardar'], fr: ['sauvegarder'], it: ['salvare'], pt: ['salvar'], de: ['speichern', 0, 'gespeichert'] },
   set: { ar: 'يجهّز', e: '🍴', en: ['set', 'set', 'set'], es: ['poner', 'pongo,pones,pone,ponemos,ponéis,ponen', 'puse,pusiste,puso,pusimos,pusisteis,pusieron', 'puesto'], fr: ['mettre', 'mets,mets,met,mettons,mettez,mettent', 'mis'], it: ['apparecchiare'], pt: ['pôr', 'ponho,pões,põe,pomos,pondes,põem', 'pus,puseste,pôs,pusemos,pusestes,puseram', 'posto'], de: ['decken', 0, 'gedeckt'] },
 };
@@ -303,123 +334,106 @@ LT.AR_VERBS = {
   teach: { p: 'درّس', r: 'درّس', ps: ['دُرِّسَ', 'يُدَرَّسُ'] },
   repeat: { p: 'كرّر', r: 'كرّر', ps: ['كُرِّرَ', 'يُكَرَّرُ'] },
   show: { p: 'عرض', r: 'عرض', ps: ['عُرِضَ', 'يُعْرَضُ'] },
+  washcup: { p: 'غسل', r: 'غسل', ps: ['غُسِلَ', 'يُغْسَلُ'] },
+  correct: { p: 'صحّح', r: 'صحّح', ps: ['صُحِّحَ', 'يُصَحَّحُ'] },
+  dry: { p: 'جفّف', r: 'جفّف', ps: ['جُفِّفَ', 'يُجَفَّفُ'] },
+  edit: { p: 'عدّل', r: 'عدّل', ps: ['عُدِّلَ', 'يُعَدَّلُ'] },
+  wrap: { p: 'غلّف', r: 'غلّف', ps: ['غُلِّفَ', 'يُغَلَّفُ'] },
+  sew: { p: 'خِطتُ,خِطتَ,خاط,خاطت,خِطنا,خِطتم,خاطوا', r: 'خيط', j: 'أخِط,تخِط,يخِط,تخِط,نخِط,تخيطوا,يخيطوا', ps: ['خِيطَ', 'يُخَاطُ'] },
+  prepare: { p: 'جهّز', r: 'جهّز', ps: ['جُهِّزَ', 'يُجَهَّزُ'] },
   save: { p: 'حفظ', r: 'حفظ', ps: ['حُفِظَ', 'يُحْفَظُ'] },
 };
 
 /* الوحدات = خطوط القطار. كل جملة:
    [فعل، أيقونة، المعنى، en 'the X|X|pl?'، es 'np|pl?'، fr 'np|m/f|pl?'، it 'np|m/f|pl?'، pt 'np|pl?'،
-    de 'm/f/n/p|Nomen'، ar 'المفعول|المضاف بلا أل|m/f'، مكان، سبب، كيفية، مالك، مجموعة الزمان (0 كل يوم، 1 كل صباح، 2 كل مساء، 3 العطلات)] */
+    de 'm/f/n/p|Nomen'، ar 'المفعول|المضاف بلا أل|m/f'، مكان، سبب، كيفية، مالك، مجموعة الزمان (0 كل يوم، 1 كل صباح، 2 كل مساء، 3 العطلات)]
+   قواعد اختيار الجمل حتى تصلح كل الصيغ منطقياً:
+   - المفعول به شيء يملكه شخص ويمكن نقله (فيصلح سؤال «لِمَن؟»)، ولا يرتبط بمكان ثابت (فيصلح سؤال «أين؟»).
+   - المكان لا يُفهم من الفعل أو المفعول (لا «ننظّف الغرفة في البيت» ولا «نرسل الطرد في البريد»).
+   - السبب والكيفية والمالك متّسقة معاً، والفعل يصلح عادةً متكررة وفي المبني للمجهول. */
 LT.UNITS = [
   {
     ar: 'الحياة اليومية', color: '#d62839', icon: '🏠', s: [
-      ['read', '📖', 'قراءة الكتاب', 'the book|book', 'el libro', 'le livre|m', 'il libro|m', 'o livro', 'n|Buch', 'الكتاب|كتاب|m', 6, 0, 0, 0, 0],
-      ['drink', '☕', 'شرب القهوة', 'the coffee|coffee', 'el café', 'le café|m', 'il caffè|m', 'o café', 'm|Kaffee', 'القهوة|قهوة|f', 5, 1, 0, 3, 1],
-      ['eat', '🍎', 'أكل التفاحة', 'the apple|apple', 'la manzana', 'la pomme|f', 'la mela|f', 'a maçã', 'm|Apfel', 'التفاحة|تفاحة|f', 3, 6, 1, 1, 0],
-      ['open', '🚪', 'فتح الباب', 'the door|door', 'la puerta', 'la porte|f', 'la porta|f', 'a porta', 'f|Tür', 'الباب|باب|m', 9, 9, 3, 6, 1],
-      ['clean', '🧹', 'تنظيف الغرفة', 'the room|room', 'el cuarto', 'la chambre|f', 'la stanza|f', 'o quarto', 'n|Zimmer', 'الغرفة|غرفة|f', 0, 2, 2, 1, 3],
-      ['cook', '🍲', 'طبخ الشوربة', 'the soup|soup', 'la sopa', 'la soupe|f', 'la zuppa|f', 'a sopa', 'f|Suppe', 'الشوربة|شوربة|f', 3, 12, 12, 7, 2],
-      ['makebed', '🛏️', 'ترتيب السرير', 'the bed|bed', 'la cama', 'le lit|m', 'il letto|m', 'a cama', 'n|Bett', 'السرير|سرير|m', 16, 9, 1, 0, 1],
-      ['wash', '🚗', 'غسل السيارة', 'the car|car', 'el carro', 'la voiture|f', 'la macchina|f', 'o carro', 'n|Auto', 'السيارة|سيارة|f', 7, 7, 9, 3, 3],
-      ['do', '📝', 'حلّ الواجب', 'the homework|homework', 'la tarea', 'les devoirs|m|pl', 'i compiti|m|pl', 'a lição de casa', 'p|Hausaufgaben', 'الواجب|واجب|m', 0, 5, 2, 0, 2],
-      ['takemed', '💊', 'تناول الدواء', 'the medicine|medicine', 'la medicina', 'le médicament|m', 'la medicina|f', 'o remédio', 'f|Medizin', 'الدواء|دواء|m', 3, 6, 15, 7, 1],
+      ['read', '📖', 'قراءة الكتاب', 'the book|book', 'el libro', 'le livre|m', 'il libro|m', 'o livro', 'n|Buch', 'الكتاب|كتاب|m', 19, 0, 0, 0, 0],
+      ['charge', '📱', 'شحن الهاتف', 'the phone|phone', 'el teléfono', 'le téléphone|m', 'il telefono|m', 'o celular', 'n|Handy', 'الهاتف|هاتف|m', 5, 18, 16, 1, 1],
+      ['clean', '👓', 'تنظيف النظارة', 'the glasses|glasses|pl', 'los lentes|pl', 'les lunettes|f|pl', 'gli occhiali|m|pl', 'os óculos|pl', 'f|Brille', 'النظارة|نظارة|f', 14, 19, 18, 7, 1],
+      ['iron', '👔', 'كيّ القميص', 'the shirt|shirt', 'la camisa', 'la chemise|f', 'la camicia|f', 'a camisa', 'n|Hemd', 'القميص|قميص|m', 16, 1, 2, 3, 1],
+      ['carry', '👜', 'حمل الحقيبة', 'the bag|bag', 'la bolsa', 'le sac|m', 'la borsa|f', 'a bolsa', 'f|Tasche', 'الحقيبة|حقيبة|f', 13, 7, 4, 2, 3],
+      ['wash', '🚗', 'غسل السيارة', 'the car|car', 'el carro', 'la voiture|f', 'la macchina|f', 'o carro', 'n|Auto', 'السيارة|سيارة|f', 23, 7, 9, 9, 3],
+      ['fold', '👚', 'طيّ الملابس', 'the clothes|clothes|pl', 'la ropa', 'les vêtements|m|pl', 'i vestiti|m|pl', 'as roupas|pl', 'f|Wäsche', 'الملابس|ملابس|f', 24, 7, 2, 1, 3],
+      ['read', '📰', 'قراءة الجريدة', 'the newspaper|newspaper', 'el periódico', 'le journal|m', 'il giornale|m', 'o jornal', 'f|Zeitung', 'الجريدة|جريدة|f', 20, 1, 1, 3, 1],
+      ['use', '💻', 'استخدام الحاسوب', 'the computer|computer', 'la computadora', "l'ordinateur|m", 'il computer|m', 'o computador', 'm|Computer', 'الحاسوب|حاسوب|m', 6, 10, 6, 0, 0],
+      ['water', '🪴', 'سقي النباتات', 'the plants|plants|pl', 'las plantas|pl', 'les plantes|f|pl', 'le piante|f|pl', 'as plantas|pl', 'p|Pflanzen', 'النباتات|نباتات|f', 25, 14, 2, 6, 2],
     ]
   },
   {
-    ar: 'التسوّق والطعام', color: '#1e6fd9', icon: '🛒', s: [
-      ['buy', '🥦', 'شراء الخضار', 'the vegetables|vegetables|pl', 'las verduras|pl', 'les légumes|m|pl', 'le verdure|f|pl', 'os legumes|pl', 'n|Gemüse', 'الخضار|خضار|f', 8, 13, 13, 6, 1],
-      ['make', '🍵', 'تحضير الشاي', 'the tea|tea', 'el té', 'le thé|m', 'il tè|m', 'o chá', 'm|Tee', 'الشاي|شاي|m', 3, 9, 1, 2, 2],
-      ['order', '🍕', 'طلب البيتزا', 'the pizza|pizza', 'la pizza', 'la pizza|f', 'la pizza|f', 'a pizza', 'f|Pizza', 'البيتزا|بيتزا|f', 0, 4, 10, 0, 3],
-      ['pay', '🧾', 'دفع الفاتورة', 'the bill|bill', 'la cuenta', "l'addition|f", 'il conto|m', 'a conta', 'f|Rechnung', 'الفاتورة|فاتورة|f', 11, 12, 14, 8, 2],
-      ['cut', '🍞', 'تقطيع الخبز', 'the bread|bread', 'el pan', 'le pain|m', 'il pane|m', 'o pão', 'n|Brot', 'الخبز|خبز|m', 3, 13, 8, 7, 1],
-      ['bake', '🎂', 'خَبز الكعكة', 'the cake|cake', 'el pastel', 'le gâteau|m', 'la torta|f', 'o bolo', 'm|Kuchen', 'الكعكة|كعكة|f', 0, 11, 12, 1, 3],
-      ['make', '🍳', 'تحضير الفطور', 'the breakfast|breakfast', 'el desayuno', 'le petit-déjeuner|m', 'la colazione|f', 'o café da manhã', 'n|Frühstück', 'الفطور|فطور|m', 3, 3, 1, 2, 1],
-      ['wash', '🍽️', 'غسل الصحون', 'the dishes|dishes|pl', 'los platos|pl', 'la vaisselle|f', 'i piatti|m|pl', 'a louça', 'n|Geschirr', 'الصحون|صحون|f', 3, 9, 9, 2, 2],
-      ['drink', '🧃', 'شرب العصير', 'the juice|juice', 'el jugo', 'le jus|m', 'il succo|m', 'o suco', 'm|Saft', 'العصير|عصير|m', 5, 6, 0, 0, 1],
-      ['carry', '🛍️', 'حمل الأكياس', 'the bags|bags|pl', 'las bolsas|pl', 'les sacs|m|pl', 'le borse|f|pl', 'as sacolas|pl', 'p|Taschen', 'الأكياس|أكياس|f', 17, 3, 4, 6, 3],
+    ar: 'المال والتسوّق', color: '#1e6fd9', icon: '💳', s: [
+      ['buy', '🎟️', 'شراء التذاكر', 'the tickets|tickets|pl', 'los boletos|pl', 'les billets|m|pl', 'i biglietti|m|pl', 'as passagens|pl', 'p|Tickets', 'التذاكر|تذاكر|f', 13, 7, 14, 4, 3],
+      ['pay', '🧾', 'دفع الفاتورة', 'the bill|bill', 'la cuenta', "l'addition|f", 'il conto|m', 'a conta', 'f|Rechnung', 'الفاتورة|فاتورة|f', 5, 8, 14, 4, 3],
+      ['count', '💵', 'عدّ النقود', 'the money|money', 'el dinero', "l'argent|m", 'i soldi|m|pl', 'o dinheiro', 'n|Geld', 'النقود|نقود|f', 9, 1, 2, 8, 2],
+      ['order', '🍕', 'طلب البيتزا', 'the pizza|pizza', 'la pizza', 'la pizza|f', 'la pizza|f', 'a pizza', 'f|Pizza', 'البيتزا|بيتزا|f', 14, 17, 5, 0, 3],
+      ['check', '🧾', 'مراجعة الإيصال', 'the receipt|receipt', 'el recibo', 'le ticket de caisse|m', 'lo scontrino|m', 'o recibo', 'm|Kassenbon', 'الإيصال|إيصال|m', 17, 3, 2, 2, 2],
+      ['eat', '🍰', 'أكل الكعكة', 'the cake|cake', 'el pastel', 'le gâteau|m', 'la torta|f', 'o bolo', 'm|Kuchen', 'الكعكة|كعكة|f', 11, 11, 0, 4, 3],
+      ['make', '☕', 'تحضير القهوة', 'the coffee|coffee', 'el café', 'le café|m', 'il caffè|m', 'o café', 'm|Kaffee', 'القهوة|قهوة|f', 9, 15, 1, 8, 1],
+      ['washcup', '🍵', 'غسل الكوب', 'the cup|cup', 'la taza', 'la tasse|f', 'la tazza|f', 'a xícara', 'f|Tasse', 'الكوب|كوب|m', 26, 15, 9, 5, 1],
+      ['buy', '💐', 'شراء الورود', 'the flowers|flowers|pl', 'las flores|pl', 'les fleurs|f|pl', 'i fiori|m|pl', 'as flores|pl', 'p|Blumen', 'الورود|ورود|f', 8, 11, 13, 2, 3],
+      ['sign', '✍️', 'توقيع المستندات', 'the documents|documents|pl', 'los documentos|pl', 'les documents|m|pl', 'i documenti|m|pl', 'os documentos|pl', 'p|Dokumente', 'المستندات|مستندات|f', 28, 1, 7, 8, 1],
     ]
   },
   {
-    ar: 'المدرسة والعمل', color: '#1a936f', icon: '🏫', s: [
-      ['learn', '📘', 'تعلّم الدرس', 'the lesson|lesson', 'la lección', 'la leçon|f', 'la lezione|f', 'a lição', 'f|Lektion', 'الدرس|درس|m', 1, 0, 6, 5, 0],
-      ['write', '📄', 'كتابة التقرير', 'the report|report', 'el informe', 'le rapport|m', 'la relazione|f', 'o relatório', 'm|Bericht', 'التقرير|تقرير|m', 9, 10, 1, 8, 2],
-      ['send', '📧', 'إرسال البريد الإلكتروني', 'the email|email', 'el correo', "l'e-mail|m", "l'email|f", 'o e-mail', 'f|E-Mail', 'الرسالة الإلكترونية|رسالة|f', 9, 1, 10, 3, 1],
-      ['use', '💻', 'استخدام الحاسوب', 'the computer|computer', 'la computadora', "l'ordinateur|m", 'il computer|m', 'o computador', 'm|Computer', 'الحاسوب|حاسوب|m', 6, 10, 6, 1, 0],
-      ['print', '🖨️', 'طباعة المستندات', 'the documents|documents|pl', 'los documentos|pl', 'les documents|m|pl', 'i documenti|m|pl', 'os documentos|pl', 'p|Dokumente', 'المستندات|مستندات|f', 9, 1, 1, 8, 1],
+    ar: 'المدرسة والجامعة', color: '#1a936f', icon: '🎓', s: [
+      ['copy', '🗒️', 'نسخ الملاحظات', 'the notes|notes|pl', 'los apuntes|pl', 'les notes|f|pl', 'gli appunti|m|pl', 'as anotações|pl', 'p|Notizen', 'الملاحظات|ملاحظات|f', 6, 0, 4, 4, 0],
+      ['use', '📕', 'استخدام القاموس', 'the dictionary|dictionary', 'el diccionario', 'le dictionnaire|m', 'il dizionario|m', 'o dicionário', 'n|Wörterbuch', 'القاموس|قاموس|m', 12, 5, 6, 5, 0],
+      ['check', '📝', 'مراجعة الواجب', 'the homework|homework', 'la tarea', 'les devoirs|m|pl', 'i compiti|m|pl', 'a lição de casa', 'p|Hausaufgaben', 'الواجب|واجب|m', 6, 16, 2, 0, 2],
+      ['correct', '🖍️', 'تصحيح الامتحانات', 'the exams|exams|pl', 'los exámenes|pl', 'les examens|m|pl', 'gli esami|m|pl', 'as provas|pl', 'p|Prüfungen', 'الامتحانات|امتحانات|f', 26, 5, 7, 12, 2],
+      ['print', '🖨️', 'طباعة المستندات', 'the documents|documents|pl', 'los documentos|pl', 'les documents|m|pl', 'i documenti|m|pl', 'os documentos|pl', 'p|Dokumente', 'المستندات|مستندات|f', 9, 10, 17, 4, 1],
+      ['park', '🚲', 'ركن الدراجة', 'the bike|bike', 'la bicicleta', 'le vélo|m', 'la bicicletta|f', 'a bicicleta', 'n|Fahrrad', 'الدراجة|دراجة|f', 26, 5, 1, 10, 1],
+      ['organize', '🗂️', 'تنظيم الملفات', 'the files|files|pl', 'los archivos|pl', 'les fichiers|m|pl', 'i file|m|pl', 'os arquivos|pl', 'p|Dateien', 'الملفات|ملفات|f', 20, 10, 2, 11, 3],
+      ['carry', '🎒', 'حمل حقيبة الظهر', 'the backpack|backpack', 'la mochila', 'le sac à dos|m', 'lo zaino|m', 'a mochila', 'm|Rucksack', 'حقيبة الظهر|حقيبة ظهر|f', 19, 18, 22, 1, 1],
       ['check', '✅', 'مراجعة الإجابات', 'the answers|answers|pl', 'las respuestas|pl', 'les réponses|f|pl', 'le risposte|f|pl', 'as respostas|pl', 'p|Antworten', 'الإجابات|إجابات|f', 12, 0, 2, 4, 0],
-      ['translate', '🌍', 'ترجمة النص', 'the text|text', 'el texto', 'le texte|m', 'il testo|m', 'o texto', 'm|Text', 'النص|نص|m', 12, 5, 0, 5, 2],
-      ['organize', '📚', 'تنظيم الكتب', 'the books|books|pl', 'los libros|pl', 'les livres|m|pl', 'i libri|m|pl', 'os livros|pl', 'p|Bücher', 'الكتب|كتب|f', 6, 5, 2, 5, 3],
-      ['copy', '🗒️', 'نسخ الملاحظات', 'the notes|notes|pl', 'los apuntes|pl', 'les notes|f|pl', 'gli appunti|m|pl', 'as anotações|pl', 'p|Notizen', 'الملاحظات|ملاحظات|f', 12, 5, 4, 4, 0],
-      ['draw', '🗺️', 'رسم الخريطة', 'the map|map', 'el mapa', 'la carte|f', 'la mappa|f', 'o mapa', 'f|Karte', 'الخريطة|خريطة|f', 1, 5, 7, 10, 3],
+      ['draw', '🐈', 'رسم القطة', 'the cat|cat', 'el gato', 'le chat|m', 'il gatto|m', 'o gato', 'f|Katze', 'القطة|قطة|f', 4, 4, 7, 6, 3],
     ]
   },
   {
     ar: 'السفر والمدينة', color: '#e07a12', icon: '✈️', s: [
       ['drive', '🚗', 'قيادة السيارة', 'the car|car', 'el carro', 'la voiture|f', 'la macchina|f', 'o carro', 'n|Auto', 'السيارة|سيارة|f', 10, 1, 0, 3, 0],
-      ['park', '🅿️', 'ركن الدراجة', 'the bike|bike', 'la bicicleta', 'le vélo|m', 'la bicicletta|f', 'a bicicleta', 'n|Fahrrad', 'الدراجة|دراجة|f', 13, 1, 0, 9, 1],
-      ['buy', '🎟️', 'شراء التذاكر', 'the tickets|tickets|pl', 'los boletos|pl', 'les billets|m|pl', 'i biglietti|m|pl', 'os ingressos|pl', 'p|Tickets', 'التذاكر|تذاكر|f', 13, 7, 14, 4, 3],
-      ['bring', '📷', 'إحضار الكاميرا', 'the camera|camera', 'la cámara', "l'appareil photo|m", 'la macchina fotografica|f', 'a câmera', 'f|Kamera', 'الكاميرا|كاميرا|f', 15, 7, 2, 9, 3],
-      ['pack', '🧳', 'تجهيز الحقيبة', 'the suitcase|suitcase', 'la maleta', 'la valise|f', 'la valigia|f', 'a mala', 'm|Koffer', 'الحقيبة|حقيبة|f', 16, 7, 1, 1, 2],
-      ['check', '🛂', 'مراجعة جواز السفر', 'the passport|passport', 'el pasaporte', 'le passeport|m', 'il passaporto|m', 'o passaporte', 'm|Pass', 'جواز السفر|جواز سفر|m', 18, 7, 2, 3, 3],
-      ['takephoto', '📸', 'التقاط الصور', 'the photos|photos|pl', 'las fotos|pl', 'les photos|f|pl', 'le foto|f|pl', 'as fotos|pl', 'p|Fotos', 'الصور|صور|f', 15, 4, 10, 4, 3],
-      ['buy', '💐', 'شراء الورد', 'the flowers|flowers|pl', 'las flores|pl', 'les fleurs|f|pl', 'i fiori|m|pl', 'as flores|pl', 'p|Blumen', 'الورد|ورد|m', 8, 3, 13, 7, 3],
-      ['wash', '👕', 'غسل الملابس', 'the clothes|clothes|pl', 'la ropa', 'les vêtements|m|pl', 'i vestiti|m|pl', 'as roupas|pl', 'f|Kleidung', 'الملابس|ملابس|f', 0, 1, 4, 0, 3],
-      ['read', '🧭', 'قراءة الخريطة', 'the map|map', 'el mapa', 'la carte|f', 'la mappa|f', 'o mapa', 'f|Karte', 'الخريطة|خريطة|f', 10, 7, 2, 10, 1],
+      ['park', '🅿️', 'ركن السيارة', 'the car|car', 'el carro', 'la voiture|f', 'la macchina|f', 'o carro', 'n|Auto', 'السيارة|سيارة|f', 13, 1, 2, 9, 1],
+      ['carry', '🧳', 'حمل حقيبة السفر', 'the suitcase|suitcase', 'la maleta', 'la valise|f', 'la valigia|f', 'a mala', 'm|Koffer', 'حقيبة السفر|حقيبة سفر|f', 18, 7, 2, 7, 3],
+      ['pack', '🎒', 'تجهيز حقيبة السفر', 'the suitcase|suitcase', 'la maleta', 'la valise|f', 'la valigia|f', 'a mala', 'm|Koffer', 'حقيبة السفر|حقيبة سفر|f', 16, 7, 1, 1, 3],
+      ['check', '🛂', 'مراجعة جواز السفر', 'the passport|passport', 'el pasaporte', 'le passeport|m', 'il passaporto|m', 'o passaporte', 'm|Pass', 'جواز السفر|جواز سفر|m', 22, 7, 2, 3, 3],
+      ['read', '🗺️', 'قراءة الخريطة', 'the map|map', 'el mapa', 'la carte|f', 'la mappa|f', 'o mapa', 'f|Karte', 'الخريطة|خريطة|f', 10, 7, 2, 4, 3],
+      ['show', '🖼️', 'عرض الصور', 'the photos|photos|pl', 'las fotos|pl', 'les photos|f|pl', 'le foto|f|pl', 'as fotos|pl', 'p|Fotos', 'الصور|صور|f', 5, 4, 10, 10, 3],
+      ['charge', '📷', 'شحن الكاميرا', 'the camera|camera', 'la cámara', "l'appareil photo|m", 'la macchina fotografica|f', 'a câmera', 'f|Kamera', 'الكاميرا|كاميرا|f', 20, 7, 16, 9, 2],
+      ['wash', '👕', 'غسل الملابس', 'the clothes|clothes|pl', 'la ropa', 'les vêtements|m|pl', 'i vestiti|m|pl', 'as roupas|pl', 'f|Wäsche', 'الملابس|ملابس|f', 22, 7, 4, 0, 3],
+      ['dry', '☀️', 'تجفيف الملابس', 'the clothes|clothes|pl', 'la ropa', 'les vêtements|m|pl', 'i vestiti|m|pl', 'as roupas|pl', 'f|Wäsche', 'الملابس|ملابس|f', 25, 7, 21, 0, 3],
     ]
   },
   {
-    ar: 'البيت والهوايات', color: '#7b4fd6', icon: '🎨', s: [
-      ['water', '🪴', 'سقي النباتات', 'the plants|plants|pl', 'las plantas|pl', 'les plantes|f|pl', 'le piante|f|pl', 'as plantas|pl', 'p|Pflanzen', 'النباتات|نباتات|f', 7, 3, 2, 7, 1],
-      ['mow', '🌱', 'قصّ العشب', 'the grass|grass', 'el césped', 'la pelouse|f', "l'erba|f", 'a grama', 'm|Rasen', 'العشب|عشب|m', 7, 3, 1, 6, 3],
-      ['paint', '🎨', 'رسم اللوحة', 'the picture|picture', 'el cuadro', 'le tableau|m', 'il quadro|m', 'o quadro', 'n|Bild', 'اللوحة|لوحة|f', 4, 4, 0, 10, 3],
-      ['fix', '🔧', 'إصلاح الدراجة', 'the bike|bike', 'la bicicleta', 'le vélo|m', 'la bicicletta|f', 'a bicicleta', 'n|Fahrrad', 'الدراجة|دراجة|f', 7, 13, 2, 10, 3],
-      ['sing', '🎤', 'غناء الأغنية', 'the song|song', 'la canción', 'la chanson|f', 'la canzone|f', 'a canção', 'n|Lied', 'الأغنية|أغنية|f', 1, 5, 11, 1, 1],
-      ['close', '🪟', 'إغلاق النافذة', 'the window|window', 'la ventana', 'la fenêtre|f', 'la finestra|f', 'a janela', 'n|Fenster', 'النافذة|نافذة|f', 16, 13, 3, 2, 2],
-      ['read', '📰', 'قراءة الجريدة', 'the newspaper|newspaper', 'el periódico', 'le journal|m', 'il giornale|m', 'o jornal', 'f|Zeitung', 'الجريدة|جريدة|f', 5, 1, 1, 3, 1],
-      ['fold', '👚', 'طيّ الملابس', 'the clothes|clothes|pl', 'la ropa', 'les vêtements|m|pl', 'i vestiti|m|pl', 'as roupas|pl', 'f|Wäsche', 'الملابس|ملابس|f', 16, 3, 2, 0, 3],
-      ['draw', '🐈', 'رسم القطة', 'the cat|cat', 'el gato', 'le chat|m', 'il gatto|m', 'o gato', 'f|Katze', 'القطة|قطة|f', 0, 4, 7, 6, 0],
-      ['write', '✉️', 'كتابة الرسالة', 'the letter|letter', 'la carta', 'la lettre|f', 'la lettera|f', 'a carta', 'm|Brief', 'الرسالة|رسالة|f', 0, 3, 7, 7, 3],
+    ar: 'العمل والمكتب', color: '#7b4fd6', icon: '💼', s: [
+      ['write', '📄', 'كتابة التقرير', 'the report|report', 'el informe', 'le rapport|m', 'la relazione|f', 'o relatório', 'm|Bericht', 'التقرير|تقرير|m', 20, 15, 1, 11, 2],
+      ['translate', '🌍', 'ترجمة المستندات', 'the documents|documents|pl', 'los documentos|pl', 'les documents|m|pl', 'i documenti|m|pl', 'os documentos|pl', 'p|Dokumente', 'المستندات|مستندات|f', 9, 1, 2, 11, 1],
+      ['open', '✉️', 'فتح الرسائل', 'the letters|letters|pl', 'las cartas|pl', 'les lettres|f|pl', 'le lettere|f|pl', 'as cartas|pl', 'p|Briefe', 'الرسائل|رسائل|f', 9, 1, 8, 8, 1],
+      ['show', '📋', 'عرض الخطة', 'the plan|plan', 'el plan', 'le plan|m', 'il piano|m', 'o plano', 'm|Plan', 'الخطة|خطة|f', 5, 15, 20, 8, 1],
+      ['save', '💾', 'حفظ الملفات', 'the files|files|pl', 'los archivos|pl', 'les fichiers|m|pl', 'i file|m|pl', 'os arquivos|pl', 'p|Dateien', 'الملفات|ملفات|f', 20, 10, 1, 11, 2],
+      ['charge', '🔋', 'شحن الحاسوب المحمول', 'the laptop|laptop', 'la laptop', "l'ordinateur portable|m", 'il portatile|m', 'o notebook', 'm|Laptop', 'الحاسوب المحمول|حاسوب|m', 22, 1, 16, 8, 2],
+      ['prepare', '📊', 'تجهيز العرض التقديمي', 'the presentation|presentation', 'la presentación', 'la présentation|f', 'la presentazione|f', 'a apresentação', 'f|Präsentation', 'العرض التقديمي|عرض|m', 6, 15, 2, 11, 3],
+      ['organize', '📁', 'تنظيم المستندات', 'the documents|documents|pl', 'los documentos|pl', 'les documents|m|pl', 'i documenti|m|pl', 'os documentos|pl', 'p|Dokumente', 'المستندات|مستندات|f', 9, 15, 2, 8, 1],
+      ['teach', '🧑‍🏫', 'تدريس الفصل', 'the class|class', 'la clase', 'le cours|m', 'la lezione|f', 'a aula', 'f|Klasse', 'الفصل|فصل|m', 26, 8, 0, 4, 0],
+      ['write', '👨‍💻', 'كتابة الكود', 'the code|code', 'el código', 'le code|m', 'il codice|m', 'o código', 'm|Code', 'الكود|كود|m', 0, 10, 2, 11, 0],
     ]
   },
   {
     ar: 'العائلة والمناسبات', color: '#0e8fa3', icon: '🎉', s: [
-      ['make', '🥪', 'تحضير الشطيرة', 'the sandwich|sandwich', 'el sándwich', 'le sandwich|m', 'il panino|m', 'o sanduíche', 'n|Sandwich', 'الشطيرة|شطيرة|f', 3, 13, 1, 0, 1],
-      ['eat', '🥗', 'أكل السلطة', 'the salad|salad', 'la ensalada', 'la salade|f', "l'insalata|f", 'a salada', 'm|Salat', 'السلطة|سلطة|f', 11, 6, 0, 4, 2],
-      ['bring', '🎁', 'إحضار الهدايا', 'the gifts|gifts|pl', 'los regalos|pl', 'les cadeaux|m|pl', 'i regali|m|pl', 'os presentes|pl', 'p|Geschenke', 'الهدايا|هدايا|f', 0, 11, 2, 10, 3],
-      ['send', '💌', 'إرسال الصور', 'the photos|photos|pl', 'las fotos|pl', 'les photos|f|pl', 'le foto|f|pl', 'as fotos|pl', 'p|Fotos', 'الصور|صور|f', 0, 3, 10, 1, 3],
-      ['watch', '⚽', 'مشاهدة المباراة', 'the game|game', 'el partido', 'le match|m', 'la partita|f', 'o jogo', 'n|Spiel', 'المباراة|مباراة|f', 5, 4, 11, 0, 3],
-      ['clean', '🧽', 'تنظيف الطاولة', 'the table|table', 'la mesa', 'la table|f', 'il tavolo|m', 'a mesa', 'm|Tisch', 'الطاولة|طاولة|f', 3, 12, 9, 7, 2],
-      ['set', '🍴', 'تجهيز المائدة', 'the table|table', 'la mesa', 'la table|f', 'la tavola|f', 'a mesa', 'm|Tisch', 'المائدة|مائدة|f', 14, 9, 2, 2, 2],
-      ['cook', '🍚', 'طبخ الأرز', 'the rice|rice', 'el arroz', 'le riz|m', 'il riso|m', 'o arroz', 'm|Reis', 'الأرز|أرز|m', 3, 9, 0, 2, 0],
-      ['make', '🥘', 'تحضير الغداء', 'the lunch|lunch', 'el almuerzo', 'le déjeuner|m', 'il pranzo|m', 'o almoço', 'n|Mittagessen', 'الغداء|غداء|m', 0, 3, 12, 7, 0],
-      ['order', '🍔', 'طلب الطعام', 'the food|food', 'la comida', 'le repas|m', 'il cibo|m', 'a comida', 'n|Essen', 'الطعام|طعام|m', 0, 9, 5, 4, 3],
-    ]
-  },
-  {
-    ar: 'المطبخ والملابس', color: '#c2185b', icon: '🍳', s: [
-      ['heat', '🥛', 'تسخين الحليب', 'the milk|milk', 'la leche', 'le lait|m', 'il latte|m', 'o leite', 'f|Milch', 'الحليب|حليب|m', 3, 13, 0, 7, 1],
-      ['taste', '🥫', 'تذوّق الصلصة', 'the sauce|sauce', 'la salsa', 'la sauce|f', 'il sugo|m', 'o molho', 'f|Soße', 'الصلصة|صلصة|f', 3, 12, 2, 2, 2],
-      ['serve', '🍽️', 'تقديم العشاء', 'the dinner|dinner', 'la cena', 'le dîner|m', 'la cena|f', 'o jantar', 'n|Abendessen', 'العشاء|عشاء|m', 14, 9, 12, 1, 2],
-      ['mix', '🥚', 'خلط البيض', 'the eggs|eggs|pl', 'los huevos|pl', 'les œufs|m|pl', 'le uova|f|pl', 'os ovos|pl', 'p|Eier', 'البيض|بيض|m', 3, 3, 1, 7, 1],
-      ['fill', '🍶', 'ملء القارورة', 'the bottle|bottle', 'la botella', 'la bouteille|f', 'la bottiglia|f', 'a garrafa', 'f|Flasche', 'القارورة|قارورة|f', 3, 6, 15, 0, 1],
-      ['peel', '🥔', 'تقشير البطاطس', 'the potatoes|potatoes|pl', 'las papas|pl', 'les pommes de terre|f|pl', 'le patate|f|pl', 'as batatas|pl', 'p|Kartoffeln', 'البطاطس|بطاطس|f', 3, 12, 8, 7, 2],
-      ['count', '💵', 'عدّ النقود', 'the money|money', 'el dinero', "l'argent|m", 'i soldi|m|pl', 'o dinheiro', 'n|Geld', 'النقود|نقود|f', 8, 1, 2, 8, 2],
-      ['choose', '👗', 'اختيار الفستان', 'the dress|dress', 'el vestido', 'la robe|f', 'il vestito|m', 'o vestido', 'n|Kleid', 'الفستان|فستان|m', 16, 2, 5, 1, 1],
-      ['iron', '👔', 'كيّ القميص', 'the shirt|shirt', 'la camisa', 'la chemise|f', 'la camicia|f', 'a camisa', 'n|Hemd', 'القميص|قميص|m', 16, 1, 2, 3, 1],
-      ['taste', '🧀', 'تذوّق الجبن', 'the cheese|cheese', 'el queso', 'le fromage|m', 'il formaggio|m', 'o queijo', 'm|Käse', 'الجبن|جبن|m', 8, 4, 0, 9, 3],
-    ]
-  },
-  {
-    ar: 'التقنية والمكتب', color: '#4f7d2a', icon: '💻', s: [
-      ['check', '📩', 'مراجعة الرسائل', 'the messages|messages|pl', 'los mensajes|pl', 'les messages|m|pl', 'i messaggi|m|pl', 'as mensagens|pl', 'p|Nachrichten', 'الرسائل|رسائل|f', 9, 1, 10, 11, 1],
-      ['close', '💻', 'إغلاق الحاسوب المحمول', 'the laptop|laptop', 'la laptop', "l'ordinateur portable|m", 'il portatile|m', 'o notebook', 'm|Laptop', 'الحاسوب المحمول|حاسوب|m', 9, 1, 1, 11, 2],
-      ['charge', '🔋', 'شحن الهاتف', 'the phone|phone', 'el teléfono', 'le téléphone|m', 'il telefono|m', 'o celular', 'n|Handy', 'الهاتف|هاتف|m', 16, 1, 1, 10, 2],
-      ['sign', '✍️', 'توقيع الخطابات', 'the letters|letters|pl', 'las cartas|pl', 'les lettres|f|pl', 'le lettere|f|pl', 'as cartas|pl', 'p|Briefe', 'الخطابات|خطابات|f', 9, 1, 7, 8, 1],
-      ['explain', '💡', 'شرح القاعدة', 'the rule|rule', 'la regla', 'la règle|f', 'la regola|f', 'a regra', 'f|Regel', 'القاعدة|قاعدة|f', 12, 5, 6, 5, 0],
-      ['teach', '🧑‍🏫', 'تدريس الفصل', 'the class|class', 'la clase', 'le cours|m', 'la lezione|f', 'a aula', 'f|Klasse', 'الفصل|فصل|m', 1, 13, 0, 5, 0],
-      ['repeat', '🔁', 'تكرار الجملة', 'the sentence|sentence', 'la oración', 'la phrase|f', 'la frase|f', 'a frase', 'm|Satz', 'الجملة|جملة|f', 12, 0, 11, 4, 0],
-      ['show', '📋', 'عرض الخطة', 'the plan|plan', 'el plan', 'le plan|m', 'il piano|m', 'o plano', 'm|Plan', 'الخطة|خطة|f', 9, 10, 5, 8, 1],
-      ['save', '💾', 'حفظ الملفات', 'the files|files|pl', 'los archivos|pl', 'les fichiers|m|pl', 'i file|m|pl', 'os arquivos|pl', 'p|Dateien', 'الملفات|ملفات|f', 9, 10, 1, 11, 2],
-      ['write', '👨‍💻', 'كتابة الكود', 'the code|code', 'el código', 'le code|m', 'il codice|m', 'o código', 'm|Code', 'الكود|كود|m', 9, 10, 2, 11, 0],
+      ['iron', '👗', 'كيّ الفستان', 'the dress|dress', 'el vestido', 'la robe|f', 'il vestito|m', 'o vestido', 'n|Kleid', 'الفستان|فستان|m', 22, 2, 2, 1, 2],
+      ['clean', '👞', 'تنظيف الحذاء', 'the shoes|shoes|pl', 'los zapatos|pl', 'les chaussures|f|pl', 'le scarpe|f|pl', 'os sapatos|pl', 'p|Schuhe', 'الحذاء|حذاء|m', 25, 2, 18, 0, 3],
+      ['read', '💌', 'قراءة الرسالة', 'the letter|letter', 'la carta', 'la lettre|f', 'la lettera|f', 'a carta', 'm|Brief', 'الرسالة|رسالة|f', 14, 19, 11, 7, 2],
+      ['edit', '🤳', 'تعديل الصور', 'the photos|photos|pl', 'las fotos|pl', 'les photos|f|pl', 'le foto|f|pl', 'as fotos|pl', 'p|Fotos', 'الصور|صور|f', 20, 2, 10, 10, 2],
+      ['cut', '🎂', 'تقطيع الكعكة', 'the cake|cake', 'el pastel', 'le gâteau|m', 'la torta|f', 'o bolo', 'm|Kuchen', 'الكعكة|كعكة|f', 11, 11, 8, 1, 3],
+      ['wrap', '🎁', 'تغليف الهدايا', 'the gifts|gifts|pl', 'los regalos|pl', 'les cadeaux|m|pl', 'i regali|m|pl', 'os presentes|pl', 'p|Geschenke', 'الهدايا|هدايا|f', 16, 11, 2, 10, 3],
+      ['fix', '🧸', 'إصلاح الألعاب', 'the toys|toys|pl', 'los juguetes|pl', 'les jouets|m|pl', 'i giocattoli|m|pl', 'os brinquedos|pl', 'p|Spielsachen', 'الألعاب|ألعاب|f', 23, 13, 2, 6, 3],
+      ['charge', '📲', 'شحن الجهاز اللوحي', 'the tablet|tablet', 'la tableta', 'la tablette|f', 'il tablet|m', 'o tablet', 'n|Tablet', 'الجهاز اللوحي|جهاز|m', 20, 16, 16, 0, 2],
+      ['sew', '🧥', 'خياطة السترة', 'the jacket|jacket', 'la chaqueta', 'la veste|f', 'la giacca|f', 'a jaqueta', 'f|Jacke', 'السترة|سترة|f', 14, 2, 19, 9, 3],
+      ['fill', '🍶', 'ملء القارورة', 'the bottle|bottle', 'la botella', 'la bouteille|f', 'la bottiglia|f', 'a garrafa', 'f|Flasche', 'القارورة|قارورة|f', 27, 6, 15, 4, 1],
     ]
   },
 ];

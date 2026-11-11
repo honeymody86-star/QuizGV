@@ -152,8 +152,8 @@
     },
     sub(a, s) { return AR.pres(a, s).replace(/ون$/, 'وا'); },     // المنصوب بعد «لن»
     jus(a, s) { return a.j ? pick(a.j, s) : AR.sub(a, s); },       // المجزوم بعد «لم»
-    pass(a, t, f) {                                                   // المبني للمجهول مع التأنيث
-      if (t === 0) return a.ps[0] + (f ? 'تِ' : '');
+    pass(a, t, f, al) {                                               // المبني للمجهول مع التأنيث
+      if (t === 0) return a.ps[0] + (f ? (al ? 'تِ' : 'تْ') : '');   // «تِ» قبل «ال» فقط
       return f ? a.ps[1].replace(/^يُ/, 'تُ') : a.ps[1];
     },
   };
@@ -221,7 +221,7 @@
       rows.why = [...wh('لماذا'), [...REASON(), DOT()]];
       rows.how = [...wh('كيف'), [...MANNER(), DOT()]];
       rows.whose = [[...words(O.n, 'obj'), tk('مَن', 'qw'), ...V(qk), ...T(), QM(L)], [...words(O.n, 'obj'), ...POSS(), DOT()]];
-      rows.pass = [[...(t === 2 ? [tk('س', 'aux', { jr: 1 })] : []), tk(AR.pass(A, t, fem), 'verb'), ...OBJ(), ...T(), DOT()]];
+      rows.pass = [[...(t === 2 ? [tk('س', 'aux', { jr: 1 })] : []), tk(AR.pass(A, t, fem, O.np.startsWith('ال')), 'verb'), ...OBJ(), ...T(), DOT()]];
       return LT.ROWS.map(r => rows[r.id].map(line => finishLine(L, line)));
     }
 
