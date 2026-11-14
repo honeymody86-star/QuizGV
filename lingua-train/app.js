@@ -457,7 +457,7 @@
     n.style.transform = `rotate(${-90 + pct * 180}deg)`;
     a.setAttribute('stroke-dasharray', `${pct * 100} 100`);
     $('#kmh').textContent = AR_NUM(Math.round(rate * 120));
-    $('#stage').textContent = rate ? stageOf(rate) : '🚉 في المحطة';
+    $('#stage').textContent = !rate ? '🚉 في المحطة' : P.express ? '⚡ قراءة سريعة' : stageOf(rate);
     const passes = P.express ? 1 : SET.passes;
     $('#cars').innerHTML = Array.from({ length: passes }, (_, k) => `<span class="${k <= pass ? 'on' : ''}"></span>`).join('');
   }
@@ -547,7 +547,7 @@
   async function playCell(k, id) {
     const c = P.cells[k];
     setActive(k);
-    const rates = P.express ? [Math.max(1.3, ladder(2)[1])] : ladder(SET.passes);
+    const rates = P.express ? [Math.max(1.3, ladder(SET.passes).slice(-1)[0])] : ladder(SET.passes);   // القراءة السريعة: أعلى سرعة مختارة، ولا تقل عن ١٫٣×
     for (let b = 0; b < c.blocks.length; b++) {
       for (let p = 0; p < rates.length; p++) {
         setGauge(rates[p], p);
@@ -638,11 +638,11 @@
     if (first) addXP(20);
     modal(`
       <div class="big">${wasExpress ? '⚡' : '🏁'}</div>
-      <h2>${wasExpress ? 'جولة إكسبريس مكتملة!' : 'وصلت المحطة!'}</h2>
+      <h2>${wasExpress ? 'قراءة سريعة مكتملة!' : 'وصلت المحطة!'}</h2>
       <p class="muted">شاهدت ${AR_NUM(P.cells.length)} صيغة للجملة «${esc(NAV.S.ar)}»${first ? ' · +٢٠ نقطة' : ''}</p>
       <div class="acts">
         <button class="btn btn-main" data-a="practice">🎯 تمارين الإتقان</button>
-        <button class="btn btn-rail" data-a="express">⚡ جولة إكسبريس (كل الصيغ بسرعة)</button>
+        <button class="btn btn-rail" data-a="express">⚡ قراءة سريعة لكل الصيغ مرة واحدة</button>
         <button class="btn btn-ghost" data-a="next">المحطة التالية ⬅</button>
         <button class="btn btn-ghost" data-a="route">🗺️ خريطة الخطوط</button>
       </div>`);
@@ -650,7 +650,7 @@
       closeModal();
       const a = b.dataset.a;
       if (a === 'practice') go('practice');
-      else if (a === 'express') { P.express = true; P.cells.forEach((_, j) => revealCellStatic(j)); playFrom(0); }
+      else if (a === 'express') fastRead();
       else if (a === 'next') goNextLesson();
       else go('route');
     });
@@ -705,6 +705,7 @@
     $('#passSel').value = String(SET.passes);
     $('#autoBtn').classList.toggle('on', SET.auto);
     $('#soundBtn').classList.toggle('on', SET.sound);
+    $('#fastBtn').classList.toggle('on', P.playing && P.express);
   }
   $('#playBtn').onclick = () => {
     if (P.playing) { stopPlayback(); setGauge(0, -1); }
@@ -717,6 +718,15 @@
   $('#autoBtn').onclick = () => { SET.auto = !SET.auto; saveSet(); syncDock(); toast(SET.auto ? '🔁 العرض التلقائي: ينتقل القطار للصيغة التالية وحده' : '✋ العرض اليدوي: اضغط ▶ لكل صيغة'); };
   $('#soundBtn').onclick = () => { SET.sound = !SET.sound; saveSet(); syncDock(); if (!SET.sound) hush(); };
   $('#revealBtn').onclick = () => { P.cells.forEach((_, j) => revealCellStatic(j)); };
+  /* قراءة سريعة: كل الصيغ مرة واحدة بسرعة عالية، دون نطق كلمة كلمة ودون إعادة جماعية */
+  function fastRead() {
+    stopPlayback();
+    P.express = true;
+    P.cells.forEach((_, j) => revealCellStatic(j));
+    toast('⚡ قراءة سريعة لكل الصيغ مرة واحدة');
+    playFrom(0);
+  }
+  $('#fastBtn').onclick = fastRead;
 
   /* ---------- التمارين ----------
      كل تمرين يعمل على «عنصر» = صيغة واحدة: {S, r, t, pk, lines (لغة الدرس), ar (الترجمة العربية)}
