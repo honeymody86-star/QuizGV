@@ -1,0 +1,24 @@
+name = "visual-tutor"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+# أنشئ مساحة التخزين:  npx wrangler kv namespace create CACHE  ثم ضع المعرّف هنا
+[[kv_namespaces]]
+binding = "CACHE"
+id = "PUT_YOUR_KV_NAMESPACE_ID_HERE"
+
+[vars]
+DEFAULT_MODEL = "claude-sonnet-5-5"
+TTS_PROVIDER = "azure"            # أو elevenlabs
+AZURE_REGION = "westeurope"
+AZURE_VOICE = "ar-SA-HamedNeural"
+ELEVEN_VOICE_ID = ""
+ELEVEN_MODEL = "eleven_multilingual_v2"
+DAILY_LESSONS = "30"              # حد الأسئلة اليومي لكل مستخدم
+DAILY_TTS = "400"
+ALLOWED_ORIGINS = "*"             # ضع رابط موقعك، مثل https://honeymody86-star.github.io
+
+# المفاتيح السرية (لا تكتبها هنا):
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put AZURE_SPEECH_KEY      (أو ELEVENLABS_API_KEY)
