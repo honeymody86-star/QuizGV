@@ -27,8 +27,9 @@
   };
   function ladder(passes) {
     const [kind, id] = SET.speed.split(':');
-    if (kind === 'fx') return Array(passes).fill(parseFloat(id));
+    if (kind === 'fx') return Array(Math.max(1, passes)).fill(parseFloat(id));
     const s = SPEEDS.tr[id] || SPEEDS.tr.mid;
+    if (passes === 0) return [+((s.a + s.b) / 2).toFixed(2)];   // بلا تكرار: سرعة طبيعية وسط التسارع
     if (passes === 1) return [s.a];
     return Array.from({ length: passes }, (_, k) => +(s.a + (s.b - s.a) * k / (passes - 1)).toFixed(2));
   }
@@ -458,7 +459,7 @@
     a.setAttribute('stroke-dasharray', `${pct * 100} 100`);
     $('#kmh').textContent = AR_NUM(Math.round(rate * 120));
     $('#stage').textContent = !rate ? '🚉 في المحطة' : P.express ? '⚡ قراءة سريعة' : stageOf(rate);
-    const passes = P.express ? 1 : SET.passes;
+    const passes = P.express || !SET.passes ? 1 : SET.passes;
     $('#cars').innerHTML = Array.from({ length: passes }, (_, k) => `<span class="${k <= pass ? 'on' : ''}"></span>`).join('');
   }
 
@@ -555,7 +556,7 @@
         for (let li = 0; li < c.blocks[b].lines.length; li++) {
           if (id !== P.run) return false;
           if (p === 0 && !P.revealed[k][b] && !P.express) {
-            if (SET.wordFirst) {
+            if (SET.wordFirst && SET.passes > 0) {   // «٠» = بلا تكرار: تظهر الجملة مع نطقها مرة واحدة فقط
               await revealLine(k, b, li, rates[p], id);
               if (rates.length === 1 && id === P.run) await sweepLine(k, b, li, rates[p], id);
             } else await sweepLine(k, b, li, rates[p], id, true);   // تظهر الكلمات مع نطق الجملة البطيء
@@ -588,7 +589,7 @@
     for (const k of group) {
       if (id !== P.run) break;
       setActive(k);
-      setGauge(rate, SET.passes - 1);
+      setGauge(rate, Math.max(0, SET.passes - 1));
       $('#stage').textContent = '🔗 الصيغ معاً';
       const c = P.cells[k];
       for (let b = 0; b < c.blocks.length; b++) {
@@ -614,7 +615,7 @@
       const k = P.order[j];
       const ok = await playCell(k, id);
       if (!ok || id !== P.run) return;
-      const g = !P.express && P.groups.find(gr => gr[gr.length - 1] === k);
+      const g = !P.express && SET.passes > 0 && P.groups.find(gr => gr[gr.length - 1] === k);   // بلا تكرار: لا إعادة جماعية
       if (g && !(await chorus(g, id))) return;
       if (!SET.auto && !P.express) { P.i = j + 1; P.playing = false; syncDock(); setGauge(0, -1); return; }
       await sleep(P.express ? 200 : 420);
