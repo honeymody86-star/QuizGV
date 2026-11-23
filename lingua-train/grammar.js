@@ -180,6 +180,57 @@
   }
   const pool = (arr, i, L) => arr[i][POOL_IDX[L]];
 
+  /* ضمير الملكية يعود على صاحب الجواب: «لمساعدة أمي» ← «لمساعدة أمه / أمها / أمنا / أمهم».
+     who = ضمير المجيب (i, he, she, we, they). البيانات مكتوبة بصيغة المتكلم وتُحوَّل هنا حسب قواعد كل لغة. */
+  const ES_FEM = new Set(['mamá', 'hermana', 'abuela', 'familia', 'salud', 'laptop']);
+  const AR_POSS = {
+    'أخي': ['أخ', 2], 'أبي': ['أب', 2], 'أختي': ['أخت', 1], 'أمي': ['أم', 1], 'صديقي': ['صديق', 1], 'جاري': ['جار', 1],
+    'جدتي': ['جدت', 1], 'مديري': ['مدير', 1], 'عمي': ['عم', 1], 'زميلي': ['زميل', 1], 'طالبي': ['طالب', 1],
+    'عائلتي': ['عائلت', 1], 'صحتي': ['صحت', 1], 'بهاتفي': ['بهاتف', 1], 'بحاسوبي': ['بحاسوب', 1], 'ظهري': ['ظهر', 1],
+  };
+  const AR_SUF = { 1: { he: 'ه', she: 'ها', we: 'نا', they: 'هم' }, 2: { he: 'يه', she: 'يها', we: 'ينا', they: 'يهم' } };
+  function possFor(str, L, who) {
+    if (!who || who === 'i') return str;
+    const w = str.split(' ');
+    if (L === 'en') return w.map(x => x === 'my' ? { he: 'his', she: 'her', we: 'our', they: 'their' }[who] : x).join(' ');
+    if (L === 'es') return w.map((x, k) => x !== 'mi' ? x : who === 'we' ? (ES_FEM.has(w[k + 1]) ? 'nuestra' : 'nuestro') : 'su').join(' ');
+    if (L === 'fr') {
+      const T = { mon: { he: 'son', she: 'son', we: 'notre', they: 'leur' }, ma: { he: 'sa', she: 'sa', we: 'notre', they: 'leur' }, mes: { he: 'ses', she: 'ses', we: 'nos', they: 'leurs' } };
+      return w.map(x => T[x] ? T[x][who] : x).join(' ');
+    }
+    if (L === 'de') {
+      const stem = { he: 'sein', she: 'ihr', we: 'unser', they: 'ihr' }[who];
+      return w.map(x => { const m = x.match(/^mein(e|er|em|en|es)?$/); return m ? stem + (m[1] || '') : x; }).join(' ');
+    }
+    if (L === 'it') {
+      const out = [];
+      w.forEach((x, k) => {
+        if (x !== 'mio' && x !== 'mia') { out.push(x); return; }
+        const f = x === 'mia', prev = out[out.length - 1] || '';
+        const adj = who === 'we' ? (f ? 'nostra' : 'nostro') : who === 'they' ? 'loro' : (f ? 'sua' : 'suo');
+        const hasArt = /^(il|la|del|della|Del|Della)$/.test(prev);
+        if (who === 'they' && !hasArt) {          // أسماء القرابة: «la loro madre»، و«Di» + أداة = «Della / Del»
+          if (/^di$/i.test(prev)) { out[out.length - 1] = (prev[0] === 'D' ? 'D' : 'd') + (f ? 'ella' : 'el'); out.push(adj); return; }
+          out.push(f ? 'la' : 'il', adj); return;
+        }
+        out.push(adj);
+      });
+      return out.join(' ');
+    }
+    if (L === 'pt') {                               // البرازيلية: «o celular dele / dela / deles»، و«o nosso celular»
+      const out = [];
+      for (let k = 0; k < w.length; k++) {
+        const x = w[k];
+        if (x !== 'meu' && x !== 'minha') { out.push(x); continue; }
+        if (who === 'we') { out.push(x === 'minha' ? 'nossa' : 'nosso'); continue; }
+        out.push(w[k + 1], { he: 'dele', she: 'dela', they: 'deles' }[who]); k++;
+      }
+      return out.join(' ');
+    }
+    if (L === 'ar') return w.map(x => AR_POSS[x] ? AR_POSS[x][0] + AR_SUF[AR_POSS[x][1]][who] : x).join(' ');
+    return str;
+  }
+
   /* ---------- بناء الصيغ ---------- */
   function build(L, S, pk, t) {
     const O = objectOf(L, S);
@@ -189,9 +240,9 @@
     const slot = (k) => PR[k][1];
     const T = () => words(LT.TIME[L][S.timeVar][t], 'time');
     const PLACE = () => words(pool(LT.PLACES, S.place, L), 'place');
-    const REASON = () => words(pool(LT.REASONS, S.reason, L), 'reason');
-    const MANNER = () => words(pool(LT.MANNERS, S.manner, L), 'manner');
-    const POSS = () => words(pool(LT.POSS, S.poss, L), 'poss');
+    const REASON = () => words(possFor(pool(LT.REASONS, S.reason, L), L, ak), 'reason');
+    const MANNER = () => words(possFor(pool(LT.MANNERS, S.manner, L), L, ak), 'manner');
+    const POSS = () => words(possFor(pool(LT.POSS, S.poss, L), L, ak), 'poss');
     const rows = {};
 
     if (L === 'ar') {
@@ -493,5 +544,5 @@
     ];
   }
 
-  LT.G = { lesson, build, sentenceInfo, units, unitText, lineText, pronounFor, objectOf, POOL_IDX, story, compound, simple, dialogue, ROW };
+  LT.G = { possFor, lesson, build, sentenceInfo, units, unitText, lineText, pronounFor, objectOf, POOL_IDX, story, compound, simple, dialogue, ROW };
 })();
