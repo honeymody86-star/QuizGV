@@ -233,23 +233,55 @@
   }
 
   /* ---------- وضع العرض ---------- */
-  const PRES = window.PRES = { i: 0, S: [], rec: null };
+  const PRES = window.PRES = { i: 0, S: [], rec: null, left: 0, playing: false, iv: null, keys: false };
   window.startPresentation = function (L) {
     PRES.S = window.buildSlides(L); PRES.i = 0;
+    PRES.total = PRES.S.reduce((a, s) => a + s.sec, 0);
     const p = $('#present'); p.classList.remove('hide');
-    p.innerHTML = '<div class="stage"><div class="slide" id="pSlide"></div></div><div class="credit">' + esc(window.CREDIT.line) + '</div>' +
-      '<div class="pbar"><button data-p="prev">→ السابق</button><span class="count" id="pCount"></span><button data-p="next">التالي ←</button>' +
+    p.innerHTML = '<div class="autobar"><i id="aBar"></i></div><div class="aclock" id="aClock"></div><div class="stage"><div class="slide" id="pSlide"></div></div><div class="credit">' + esc(window.CREDIT.line) + '</div>' +
+      '<div class="pbar"><button data-p="prev">→ السابق</button><button data-p="play" id="pPlay" class="playbtn">⏸️ إيقاف</button><span class="count" id="pCount"></span><button data-p="next">التالي ←</button><button data-p="add">＋30ث</button>' +
       '<button data-p="timer">⏱️ مؤقت</button><button data-p="pick">🎯 اختر طالبًا</button><button data-p="think">🤫 فكّر 5ث</button><button data-p="dice">🎲 نرد</button><button data-p="points">🏆 النقاط</button><button data-p="qr">📱 QR</button><button data-p="voice">🎙️ صوت</button><button data-p="remote">🕹️ جوال</button><button data-p="fs">⛶</button><button data-p="close">✕ خروج</button></div>';
     p.querySelector('.pbar').onclick = e => { const b = e.target.closest('[data-p]'); if (b) window.remoteCmd(b.dataset.p); };
     showSlide();
-    startLive(L).then(() => { if (PRES.S[PRES.i] && PRES.S[PRES.i].k === 'quiz') showSlide(); });
-    document.addEventListener('keydown', keyNav);
+    setPlay(true);
+    clearInterval(PRES.iv); PRES.iv = setInterval(tick, 1000);
+    startLive(L).then(() => { if (PRES.S[PRES.i] && PRES.S[PRES.i].k === 'quiz') showSlide(true); });
+    if (!PRES.keys) { document.addEventListener('keydown', keyNav); PRES.keys = true; }
+    toast('▶️ العرض يمشي تلقائيًا بالتوقيت — اضغط «إيقاف» أو مسافة للإيقاف', 3500);
   };
+  /* التشغيل التلقائي بالثواني */
+  function setPlay(on) {
+    PRES.playing = on; const b = $('#pPlay');
+    if (b) { b.textContent = on ? '⏸️ إيقاف' : '▶️ متابعة'; b.classList.toggle('paused', !on); }
+    updClock();
+  }
+  function elapsed() { let e = 0; for (let k = 0; k < PRES.i; k++) e += PRES.S[k].sec; return e + (PRES.S[PRES.i].sec - PRES.left); }
+  function updClock() {
+    const s = PRES.S[PRES.i]; if (!s) return;
+    const bar = $('#aBar'), c = $('#aClock'); if (!c) return;
+    bar.style.width = (100 * (s.sec - PRES.left) / s.sec) + '%';
+    bar.style.background = PRES.left <= 10 ? '#ff5d5d' : PRES.left <= s.sec * 0.3 ? '#ffd166' : '#2cc4ac';
+    c.className = 'aclock' + (PRES.left <= 10 ? ' warn' : '') + (PRES.playing ? '' : ' stopped');
+    c.innerHTML = '<b>' + window.mmss(Math.max(0, PRES.left)) + '</b><span>' + (PRES.playing ? 'متبقٍ لهذه الجزئية' : '⏸️ متوقف') + ' · الحصة ' + window.mmss(elapsed()) + ' / ' + window.mmss(PRES.total) + '</span>';
+  }
+  function tick() {
+    if ($('#present').classList.contains('hide')) { clearInterval(PRES.iv); return; }
+    if (!PRES.playing) return;
+    PRES.left--;
+    if (PRES.left === 10) beep(660, 0.12);
+    if (PRES.left <= 0) {
+      beep(880, 0.3, 2);
+      if (PRES.i < PRES.S.length - 1) { PRES.i++; hideOverlay(); showSlide(); }
+      else { PRES.left = 0; setPlay(false); toast('🏁 انتهت الحصة في وقتها', 4000); }
+    }
+    updClock();
+  }
   function keyNav(e) {
     if ($('#present').classList.contains('hide')) return;
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
     const k = e.key;
-    if (k === 'ArrowLeft' || k === 'PageDown' || k === ' ') { e.preventDefault(); window.remoteCmd('next'); }
+    if (k === ' ' || k === 'Spacebar' || /^[pP]$/.test(k)) { e.preventDefault(); window.remoteCmd('play'); }
+    else if (k === 'ArrowLeft' || k === 'PageDown') { e.preventDefault(); window.remoteCmd('next'); }
     else if (k === 'ArrowRight' || k === 'PageUp') window.remoteCmd('prev');
     else if (k === 'Escape') { if (!$('#overlay').classList.contains('hide')) hideOverlay(); else window.remoteCmd('close'); }
     else if (/^[tT]$/.test(k)) window.remoteCmd('timer');
@@ -259,10 +291,12 @@
     else if (/^[qQ]$/.test(k)) window.remoteCmd('qr');
     else if (/^[fF]$/.test(k)) window.remoteCmd('fs');
   }
-  function showSlide() {
+  function showSlide(keepTime) {
     const s = PRES.S[PRES.i]; if (!s) return;
+    if (!keepTime) PRES.left = s.sec;
     const el = $('#pSlide'); el.innerHTML = s.html;
-    $('#pCount').textContent = (PRES.i + 1) + ' / ' + PRES.S.length + (s.minutes ? ' · ⏱️ ' + s.minutes + ' د' : '');
+    $('#pCount').textContent = (PRES.i + 1) + ' / ' + PRES.S.length + ' · ' + window.mmss(s.sec);
+    updClock();
     const slot = el.querySelector('.imgslot');
     if (slot) {
       const pr = slot.dataset.prompt; const on = $('#optImages') ? $('#optImages').checked : true;
@@ -285,9 +319,11 @@
       case 'next': if (PRES.i < PRES.S.length - 1) { PRES.i++; hideOverlay(); showSlide(); } break;
       case 'prev': if (PRES.i > 0) { PRES.i--; hideOverlay(); showSlide(); } break;
       case 'goto': PRES.i = Math.max(0, Math.min(PRES.S.length - 1, +arg || 0)); hideOverlay(); showSlide(); break;
-      case 'timer': window.startTimer(s.minutes || 3, s.title); break;
-      case 'pause': window.timerCmd('pause'); break;
-      case 'plus': window.timerCmd('plus'); break;
+      case 'timer': window.startTimer(Math.max(PRES.left, 10) / 60, s.title); break;
+      case 'play': setPlay(!PRES.playing); break;
+      case 'pause': if (T.iv) window.timerCmd('pause'); else setPlay(!PRES.playing); break;
+      case 'add': PRES.left += 30; s.sec += 30; PRES.total += 30; updClock(); break;
+      case 'plus': if (T.iv) window.timerCmd('plus'); else { PRES.left += 60; s.sec += 60; PRES.total += 60; updClock(); } break;
       case 'pick': window.pickStudent(); break;
       case 'think': window.thinkTime(5, true); break;
       case 'dice': window.rollDice(arg === 4 ? 4 : 6); break;
@@ -300,7 +336,7 @@
         showOverlay('<div class="label">🕹️ امسح بجوالك للتحكم في العرض</div><div class="qr" id="ovRQ"></div><div class="label">رمز الأمان: ' + LIVE.pin + '</div>');
         window.makeQR($('#ovRQ'), window.appBase() + 'remote.html#h=' + LIVE.id + '&k=' + LIVE.pin, 300);
       }); break;
-      case 'close': $('#present').classList.add('hide'); hideOverlay(); if (PRES.rec) { try { PRES.rec.stop(); } catch (e) {} PRES.rec = null; } try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} break;
+      case 'close': clearInterval(PRES.iv); PRES.playing = false; $('#present').classList.add('hide'); hideOverlay(); if (PRES.rec) { try { PRES.rec.stop(); } catch (e) {} PRES.rec = null; } try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {} break;
     }
   };
 
@@ -312,7 +348,7 @@
     const r = new SR(); r.lang = 'ar-SA'; r.continuous = true; r.interimResults = false;
     r.onresult = e => {
       const t = e.results[e.results.length - 1][0].transcript.trim();
-      const map = [[/التالي|بعده|بعدها|next/, 'next'], [/السابق|ارجع|قبل/, 'prev'], [/مؤقت|الوقت|ابدأ/, 'timer'], [/فكر|فكّر|تفكير/, 'think'], [/اختر|طالب|عشوائي/, 'pick'], [/نرد|زهر/, 'dice'], [/نقاط|المتصدرين/, 'points'], [/كويز|الرمز|باركود/, 'qr'], [/اغلق|أغلق|إغلاق|توقف/, 'hide']];
+      const map = [[/أوقف|اوقف|وقف|إيقاف|كمل|تابع|استمر/, 'play'], [/التالي|بعده|بعدها|next/, 'next'], [/السابق|ارجع|قبل/, 'prev'], [/مؤقت|الوقت|ابدأ/, 'timer'], [/فكر|فكّر|تفكير/, 'think'], [/اختر|طالب|عشوائي/, 'pick'], [/نرد|زهر/, 'dice'], [/نقاط|المتصدرين/, 'points'], [/كويز|الرمز|باركود/, 'qr'], [/اغلق|أغلق|إغلاق|توقف/, 'hide']];
       const m = map.find(x => x[0].test(t)); toast('🎙️ ' + t); if (m) window.remoteCmd(m[1]);
     };
     r.onend = () => { if (PRES.rec === r) try { r.start(); } catch (e) {} };

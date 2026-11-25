@@ -3,7 +3,7 @@
   const $ = s => document.querySelector(s);
   const S = window.STORE;
   const IMAGES = [];
-  let MODE = S.get('le_mode', 'bridge');
+  let MODE = S.get('le_mode2', 'auto');
 
   /* ---------- السمة ---------- */
   const theme = S.get('le_theme', '');
@@ -20,6 +20,7 @@
       try { IMAGES.push(await window.prepareImage(f)); } catch (e) { status(e.message, true); }
     }
     drawThumbs();
+    if (IMAGES.length && MODE !== 'bridge') { if (MODE === 'auto') $('#offText').value = ''; generate(); }
   }
   function drawThumbs() {
     $('#thumbs').innerHTML = IMAGES.map((im, i) => '<figure><img src="' + im.dataUrl + '" alt="صفحة ' + (i + 1) + '"><button data-rm="' + i + '">✕</button></figure>').join('');
@@ -41,10 +42,10 @@
 
   /* ---------- أوضاع التوليد ---------- */
   function setMode(m) {
-    MODE = m; S.set('le_mode', m);
+    MODE = m; S.set('le_mode2', m);
     document.querySelectorAll('.mode').forEach(x => x.classList.toggle('sel', x.dataset.mode === m));
     $('#pBridge').classList.toggle('hide', m !== 'bridge');
-    $('#pAI').classList.toggle('hide', m !== 'ai');
+    $('#pAI').classList.toggle('hide', m !== 'auto');
     $('#pOffline').classList.toggle('hide', m !== 'offline');
   }
   $('#modes').onclick = e => { const m = e.target.closest('.mode'); if (m) setMode(m.dataset.mode); };
@@ -88,44 +89,61 @@
     } catch (e) { status('⚠️ ' + e.message + '\nيمكنك كتابة/لصق نص الدرس يدويًا والمتابعة.', true); }
   };
 
-  /* ---------- التوليد ---------- */
-  $('#btnGenerate').onclick = async () => {
+  /* ---------- التوليد (تلقائي بالكامل) ---------- */
+  const STEPS = ['قراءة صورة الدرس', 'بناء الدرس وفق مؤشرات بطاقة الملاحظة', 'تجهيز العرض الموقوت والأوراق والتقرير'];
+  function progress(i, note) {
+    const el = $('#progress'); el.classList.remove('hide');
+    el.innerHTML = STEPS.map((t, k) => '<div class="st ' + (k < i ? 'done' : k === i ? 'on' : '') + '">' + (k < i ? '✅' : k === i ? '<span class="spinner"></span>' : '⏳') + ' ' + t + '</div>').join('') +
+      '<div class="pb"><i style="width:' + Math.round((i + 0.5) / STEPS.length * 100) + '%"></i></div>' + (note ? '<div class="small muted" style="margin-top:6px">' + note + '</div>' : '');
+  }
+  function keyedProvider() {
+    const sel = $('#aiProvider').value;
+    if (S.get('le_key_' + sel, '')) return sel;
+    return Object.keys(P).find(k => S.get('le_key_' + k, '')) || null;
+  }
+  let BUSY = false;
+  async function generate() {
+    if (BUSY) return; BUSY = true;
     const inf = info();
-    const btn = $('#btnGenerate'); btn.disabled = true;
+    $('#btnGenerate').disabled = true; $('#status').classList.add('hide');
     try {
-      let L;
+      let L = null;
       if (MODE === 'bridge') {
         const raw = $('#pasteJSON').value.trim();
-        if (!raw) throw new Error('الصق رد أداة الذكاء الاصطناعي في المربع أولًا (أو اختر المحرك الذاتي).');
+        if (!raw) throw new Error('الصق رد أداة الذكاء الاصطناعي في المربع أولًا.');
         L = window.extractJSON(raw);
-      } else if (MODE === 'ai') {
-        if (!IMAGES.length && !inf.title) throw new Error('أضف صورة الدرس (أو اكتب عنوانه على الأقل).');
-        const pv = $('#aiProvider').value;
-        status('<span class="spinner"></span> يقرأ ' + P[pv].label.split(' (')[0] + ' صورة الدرس ويبني الدرس كاملًا… (30–90 ثانية)');
-        let txt;
-        try {
-          txt = await window.callAI({ provider: pv, model: $('#aiModel').value.trim(), key: $('#aiKey').value.trim(), prompt: window.buildMasterPrompt(inf), images: IMAGES });
-          L = window.extractJSON(txt);
-        } catch (e) {
-          status('⚠️ ' + e.message + '\n↩️ سأبني الدرس الآن بالمحرك الذاتي حتى لا تتوقف، ويمكنك إعادة المحاولة لاحقًا.', true);
-          L = await offline(inf);
+      } else if (MODE === 'auto' && (IMAGES.length || inf.title)) {
+        progress(0, 'يستغرق عادة من 30 إلى 90 ثانية…');
+        const pv = keyedProvider();
+        if (pv) {
+          try {
+            const txt = await window.callAI({ provider: pv, model: S.get('le_model_' + pv, P[pv].models[0]), key: S.get('le_key_' + pv, ''), prompt: window.buildMasterPrompt(inf), images: IMAGES });
+            progress(1); L = window.extractJSON(txt);
+          } catch (e) { console.warn(e); }
         }
-      } else {
-        L = await offline(inf);
+        if (!L) {
+          try {
+            const txt = await window.callKeyless({ prompt: window.buildMasterPrompt(inf), images: IMAGES });
+            progress(1); L = window.extractJSON(txt);
+          } catch (e) { console.warn(e); }
+        }
       }
+      if (!L) { progress(1, 'يكمل المحرك الذاتي بناء الدرس…'); L = await offline(inf); }
+      progress(2);
       L = normalize(L, inf);
       show(L);
-      if (MODE !== 'ai' || !$('#status').classList.contains('err')) $('#status').classList.add('hide');
+      $('#progress').classList.add('hide');
     } catch (e) {
+      $('#progress').classList.add('hide');
       status('⚠️ ' + e.message, true);
-    } finally { btn.disabled = false; }
-  };
+    } finally { BUSY = false; $('#btnGenerate').disabled = false; }
+  }
+  $('#btnGenerate').onclick = generate;
   async function offline(inf) {
     let text = $('#offText').value.trim();
     if (!text && IMAGES.length) {
       try {
-        status('<span class="spinner"></span> المحرك الذاتي: قراءة نص الصورة (OCR)…');
-        text = await window.runOCR(IMAGES, m => status('<span class="spinner"></span> ' + m));
+        text = await window.runOCR(IMAGES, m => progress(1, 'قراءة نص الصورة: ' + m));
         $('#offText').value = text.trim();
       } catch (e) { text = ''; }
     }
@@ -220,7 +238,7 @@
   };
   $('#btnWord').onclick = () => window.exportWord(window.CURRENT);
   $('#btnSave').onclick = () => { autosave(window.CURRENT, true); window.toast('حُفظ الدرس في «دروسي»'); };
-  $('#btnNew').onclick = () => { $('#out').classList.add('hide'); $('#inputSection').classList.remove('hide'); $('#pasteJSON').value = ''; window.scrollTo(0, 0); };
+  $('#btnNew').onclick = () => { IMAGES.length = 0; drawThumbs(); $('#out').classList.add('hide'); $('#inputSection').classList.remove('hide'); $('#pasteJSON').value = ''; window.scrollTo(0, 0); };
 
   /* ---------- دروسي (الحفظ المحلي) ---------- */
   function autosave(L) {

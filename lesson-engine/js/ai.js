@@ -123,3 +123,20 @@ window.callAI = async function ({ provider, model, key, prompt, images }) {
   }
   throw new Error('مزود غير معروف');
 };
+
+/* ذكاء اصطناعي مجاني بلا مفتاح (Pollinations) — يُجرَّب تلقائيًا عند عدم وجود مفتاح */
+window.callKeyless = async function ({ prompt, images }) {
+  const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 120000);
+  try {
+    const content = [{ type: 'text', text: prompt }].concat((images || []).map(im => ({ type: 'image_url', image_url: { url: im.dataUrl } })));
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST', signal: ctrl.signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content }], private: true, referrer: 'lesson-engine' })
+    });
+    if (!res.ok) throw new Error('الخدمة المجانية غير متاحة الآن (' + res.status + ')');
+    const data = await res.json();
+    const t = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (!t) throw new Error('رد فارغ من الخدمة المجانية');
+    return t;
+  } finally { clearTimeout(to); }
+};

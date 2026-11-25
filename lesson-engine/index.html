@@ -28,24 +28,27 @@
 
 <!-- ============ الإدخال ============ -->
 <section id="inputSection">
-  <div class="card">
-    <h2>١) صورة الدرس</h2>
-    <div class="drop" id="drop">
-      <div style="font-size:42px">📷</div>
-      <b>اضغط لالتقاط صورة صفحة الدرس أو اختيارها</b>
-      <div class="muted small">يمكنك إضافة أكثر من صفحة، أو السحب والإفلات، أو اللصق (Ctrl+V)</div>
+  <div class="card hero">
+    <div class="drop big" id="drop">
+      <div style="font-size:64px;line-height:1">📷</div>
+      <b style="font-size:clamp(20px,3vw,28px)">ضع صورة الدرس فقط</b>
+      <div class="muted">ويخرج لك الدرس كاملًا جاهزًا تلقائيًا: الخطة، والعرض الموقوت، وورقة العمل، والبطاقات، والكويز، والتقرير</div>
     </div>
     <input type="file" id="file" accept="image/*" multiple class="hide">
     <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
-    <div class="row" style="margin-top:8px">
-      <button id="btnCam">📸 الكاميرا مباشرة</button>
-      <button id="btnPick">🖼️ من الملفات</button>
+    <div class="row" style="margin-top:10px;justify-content:center">
+      <button class="primary big" id="btnCam">📸 صوّر الدرس</button>
+      <button class="big" id="btnPick">🖼️ اختر صورة</button>
     </div>
     <div class="thumbs" id="thumbs"></div>
+    <div id="progress" class="progress hide"></div>
+    <div id="status" class="status hide"></div>
+    <div class="row" style="justify-content:center;margin-top:8px"><button id="btnDemo" class="ghost small">جرّب بدرس نموذجي</button></div>
   </div>
 
-  <div class="card">
-    <h2>٢) بيانات الحصة <span class="muted small">(اختيارية — يستنتجها المحرك من الصورة)</span></h2>
+  <details class="card" id="adv">
+    <summary><b>⚙️ إعدادات اختيارية</b> <span class="muted small">— لست بحاجة لها، المحرك يعمل بدونها</span></summary>
+    <h3>بيانات الحصة (يستنتجها المحرك من الصورة)</h3>
     <div class="grid g3">
       <div><label>المادة</label><input id="fSubject" list="subjects" placeholder="مثال: الرياضيات"></div>
       <div><label>الصف / المرحلة</label><input id="fGrade" placeholder="مثال: أول ثانوي"></div>
@@ -61,22 +64,28 @@
       <option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>الدراسات الإسلامية</option>
       <option>المهارات الرقمية</option><option>التقنية الرقمية</option><option>علم البيئة</option><option>التفكير الناقد</option><option>المهارات الحياتية</option>
     </datalist>
-  </div>
-
-  <div class="card">
-    <h2>٣) طريقة التوليد <span class="muted small">— يخرج الدرس في كل الأحوال</span></h2>
+    <h3>طريقة التوليد</h3>
     <div class="modes" id="modes">
-      <div class="mode sel" data-mode="bridge"><b>🔗 مجاني بدون مفتاح <span class="tag">موصى به</span></b><span class="small muted">انسخ الموجّه الجاهز ← الصقه مع الصورة في ChatGPT أو Gemini أو Claude المجاني ← الصق الرد هنا.</span></div>
-      <div class="mode" data-mode="ai"><b>⚡ تلقائي بمفتاح API <span class="tag">Gemini مجاني</span></b><span class="small muted">يرسل الصورة ويستلم الدرس كاملًا بضغطة واحدة.</span></div>
-      <div class="mode" data-mode="offline"><b>🛟 المحرك الذاتي <span class="tag gray">بدون ذكاء اصطناعي</span></b><span class="small muted">يقرأ نص الصورة (OCR) ويبني درسًا كاملًا بالقوالب — يعمل في أي ظرف.</span></div>
+      <div class="mode sel" data-mode="auto"><b>⚡ تلقائي <span class="tag">الافتراضي</span></b><span class="small muted">يقرأ الصورة بالذكاء الاصطناعي ويبني الدرس، وإن تعذر يكمل بالمحرك الذاتي.</span></div>
+      <div class="mode" data-mode="bridge"><b>🔗 عبر ChatGPT / Gemini يدويًا</b><span class="small muted">نسخ الموجّه ولصق الرد.</span></div>
+      <div class="mode" data-mode="offline"><b>🛟 المحرك الذاتي فقط</b><span class="small muted">بدون ذكاء اصطناعي.</span></div>
+    </div>
+    <!-- ai -->
+    <div id="pAI" style="margin-top:14px">
+      <div class="grid g3">
+        <div><label>المزود</label><select id="aiProvider"></select></div>
+        <div><label>النموذج</label><input id="aiModel" list="aiModels"><datalist id="aiModels"></datalist></div>
+        <div><label>مفتاح API <a id="keyLink" target="_blank" rel="noopener" class="small">احصل عليه مجانًا</a></label><input id="aiKey" type="password" placeholder="يُحفظ في جهازك فقط"></div>
+      </div>
+      <p class="small muted" style="margin:6px 0 0">اختياري لجودة أعلى. 🔒 المفتاح يُحفظ في متصفحك فقط ويُرسل لمزوده مباشرة. للحصول على مفتاح Gemini مجاني: سجّل بحساب Google في AI Studio ← Get API key.</p>
     </div>
 
     <!-- bridge -->
-    <div id="pBridge" style="margin-top:14px">
+    <div id="pBridge" class="hide" style="margin-top:14px">
       <ol class="small" style="margin:0 0 8px;padding-inline-start:20px">
         <li>اضغط «نسخ الموجّه» ثم افتح أي أداة مجانية بالأسفل.</li>
         <li>أرفق صورة الدرس في المحادثة، والصق الموجّه، وأرسل.</li>
-        <li>انسخ الرد كاملًا (يبدأ بـ { ) والصقه في المربع، ثم «إنشاء الدرس».</li>
+        <li>انسخ الرد كاملًا (يبدأ بـ { ) والصقه في المربع، ثم «إنشاء الدرس» بالأسفل.</li>
       </ol>
       <div class="row">
         <button class="primary" id="btnCopyPrompt">📋 نسخ الموجّه</button>
@@ -90,29 +99,18 @@
       <div style="margin-top:10px"><label>الصق رد الأداة هنا</label><textarea id="pasteJSON" placeholder='{ "meta": { ... } }' style="min-height:120px;direction:ltr;text-align:left"></textarea></div>
     </div>
 
-    <!-- ai -->
-    <div id="pAI" class="hide" style="margin-top:14px">
-      <div class="grid g3">
-        <div><label>المزود</label><select id="aiProvider"></select></div>
-        <div><label>النموذج</label><input id="aiModel" list="aiModels"><datalist id="aiModels"></datalist></div>
-        <div><label>مفتاح API <a id="keyLink" target="_blank" rel="noopener" class="small">احصل عليه مجانًا</a></label><input id="aiKey" type="password" placeholder="يُحفظ في جهازك فقط"></div>
-      </div>
-      <p class="small muted" style="margin:6px 0 0">🔒 المفتاح يُحفظ في متصفحك فقط ويُرسل لمزوده مباشرة. للحصول على مفتاح Gemini مجاني: سجّل بحساب Google في AI Studio ← Get API key.</p>
-    </div>
-
     <!-- offline -->
     <div id="pOffline" class="hide" style="margin-top:14px">
       <div class="row"><button id="btnOCR">🔎 استخراج النص من الصورة (OCR)</button><span class="small muted">أو الصق/اكتب نص الدرس مباشرة:</span></div>
       <textarea id="offText" style="margin-top:8px;min-height:120px" placeholder="نص الدرس..."></textarea>
     </div>
 
+    
     <div class="row" style="margin-top:14px">
-      <button class="primary big" id="btnGenerate">✨ إنشاء الدرس</button>
-      <button id="btnDemo" class="ghost">تجربة بدرس نموذجي</button>
+      <button class="primary" id="btnGenerate">✨ إنشاء الدرس</button>
       <label class="small" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="optImages" checked style="width:auto"> صور توضيحية مجانية تلقائية للعرض</label>
     </div>
-    <div id="status" class="status hide"></div>
-  </div>
+  </details>
 </section>
 
 <!-- ============ المخرجات ============ -->

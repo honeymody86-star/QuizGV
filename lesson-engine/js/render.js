@@ -73,6 +73,7 @@
       '<h3>🇸🇦 القيم والهوية الوطنية</h3><table><tr><th>قيمة الأسبوع</th><td>' + esc(L.value.weekValue) + ' — ' + esc(L.value.statement) + '</td></tr><tr><th>رؤية 2030</th><td>' + esc(L.value.vision2030) + '</td></tr><tr><th>منجز وطني</th><td>' + esc(L.value.nationalFact) + '</td></tr><tr><th>احترام التنوع</th><td>' + esc(L.diversity) + '</td></tr></table>' +
       '<h3>🤝 ميثاق التعامل الصفي</h3><ul>' + li(L.charter) + '</ul>' +
       '<h3>⏱️ سير الدرس والتوزيع الزمني</h3><table><tr><th>#</th><th>المرحلة / النشاط</th><th>دور المعلم</th><th>دور الطلاب</th><th>الشاهد للمقوّم</th></tr>' + phases + '</table>' +
+      '<h3>⏱️ توقيت العرض التلقائي (ثانية بثانية)</h3>' + window.timingTable(L) +
       '<h3>🧩 إستراتيجيات التدريس</h3><table><tr><th>الإستراتيجية</th><th>سبب الاختيار</th><th>خطوات التنفيذ</th></tr>' + strat + '</table>' +
       '<h3>🧰 مصادر التعلم</h3><table><tr><th>النوع</th><th>المصدر</th><th>طريقة الاستخدام</th><th>يخدم</th></tr>' + res + '</table>' +
       '<h3>🔍 التقويم التشخيصي</h3><p><b>' + esc(L.diagnostic.question) + '</b><br><span class="small">' + esc(L.diagnostic.answer) + '</span></p>' +
@@ -128,7 +129,7 @@
   window.buildSlides = function (L) {
     const S = [];
     const ph = t => (L.phases || []).find(p => p.tool === t) || {};
-    S.push({ k: 'cover', title: L.meta.title, html: '<div class="kicker">' + esc(L.meta.subject) + ' · ' + esc(L.meta.grade) + '</div><h1>' + esc(L.meta.title) + '</h1><div class="box"><p>🌟 قيمة الأسبوع: <b>' + esc(L.value.weekValue) + '</b></p><p>' + esc(L.value.statement) + '</p></div><p style="opacity:.8">🇸🇦 ' + esc(L.value.vision2030) + '</p><p class="kicker">' + esc(window.CREDIT.line) + '</p>' });
+    S.push({ k: 'cover', title: L.meta.title, html: '<div class="kicker">' + esc([L.meta.subject, L.meta.grade].filter(Boolean).join(' · ')) + '</div><h1>' + esc(L.meta.title) + '</h1><div class="box"><p>🌟 قيمة الأسبوع: <b>' + esc(L.value.weekValue) + '</b></p><p>' + esc(L.value.statement) + '</p></div><p style="opacity:.8">🇸🇦 ' + esc(L.value.vision2030) + '</p><p class="kicker">' + esc(window.CREDIT.line) + '</p>' });
     S.push({ k: 'outcomes', title: 'نواتج التعلم', minutes: 1, tool: 'picker', html: '<div class="kicker">اليوم بنهاية الحصة سنكون قادرين على…</div><h2>🎯 نواتج التعلم</h2><ol>' + li(L.outcomes.map(o => o.replace(/^أن\s+/, ''))) + '</ol><p class="kicker">🎲 سيُختار طالب عشوائيًا ليقرأ النواتج</p>' });
     S.push({ k: 'charter', title: 'ميثاقنا', html: '<h2>🤝 ميثاق التعامل</h2><ul>' + li(L.charter) + '</ul><p class="kicker">🌿 ' + esc(L.health) + '</p>' });
     S.push({ k: 'diag', title: 'تحدي الدقيقتين', minutes: (ph('cards').minutes || 2), tool: 'timer', html: '<div class="kicker">تقويم تشخيصي</div><h2>⚡ تحدي الدقيقتين</h2><div class="box"><p>' + esc(L.diagnostic.question) + '</p></div><p class="kicker">فكّر بصمت… ثم ارفع بطاقتك عند الإشارة</p>' });
@@ -145,14 +146,46 @@
     S.push({ k: 'peer', title: 'تقويم الأقران', minutes: (ph('peer').minutes || 3), tool: 'timer', html: '<div class="kicker">الدقيقة الذكية</div><h2>👥 تقويم الأقران</h2><p>' + esc(L.peer.instructions) + '</p><div class="box"><ul>' + li(L.peer.criteria) + '</ul></div><p class="kicker">❓ دقيقة لاستفساراتكم</p>' });
     S.push({ k: 'exit', title: 'بطاقة الخروج', minutes: (ph('exit').minutes || 4), tool: 'timer', html: '<h2>🎫 بطاقة الخروج</h2><div class="box"><p>' + esc(L.exitTicket.question) + '</p></div><h2 style="margin-top:3vh">🏠 واجبكم الليلة على منصة مدرستي</h2><p>' + esc(L.homework.madrasati) + '</p><p class="kicker">🔎 ' + esc(L.research.task) + '</p>' });
     S.push({ k: 'end', title: 'نجوم الحصة', html: '<h1>🏆 نجوم الحصة</h1><div id="starsBox" class="box"><p>شكرًا لتميزكم اليوم!</p></div><p>🇸🇦 ' + esc(L.value.nationalFact) + '</p><p class="kicker">' + esc(window.CREDIT.line) + '</p>' });
+    assignTimes(S, L);
     return S;
+  };
+
+  /* توقيت كل شريحة بالثواني بحيث يساوي المجموع زمن الحصة بالضبط */
+  function assignTimes(S, L) {
+    const total = (+L.meta.duration || 45) * 60;
+    const G = { open: ['cover', 'outcomes', 'charter'], diag: ['diag'], explain: ['exp', 'concepts'], tps: ['tps'], ws: ['ws'], quiz: ['quiz'], hot: ['hot', 'creative'], peer: ['peer'], exit: ['exit', 'end'] };
+    const DEF = { open: 120, diag: 180, explain: 540, tps: 300, ws: 480, quiz: 360, hot: 240, peer: 180, exit: 300 };
+    const MAPT = { cards: 'diag', video: 'explain', discussion: 'explain', worksheet: 'ws', quiz: 'quiz', picker: 'hot', peer: 'peer', exit: 'exit' };
+    const sec = {};
+    (L.phases || []).forEach((p, i) => {
+      const g = i === 0 ? 'open' : (MAPT[p.tool] || (p.tool === 'timer' && !sec.tps ? 'tps' : 'explain'));
+      sec[g] = (sec[g] || 0) + (+p.minutes || 0) * 60;
+    });
+    Object.keys(DEF).forEach(g => { if (!sec[g]) sec[g] = DEF[g] * total / 2700; });
+    const sum = Object.keys(DEF).reduce((a, g) => a + sec[g], 0);
+    const W = { cover: 0.3, outcomes: 0.4, charter: 0.3, hot: 0.62, creative: 0.38, exit: 0.8, end: 0.2 };
+    Object.keys(G).forEach(g => {
+      const sl = S.filter(s => G[g].indexOf(s.k) >= 0); if (!sl.length) return;
+      const w = sl.map(s => W[s.k] || 1), tw = w.reduce((a, b) => a + b, 0);
+      sl.forEach((s, i) => { s.sec = Math.max(15, Math.round(sec[g] * total / sum * w[i] / tw / 5) * 5); });
+    });
+    S.forEach(s => { if (!s.sec) s.sec = 30; });
+    const diff = total - S.reduce((a, s) => a + s.sec, 0);
+    const big = S.reduce((m, s, i) => s.sec > S[m].sec ? i : m, 0); S[big].sec += diff;
+    S.forEach(s => { s.minutes = Math.round(s.sec / 6) / 10; });
+  }
+  const mmss = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  window.mmss = mmss;
+  window.timingTable = function (L) {
+    let t = 0;
+    return '<table><tr><th>#</th><th>الشريحة / الجزئية</th><th>المدة</th><th>من – إلى</th></tr>' + window.buildSlides(L).map((s, i) => { const a = t; t += s.sec; return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.title) + '</td><td>' + mmss(s.sec) + '</td><td>' + mmss(a) + ' – ' + mmss(t) + '</td></tr>'; }).join('') + '<tr><th colspan="2">المجموع</th><th colspan="2">' + mmss(t) + '</th></tr></table>';
   };
 
   window.renderSlidesTab = function (L) {
     const S = window.buildSlides(L);
     return '<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🖥️ العرض التفاعلي (' + S.length + ' شريحة)</h2><div class="row"><button class="primary" data-act="present">▶️ ابدأ العرض</button><button data-act="pptx">⬇️ PowerPoint (.pptx)</button><button data-act="gamma">✨ نسخة مبهرة عبر Gamma</button></div></div>' +
-      '<p class="small muted">داخل العرض: الأسهم للتنقل · T مؤقت الشريحة · R اختيار طالب · W زمن التفكير 5 ثوانٍ · D النرد · Q رمز الكويز · F ملء الشاشة · 🎙️ أوامر صوتية · 📱 تحكم من الجوال.</p>' +
-      '<ol>' + S.map(s => '<li><b>' + esc(s.title) + '</b>' + (s.minutes ? ' <span class="small muted">⏱️ ' + s.minutes + ' د</span>' : '') + '</li>').join('') + '</ol></div>';
+      '<p class="small"><b>▶️ العرض يمشي تلقائيًا بالثواني</b> وينتقل لكل جزئية عند انتهاء وقتها · <b>مسافة</b> = إيقاف/متابعة.</p><p class="small muted">الأسهم للتنقل · T مؤقت كبير · R اختيار طالب · W زمن التفكير 5 ثوانٍ · D النرد · Q رمز الكويز · F ملء الشاشة · 🎙️ أوامر صوتية · 📱 تحكم من الجوال.</p>' +
+      '<ol>' + S.map(s => '<li><b>' + esc(s.title) + '</b>' + ' <span class="small muted">⏱️ ' + mmss(s.sec) + '</span>' + '</li>').join('') + '</ol></div>';
   };
 
   /* ---------- التقرير ---------- */
