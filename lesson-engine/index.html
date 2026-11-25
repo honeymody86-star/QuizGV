@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>محرك الدروس المتميزة</title>
+<meta name="description" content="محرك توليد دروس وفق بطاقة الملاحظة الصفية — من إعداد أ. محمد عطية الزهراني، مدرسة عثمان بن عفان الثانوية">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>محرك الدروس المتميزة</h1>
+      <div class="credit">من إعداد: أ. محمد عطية الزهراني — مدرسة عثمان بن عفان الثانوية</div>
+    </div>
+    <div class="hbtns noprint">
+      <span class="badge">وفق بطاقة الملاحظة الصفية — هيئة تقويم التعليم والتدريب</span>
+      <button class="ghost" id="btnTheme" style="color:#fff;border-color:rgba(255,255,255,.4)">🌓</button>
+      <button class="ghost" id="btnHistory" style="color:#fff;border-color:rgba(255,255,255,.4)">📚 دروسي</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ الإدخال ============ -->
+<section id="inputSection">
+  <div class="card hero">
+    <div class="drop big" id="drop">
+      <div style="font-size:64px;line-height:1">📷</div>
+      <b style="font-size:clamp(20px,3vw,28px)">ضع صورة الدرس فقط</b>
+      <div class="muted">ويخرج لك الدرس كاملًا جاهزًا تلقائيًا: الخطة، والعرض الموقوت، وورقة العمل، والبطاقات، والكويز، والتقرير</div>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple class="hide">
+    <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
+    <div class="row" style="margin-top:10px;justify-content:center">
+      <button class="primary big" id="btnCam">📸 صوّر الدرس</button>
+      <button class="big" id="btnPick">🖼️ اختر صورة</button>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+    <div id="progress" class="progress hide"></div>
+    <div id="status" class="status hide"></div>
+    <div class="row" style="justify-content:center;margin-top:8px"><button id="btnDemo" class="ghost small">جرّب بدرس نموذجي</button></div>
+  </div>
+
+  <details class="card" id="adv">
+    <summary><b>⚙️ إعدادات اختيارية</b> <span class="muted small">— لست بحاجة لها، المحرك يعمل بدونها</span></summary>
+    <h3>بيانات الحصة (يستنتجها المحرك من الصورة)</h3>
+    <div class="grid g3">
+      <div><label>المادة</label><input id="fSubject" list="subjects" placeholder="مثال: الرياضيات"></div>
+      <div><label>الصف / المرحلة</label><input id="fGrade" placeholder="مثال: أول ثانوي"></div>
+      <div><label>عنوان الدرس</label><input id="fTitle" placeholder="يُستنتج من الصورة"></div>
+      <div><label>زمن الحصة (دقيقة)</label><input id="fDuration" type="number" value="45" min="20" max="120"></div>
+      <div><label>عدد الطلاب</label><input id="fStudents" type="number" placeholder="مثال: 28"></div>
+      <div><label>قيمة الأسبوع</label><input id="fValue" placeholder="مثال: الأمانة"></div>
+    </div>
+    <div style="margin-top:10px"><label>ملاحظات للمحرك (اختياري)</label><textarea id="fNotes" placeholder="مثال: الصف فيه طالبان من ذوي صعوبات التعلم، لا تتوفر أجهزة لكل الطلاب..."></textarea></div>
+    <label style="margin-top:10px;display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="fPlan" checked style="width:auto"> الدرس مطابق للتوزيع الزمني المعتمد (الفرق لا يتجاوز أسبوعًا) — فقرة (4)</label>
+    <datalist id="subjects">
+      <option>الرياضيات</option><option>العلوم</option><option>الفيزياء</option><option>الكيمياء</option><option>الأحياء</option>
+      <option>اللغة العربية</option><option>اللغة الإنجليزية</option><option>الدراسات الاجتماعية</option><option>الدراسات الإسلامية</option>
+      <option>المهارات الرقمية</option><option>التقنية الرقمية</option><option>علم البيئة</option><option>التفكير الناقد</option><option>المهارات الحياتية</option>
+    </datalist>
+    <h3>طريقة التوليد</h3>
+    <div class="modes" id="modes">
+      <div class="mode sel" data-mode="auto"><b>⚡ تلقائي <span class="tag">الافتراضي</span></b><span class="small muted">يقرأ الصورة بالذكاء الاصطناعي ويبني الدرس، وإن تعذر يكمل بالمحرك الذاتي.</span></div>
+      <div class="mode" data-mode="bridge"><b>🔗 عبر ChatGPT / Gemini يدويًا</b><span class="small muted">نسخ الموجّه ولصق الرد.</span></div>
+      <div class="mode" data-mode="offline"><b>🛟 المحرك الذاتي فقط</b><span class="small muted">بدون ذكاء اصطناعي.</span></div>
+    </div>
+    <!-- ai -->
+    <div id="pAI" style="margin-top:14px">
+      <div class="grid g3">
+        <div><label>المزود</label><select id="aiProvider"></select></div>
+        <div><label>النموذج</label><input id="aiModel" list="aiModels"><datalist id="aiModels"></datalist></div>
+        <div><label>مفتاح التفعيل (اختياري) <a id="keyLink" target="_blank" rel="noopener" class="small">احصل عليه مجانًا</a></label><input id="aiKey" type="password" placeholder="يُحفظ في جهازك فقط"></div>
+      </div>
+      <div class="adminbox">
+        <b>👨‍💼 لمسؤول المدرسة فقط (مرة واحدة)، والمعلمون لا يفعلون شيئًا:</b>
+        <ol class="small" style="margin:6px 0;padding-inline-start:20px">
+          <li>افتح <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">صفحة المفتاح المجاني من Google ↗</a> بحساب Gmail، واضغط <b>Create API key</b>، ثم انسخه.</li>
+          <li>الصقه في خانة «مفتاح التفعيل» أعلاه.</li>
+          <li>اضغط الزر بالأسفل، وأرسل الرابط في قروب المعلمين. من يفتحه يتفعل عنده كل شيء تلقائيًا.</li>
+        </ol>
+        <button class="primary" id="btnSchoolLink">🔗 إنشاء رابط المعلمين الجاهز</button>
+      </div>
+    </div>
+
+    <!-- bridge -->
+    <div id="pBridge" class="hide" style="margin-top:14px">
+      <ol class="small" style="margin:0 0 8px;padding-inline-start:20px">
+        <li>اضغط «نسخ الموجّه» ثم افتح أي أداة مجانية بالأسفل.</li>
+        <li>أرفق صورة الدرس في المحادثة، والصق الموجّه، وأرسل.</li>
+        <li>انسخ الرد كاملًا (يبدأ بـ { ) والصقه في المربع، ثم «إنشاء الدرس» بالأسفل.</li>
+      </ol>
+      <div class="row">
+        <button class="primary" id="btnCopyPrompt">📋 نسخ الموجّه</button>
+        <a class="btn" target="_blank" rel="noopener" href="https://gemini.google.com/app">Gemini</a>
+        <a class="btn" target="_blank" rel="noopener" href="https://chatgpt.com/">ChatGPT</a>
+        <a class="btn" target="_blank" rel="noopener" href="https://claude.ai/new">Claude</a>
+        <a class="btn" target="_blank" rel="noopener" href="https://aistudio.google.com/">Google AI Studio</a>
+        <a class="btn" target="_blank" rel="noopener" href="https://chat.deepseek.com/">DeepSeek</a>
+        <a class="btn" target="_blank" rel="noopener" href="https://copilot.microsoft.com/">Copilot</a>
+      </div>
+      <div style="margin-top:10px"><label>الصق رد الأداة هنا</label><textarea id="pasteJSON" placeholder='{ "meta": { ... } }' style="min-height:120px;direction:ltr;text-align:left"></textarea></div>
+    </div>
+
+    <!-- offline -->
+    <div id="pOffline" class="hide" style="margin-top:14px">
+      <div class="row"><button id="btnOCR">🔎 استخراج النص من الصورة (OCR)</button><span class="small muted">أو الصق/اكتب نص الدرس مباشرة:</span></div>
+      <textarea id="offText" style="margin-top:8px;min-height:120px" placeholder="نص الدرس..."></textarea>
+    </div>
+
+    
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="btnGenerate">✨ إنشاء الدرس</button>
+      <label class="small" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="optImages" checked style="width:auto"> صور توضيحية مجانية تلقائية للعرض</label>
+    </div>
+  </details>
+</section>
+
+<!-- ============ المخرجات ============ -->
+<section id="out" class="hide">
+  <div class="card noprint" style="margin-bottom:0">
+    <div class="row" style="justify-content:space-between">
+      <div><b id="outTitle" style="font-size:20px"></b> <span class="muted small" id="outMeta"></span></div>
+      <div class="row">
+        <button class="primary" id="btnPresent">▶️ ابدأ الحصة (وضع العرض)</button>
+        <button id="btnPrint">🖨️ طباعة / PDF</button>
+        <button id="btnWord">📄 Word</button>
+        <button id="btnSave">💾 حفظ</button>
+        <button id="btnNew" class="ghost">＋ درس جديد</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs noprint" id="tabs"></nav>
+  <div id="views"></div>
+</section>
+
+</main>
+
+<footer class="foot">
+  محرك الدروس المتميزة — من إعداد: <b>أ. محمد عطية الزهراني</b> — مدرسة عثمان بن عفان الثانوية<br>
+  مبني على بطاقة الملاحظة الصفية (هيئة تقويم التعليم والتدريب) وخطة العمل الإجرائية للمعلم.
+</footer>
+
+<div id="present" class="hide"></div>
+<div id="overlay" class="hide"></div>
+
+<script src="vendor/lz-string.min.js"></script>
+<script src="vendor/qrcode-generator.js"></script>
+<script src="js/criteria.js"></script>
+<script src="js/prompt.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/offline.js"></script>
+<script src="js/report.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/render.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/exports.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+Third-party libraries bundled for offline use (open-source licenses as listed):
+- lz-string 1.5.0 (pieroxy) — https://github.com/pieroxy/lz-string
+- qrcode-generator 1.4.4 (Kazuhiko Arase) — https://github.com/kazuhikoarase/qrcode-generator
+- peerjs 1.5.4 — https://github.com/peers/peerjs
+- pptxgenjs 3.12.0 (MIT) — https://github.com/gitbrent/PptxGenJS
+- SheetJS xlsx 0.18.5 (Apache-2.0) — https://github.com/SheetJS/sheetjs
