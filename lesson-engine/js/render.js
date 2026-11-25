@@ -67,7 +67,7 @@
     const fb = (L.feedback || []).map(f => '<tr><td>' + esc(f.situation) + '</td><td>«' + esc(f.phrase) + '»</td></tr>').join('');
     const D = L.differentiation || {};
     return '<div class="doc" contenteditable="true">' + header(L, 'خطة الدرس') +
-      '<h3>🎯 نواتج التعلم (تُكتب أعلى السبورة ويقرؤها طالب)</h3><ol>' + li(L.outcomes) + '</ol>' +
+      '<h3>🎯 نواتج التعلم (تُعرض في العرض ويقرؤها طالب)</h3><ol>' + li(L.outcomes) + '</ol>' +
       '<h3>📖 ملخص المحتوى العلمي</h3><p>' + esc(L.summary) + '</p>' +
       (L.keyConcepts && L.keyConcepts.length ? '<table><tr><th>المفهوم</th><th>التعريف</th></tr>' + L.keyConcepts.map(k => '<tr><td><b>' + esc(k.term) + '</b></td><td>' + esc(k.definition) + '</td></tr>').join('') + '</table>' : '') +
       '<h3>🇸🇦 القيم والهوية الوطنية</h3><table><tr><th>قيمة الأسبوع</th><td>' + esc(L.value.weekValue) + ' — ' + esc(L.value.statement) + '</td></tr><tr><th>رؤية 2030</th><td>' + esc(L.value.vision2030) + '</td></tr><tr><th>منجز وطني</th><td>' + esc(L.value.nationalFact) + '</td></tr><tr><th>احترام التنوع</th><td>' + esc(L.diversity) + '</td></tr></table>' +
@@ -94,7 +94,7 @@
   /* ---------- ورقة العمل ---------- */
   window.renderWorksheet = function (L) {
     const lv = (cls, name, icon, items) => '<div class="lvl ' + cls + '"><b>' + icon + ' ' + name + '</b><ol>' +
-      (items || []).map(x => '<li>' + esc(x.q) + '<div class="lines"></div><div class="lines"></div><div class="ans printonly-hide">✔ ' + esc(x.a) + '</div></li>').join('') + '</ol></div>';
+      (items || []).slice(0, 2).map(x => '<li>' + esc(x.q) + '<div class="lines"></div><div class="ans printonly-hide">✔ ' + esc(x.a) + '</div></li>').join('') + '</ol></div>';
     const W = L.worksheet || {};
     return '<div class="row noprint" style="margin-bottom:8px"><label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--text)"><input type="checkbox" id="wsLarge" style="width:auto"> نسخة بخط مكبر (لذوي الاحتياج)</label><label style="display:flex;gap:6px;align-items:center;margin:0;color:var(--text)"><input type="checkbox" id="wsAns" checked style="width:auto"> إظهار الإجابات (للمعلم)</label></div>' +
       '<div class="doc" id="wsDoc" contenteditable="true">' +
@@ -106,133 +106,10 @@
       lv('lv2', 'المستوى الثاني: حلّق', '🟡', W.average) +
       lv('lv3', 'المستوى الثالث: أبدع (تحدٍّ)', '🟣', W.advanced) +
       '<div class="lvl" style="border-color:#1f4e9c;background:#eef4ff"><b>🔢 مهمة حسابية:</b> ' + esc(L.numeracy.task) + '<div class="lines"></div></div>' +
-      '<div class="lvl" style="border-color:#0f7b6c;background:#eefaf7"><b>🌍 سؤال الحياة:</b> ' + esc(L.life.question) + '<div class="lines"></div><div class="lines"></div></div>' +
-      '<div class="lvl" style="border-color:#555"><b>✍️ لخّص الفكرة الرئيسة في سطرين:</b><div class="lines"></div><div class="lines"></div></div>' +
-      '<table><tr><th colspan="2">👥 تقويم الأقران — اسم المصحح: ..................</th></tr>' + (L.peer.criteria || []).map(c => '<tr><td>' + esc(c) + '</td><td style="width:90px">☐ تحقق ☐ لا</td></tr>').join('') + '<tr><td colspan="2">ملاحظة تطويرية لزميلي: ......................................................</td></tr></table>' +
-      '<table><tr><th colspan="4">🪞 تقويمي الذاتي</th></tr>' + (L.self || []).map(s => '<tr><td>' + esc(s) + '</td><td>😀</td><td>🙂</td><td>😐</td></tr>').join('') + '</table>' +
+      '<table><tr><th colspan="2">👥 تقويم الأقران — اسم المصحح: ..................</th></tr>' + (L.peer.criteria || []).slice(0, 3).map(c => '<tr><td>' + esc(c) + '</td><td style="width:90px">☐ تحقق ☐ لا</td></tr>').join('') + '<tr><td colspan="2">ملاحظة تطويرية لزميلي: ......................................................</td></tr></table>' +
+      '<table><tr><th colspan="4">🪞 تقويمي الذاتي</th></tr>' + (L.self || []).slice(0, 3).map(s => '<tr><td>' + esc(s) + '</td><td>🟢</td><td>🟡</td><td>🔴</td></tr>').join('') + '</table>' +
       window.CREDIT_HTML() + '</div>';
   };
-
-  /* ---------- البطاقات ---------- */
-  window.renderCards = function (L) {
-    const t = '<div class="ticket"><b>🎫 بطاقة الخروج — ' + esc(L.meta.title) + '</b><div class="small">الاسم: ........................</div><p>' + esc(L.exitTicket.question) + '</p><div class="lines"></div><div class="lines"></div><div class="small">قيّم فهمك: 😀 فهمت تمامًا · 🙂 فهمت جزئيًا · 😐 أحتاج مساعدة</div><div class="small" style="margin-top:4px">سؤال ما زال في ذهني: ...........................</div></div>';
-    const colors = ['#d62839', '#1f6feb', '#e3a008', '#1e8e3e'];
-    const concepts = (L.keyConcepts || []).concat((L.literacy.vocab || []).filter(v => !(L.keyConcepts || []).some(k => k.term === v)).map(v => ({ term: v, definition: '..........' })));
-    return '<div class="doc" contenteditable="true"><h2>🎫 بطاقات الخروج (6 لكل صفحة)</h2><p class="small printonly-hide">الإجابة النموذجية: ' + esc(L.exitTicket.answer) + '</p><div class="tickets">' + t.repeat(6) + '</div>' + window.CREDIT_HTML() + '</div>' +
-      '<div class="doc pagebreak" style="margin-top:14px"><h2>🟥🟦🟨🟩 بطاقات الاستجابة المتزامنة (A/B/C/D)</h2><p class="small">اطبع نسخة لكل طالب أو مجموعة. يرفع الجميع البطاقة معًا بعد زمن التفكير.</p><div class="respcards">' +
-      LBL.map((l, i) => '<div class="respcard" style="background:' + colors[i] + '">' + l + '</div>').join('') + '</div></div>' +
-      '<div class="doc pagebreak" style="margin-top:14px" contenteditable="true"><h2>🃏 بطاقات المفاهيم (للمطابقة والتصنيف)</h2><p class="small">قصّ البطاقات؛ تطابق المجموعات المصطلح مع تعريفه.</p><div class="tickets">' +
-      concepts.map(k => '<div class="ticket" style="min-height:90px;text-align:center;font-size:22px;font-weight:800">' + esc(k.term) + '</div><div class="ticket" style="min-height:90px">' + esc(k.definition) + '</div>').join('') + '</div>' + window.CREDIT_HTML() + '</div>';
-  };
-
-  /* ---------- الشرائح ---------- */
-  window.buildSlides = function (L) {
-    const S = [];
-    const ph = t => (L.phases || []).find(p => p.tool === t) || {};
-    S.push({ k: 'cover', title: L.meta.title, html: '<div class="kicker">' + esc([L.meta.subject, L.meta.grade].filter(Boolean).join(' · ')) + '</div><h1>' + esc(L.meta.title) + '</h1><div class="box"><p>🌟 قيمة الأسبوع: <b>' + esc(L.value.weekValue) + '</b></p><p>' + esc(L.value.statement) + '</p></div><p style="opacity:.8">🇸🇦 ' + esc(L.value.vision2030) + '</p><p class="kicker">' + esc(window.CREDIT.line) + '</p>' });
-    S.push({ k: 'outcomes', title: 'نواتج التعلم', minutes: 1, tool: 'picker', html: '<div class="kicker">اليوم بنهاية الحصة سنكون قادرين على…</div><h2>🎯 نواتج التعلم</h2><ol>' + li(L.outcomes.map(o => o.replace(/^أن\s+/, ''))) + '</ol><p class="kicker">🎲 سيُختار طالب عشوائيًا ليقرأ النواتج</p>' });
-    S.push({ k: 'charter', title: 'ميثاقنا', html: '<h2>🤝 ميثاق التعامل</h2><ul>' + li(L.charter) + '</ul><p class="kicker">🌿 ' + esc(L.health) + '</p>' });
-    S.push({ k: 'diag', title: 'تحدي الدقيقتين', minutes: (ph('cards').minutes || 2), tool: 'timer', html: '<div class="kicker">تقويم تشخيصي</div><h2>⚡ تحدي الدقيقتين</h2><div class="box"><p>' + esc(L.diagnostic.question) + '</p></div><p class="kicker">فكّر بصمت… ثم ارفع بطاقتك عند الإشارة</p>' });
-    (L.explanation || []).forEach((e, i) => {
-      S.push({ k: 'exp', title: e.title, img: e.imagePrompt, html: '<div class="split"><div><div class="kicker">الفكرة ' + (i + 1) + '</div><h2>' + esc(e.title) + '</h2><ul>' + li(e.points) + '</ul>' + (e.example ? '<div class="box"><p>💡 ' + esc(e.example) + '</p></div>' : '') + '</div><div class="imgslot" data-prompt="' + esc(e.imagePrompt || '') + '"></div></div>' });
-    });
-    if ((L.keyConcepts || []).length) S.push({ k: 'concepts', title: 'المفاهيم', html: '<h2>📌 المفاهيم الرئيسة</h2>' + L.keyConcepts.map(k => '<div class="box"><p><b>' + esc(k.term) + ':</b> ' + esc(k.definition) + '</p></div>').join('') + '<p class="kicker">✍️ لخّص في دفترك: ' + esc(L.literacy.writing) + '</p>' });
-    S.push({ k: 'tps', title: 'فكر – زاوج – شارك', minutes: (ph('timer').minutes || 5), tool: 'timer', html: '<div class="kicker">فكر (1) · زاوج (2) · شارك (2)</div><h2>🌍 سؤال الحياة</h2><div class="box"><p>' + esc(L.life.question) + '</p></div><p>' + esc(L.life.scenario) + '</p>' });
-    S.push({ k: 'ws', title: 'ورقة العمل', minutes: (ph('worksheet').minutes || 8), tool: 'timer', html: '<h2>📝 ورقة العمل المتمايزة</h2><div class="box"><p>🟢 انطلق ← 🟡 حلّق ← 🟣 أبدع</p><p>ابدأ بمستواك ثم تحدَّ نفسك بالمستوى الأعلى.</p></div><p>🔢 ' + esc(L.numeracy.task) + '</p><p class="kicker">الرؤوس المرقمة: سيُختار رقم عشوائي لعرض إجابة المجموعة</p>' });
-    S.push({ k: 'quiz', title: 'الكويز التفاعلي', minutes: (ph('quiz').minutes || 6), tool: 'quiz', html: '<div class="split"><div><div class="kicker">تقويم تكويني</div><h2>📱 كويز تفاعلي</h2><p>امسح الرمز وأجب من جوالك — أو استخدم بطاقات A/B/C/D</p><div id="liveBox" class="box livebars"><p class="small">النتائج المباشرة تظهر هنا</p></div></div><div style="text-align:center"><div class="qr" id="slideQR"></div></div></div>' });
-    const H = L.hot || {};
-    S.push({ k: 'hot', title: 'تفكير أعمق', minutes: (ph('picker').minutes || 4), tool: 'think', html: '<h2>🧠 فكّر بعمق</h2>' + [['لماذا؟', H.why], ['ماذا لو؟', H.whatIf], ['ما رأيك؟ وما دليلك؟', H.opinion]].filter(x => x[1]).map(x => '<div class="box"><p><b>' + x[0] + '</b> ' + esc(x[1].q) + '</p></div>').join('') + '<p class="kicker">⏳ 5 ثوانٍ تفكير صامت قبل الاختيار</p>' });
-    S.push({ k: 'creative', title: 'تحدي الإبداع', html: '<h2>💡 تحدي الإبداع وحل المشكلات</h2><div class="box"><p>' + esc((H.creative || {}).q) + '</p></div><div class="box"><p>' + esc((H.problem || {}).q) + '</p></div><p class="kicker">🌐 ' + esc(L.diversity) + '</p>' });
-    S.push({ k: 'peer', title: 'تقويم الأقران', minutes: (ph('peer').minutes || 3), tool: 'timer', html: '<div class="kicker">الدقيقة الذكية</div><h2>👥 تقويم الأقران</h2><p>' + esc(L.peer.instructions) + '</p><div class="box"><ul>' + li(L.peer.criteria) + '</ul></div><p class="kicker">❓ دقيقة لاستفساراتكم</p>' });
-    S.push({ k: 'exit', title: 'بطاقة الخروج', minutes: (ph('exit').minutes || 4), tool: 'timer', html: '<h2>🎫 بطاقة الخروج</h2><div class="box"><p>' + esc(L.exitTicket.question) + '</p></div><h2 style="margin-top:3vh">🏠 واجبكم الليلة على منصة مدرستي</h2><p>' + esc(L.homework.madrasati) + '</p><p class="kicker">🔎 ' + esc(L.research.task) + '</p>' });
-    S.push({ k: 'end', title: 'نجوم الحصة', html: '<h1>🏆 نجوم الحصة</h1><div id="starsBox" class="box"><p>شكرًا لتميزكم اليوم!</p></div><p>🇸🇦 ' + esc(L.value.nationalFact) + '</p><p class="kicker">' + esc(window.CREDIT.line) + '</p>' });
-    assignTimes(S, L);
-    return S;
-  };
-
-  /* توقيت كل شريحة بالثواني بحيث يساوي المجموع زمن الحصة بالضبط */
-  function assignTimes(S, L) {
-    const total = (+L.meta.duration || 45) * 60;
-    const G = { open: ['cover', 'outcomes', 'charter'], diag: ['diag'], explain: ['exp', 'concepts'], tps: ['tps'], ws: ['ws'], quiz: ['quiz'], hot: ['hot', 'creative'], peer: ['peer'], exit: ['exit', 'end'] };
-    const DEF = { open: 120, diag: 180, explain: 540, tps: 300, ws: 480, quiz: 360, hot: 240, peer: 180, exit: 300 };
-    const MAPT = { cards: 'diag', video: 'explain', discussion: 'explain', worksheet: 'ws', quiz: 'quiz', picker: 'hot', peer: 'peer', exit: 'exit' };
-    const sec = {};
-    (L.phases || []).forEach((p, i) => {
-      const g = i === 0 ? 'open' : (MAPT[p.tool] || (p.tool === 'timer' && !sec.tps ? 'tps' : 'explain'));
-      sec[g] = (sec[g] || 0) + (+p.minutes || 0) * 60;
-    });
-    Object.keys(DEF).forEach(g => { if (!sec[g]) sec[g] = DEF[g] * total / 2700; });
-    const sum = Object.keys(DEF).reduce((a, g) => a + sec[g], 0);
-    const W = { cover: 0.3, outcomes: 0.4, charter: 0.3, hot: 0.62, creative: 0.38, exit: 0.8, end: 0.2 };
-    Object.keys(G).forEach(g => {
-      const sl = S.filter(s => G[g].indexOf(s.k) >= 0); if (!sl.length) return;
-      const w = sl.map(s => W[s.k] || 1), tw = w.reduce((a, b) => a + b, 0);
-      sl.forEach((s, i) => { s.sec = Math.max(15, Math.round(sec[g] * total / sum * w[i] / tw / 5) * 5); });
-    });
-    S.forEach(s => { if (!s.sec) s.sec = 30; });
-    const diff = total - S.reduce((a, s) => a + s.sec, 0);
-    const big = S.reduce((m, s, i) => s.sec > S[m].sec ? i : m, 0); S[big].sec += diff;
-    S.forEach(s => { s.minutes = Math.round(s.sec / 6) / 10; });
-  }
-  const mmss = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
-  window.mmss = mmss;
-  window.timingTable = function (L) {
-    let t = 0;
-    return '<table><tr><th>#</th><th>الشريحة / الجزئية</th><th>المدة</th><th>من – إلى</th></tr>' + window.buildSlides(L).map((s, i) => { const a = t; t += s.sec; return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.title) + '</td><td>' + mmss(s.sec) + '</td><td>' + mmss(a) + ' – ' + mmss(t) + '</td></tr>'; }).join('') + '<tr><th colspan="2">المجموع</th><th colspan="2">' + mmss(t) + '</th></tr></table>';
-  };
-
-  window.renderSlidesTab = function (L) {
-    const S = window.buildSlides(L);
-    return '<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🖥️ العرض التفاعلي (' + S.length + ' شريحة)</h2><div class="row"><button class="primary" data-act="present">▶️ ابدأ العرض</button><button data-act="pptx">⬇️ PowerPoint (.pptx)</button><button data-act="gamma">✨ نسخة مبهرة عبر Gamma</button></div></div>' +
-      '<p class="small"><b>▶️ العرض يمشي تلقائيًا بالثواني</b> وينتقل لكل جزئية عند انتهاء وقتها · <b>مسافة</b> = إيقاف/متابعة.</p><p class="small muted">الأسهم للتنقل · T مؤقت كبير · R اختيار طالب · W زمن التفكير 5 ثوانٍ · D النرد · Q رمز الكويز · F ملء الشاشة · 🎙️ أوامر صوتية · 📱 تحكم من الجوال.</p>' +
-      '<ol>' + S.map(s => '<li><b>' + esc(s.title) + '</b>' + ' <span class="small muted">⏱️ ' + mmss(s.sec) + '</span>' + '</li>').join('') + '</ol></div>';
-  };
-
-  /* ---------- التقرير ---------- */
-  window.renderReport = function (L) {
-    const R = window.buildReport(L);
-    const avg = (R.reduce((a, r) => a + r.score, 0) / R.length).toFixed(2);
-    const full = R.filter(r => r.score === 4).length;
-    const bars = R.map(r => '<div class="bar"><span>ف' + r.c.id + '</span><span class="t"><i style="width:' + (r.score * 25) + '%"></i></span><span class="score s' + r.score + '">' + r.score + '</span></div>').join('');
-    const body = R.map(r => '<h3>الفقرة (' + r.c.id + ') <span class="score s' + r.score + '">' + r.score + '/4</span></h3>' +
-      '<p class="small"><b>المؤشر (' + r.c.indicator + '):</b> ' + esc(r.c.indicatorText) + '<br><b>الفقرة:</b> ' + esc(r.c.text) + (r.c.note ? '<br><i>' + esc(r.c.note) + '</i>' : '') + '<br><b>سلم التقدير:</b> ' + r.c.scaleText.map((s, i) => (i + 1) + ': ' + s).join(' · ') + '<br><b>عدد الشواهد المحققة في الدرس:</b> ' + r.count + '</p>' +
-      '<table><tr><th style="width:30%">المشاهدة الدالة</th><th>ما يقابلها في الدرس</th><th style="width:28%">ما تفعله عمليًا</th></tr>' +
-      r.rows.map(x => '<tr><td>' + (x.ok ? '✅ ' : '⚠️ ') + esc(x.observable) + '</td><td>' + esc(x.evidence) + '</td><td class="small">' + esc(x.action) + '</td></tr>').join('') + '</table>').join('');
-    const std = (window.PLAN_STANDARDS || []).map(g => '<tr><th colspan="3">' + esc(g.group) + '</th></tr>' + g.items.map(it => '<tr><td>(' + it.n + ') ' + esc(it.name) + '</td><td class="small">' + esc(it.action) + '</td><td class="small">' + esc(planEvidence(L, it.key)) + '</td></tr>').join('')).join('');
-    return '<div class="doc" contenteditable="true">' + header(L, 'التقرير المتكامل للدرس') +
-      '<h3>📊 الخلاصة</h3><p>متوسط الدرجة المتوقعة: <b>' + avg + ' / 4</b> — فقرات بالدرجة الكاملة: <b>' + full + ' من ' + R.length + '</b>.</p><p class="small">الدرجة المتوقعة محسوبة من عدد الشواهد المصممة في الدرس مقابل سلم كل فقرة، وتتحقق فعليًا عند تنفيذ ما في عمود «ما تفعله عمليًا».</p>' +
-      '<div class="bars">' + bars + '</div>' +
-      '<h3>🧾 نواتج التعلم وما يقيسها</h3><table><tr><th>الناتج</th><th>أداة القياس في الدرس</th></tr>' + (L.outcomes || []).map((o, i) => '<tr><td>' + esc(o) + '</td><td>' + esc(['التشخيص + الكويز + ورقة العمل (المستوى الأول)', 'ورقة العمل (المستوى الثاني) + تقويم الأقران', 'سؤال الحياة + المهمة التطبيقية + بطاقة الخروج', 'أسئلة التفكير العليا + المستوى الثالث'][i] || 'الكويز وبطاقة الخروج') + '</td></tr>').join('') + '</table>' +
-      '<h2 class="pagebreak" style="margin-top:20px">تقرير المؤشرات — بطاقة الملاحظة الصفية</h2>' + body +
-      '<h2 class="pagebreak" style="margin-top:20px">مطابقة خطة العمل الإجرائية للمعلم</h2><table><tr><th>المعيار</th><th>الإجراء المقترح</th><th>ما يقابله في الدرس</th></tr>' + std + '</table>' +
-      window.CREDIT_HTML() + '</div>';
-  };
-
-  function planEvidence(L, key) {
-    const m = {
-      identity: 'قيمة ' + L.value.weekValue + ' + ' + L.value.vision2030,
-      charter: 'ميثاق التعامل: ' + (L.charter || []).slice(0, 2).join('، '),
-      resources: (L.resources || []).map(r => r.title).slice(0, 3).join('، '),
-      timer: 'مؤقت مرئي لكل نشاط في وضع العرض (' + (L.phases || []).length + ' أنشطة)',
-      picker: 'عجلة الأسماء وأعواد المثلجات الرقمية دون تكرار + سجل المشاركة',
-      points: 'لوحة النقاط ونجوم الحصة: ' + (L.motivation || []).slice(0, 2).join('، '),
-      diversity: L.diversity,
-      outcomes: (L.outcomes || []).length + ' نواتج معلنة في الشريحة الأولى ويقيسها الكويز وبطاقة الخروج',
-      worksheet: 'ورقة عمل بثلاثة مستويات (انطلق/حلّق/أبدع)',
-      life: L.life.question,
-      hot: ((L.hot || {}).whatIf || {}).q || '',
-      strategies: (L.strategies || []).map(s => s.name).join('، '),
-      self: L.research.task + ' + تقويم ذاتي',
-      digital: 'كويز QR مباشر + تصدير Kahoot/Wordwall + واجب مدرستي',
-      literacy: L.literacy.reading,
-      numeracy: L.numeracy.task,
-      assessment: 'ملاحظة + كويز + ورقة عمل + أقران + بطاقة خروج',
-      exit: L.exitTicket.question,
-      feedback: ((L.feedback || [])[0] || {}).phrase || '',
-      health: L.health
-    };
-    return m[key] || '';
-  }
 
   /* ---------- دليل المعلم ---------- */
   window.renderGuide = function (L) {
@@ -246,7 +123,7 @@
         'أدخل أسماء الطلاب في تبويب «أدوات الحصة» لتعمل عجلة الأسماء وأعواد المثلجات وسجل المشاركة.',
         'قسّم الطلاب إلى مجموعات رباعية مرقمة (1–4) — المحرك يولّد المجموعات تلقائيًا.',
         'حمّل المقطع/الصور المقترحة في «الخطة» مسبقًا تحسبًا لضعف الإنترنت.',
-        'اكتب ناتج التعلم أعلى السبورة، وجهّز «ركن التعلم» بالبطاقات والنسخ المكبرة.',
+        'ناتج التعلم معروض في الشريحة الثانية تلقائيًا؛ جهّز «ركن التعلم» بالبطاقات والنسخ المكبرة.',
         'ارفع واجب مدرستي: ' + L.homework.madrasati,
         'جرّب فتح الكويز بمسح QR من جوالك قبل الحصة.',
         'تأكد من تهوية الصف وترتيب الجلوس بما يمنع التشتت.'].map(x => '<li>☐ ' + esc(x) + '</li>').join('') + '</ul>' +

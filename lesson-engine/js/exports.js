@@ -28,8 +28,13 @@
     const css = 'body{font-family:"Traditional Arabic","Sakkal Majalla",Tahoma;direction:rtl;font-size:14pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #888;padding:4px;vertical-align:top}th{background:#e8f0fb}h2{color:#0f5c51}h3{color:#1f4e9c}.credit{text-align:center;color:#555;font-size:10pt}.lvl{border:2px solid #999;padding:6px;margin:6px 0}.ans{color:#0a6b3d}.lines{border-bottom:1px dotted #999;height:18pt}';
     const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>' + css + '</style></head><body dir="rtl">' +
       window.renderPlan(L) + '<br style="page-break-before:always">' + window.renderWorksheet(L).replace(/<div class="row noprint"[\s\S]*?<\/div>/, '') +
-      '<br style="page-break-before:always">' + window.renderReport(L) + '<br style="page-break-before:always">' + window.renderGuide(L) + '</body></html>';
+      '<br style="page-break-before:always">' + window.renderCards(L) + '<br style="page-break-before:always">' + window.renderReport(L) + '</body></html>';
     download(safe(L.meta.title) + ' - الدرس والتقرير.doc', new Blob(['﻿' + html], { type: 'application/msword' }));
+  };
+  window.exportScriptWord = function (L) {
+    const css = 'body{font-family:"Traditional Arabic","Sakkal Majalla",Tahoma;direction:rtl;font-size:14pt}h2{color:#3d2fb0}.scene{border:1px solid #bbb;margin:8pt 0;padding:6pt}.shead{background:#efeafc;padding:4pt}h4{color:#0f7b6c;margin:4pt 0}.stu{color:#1f4e9c}.do{color:#7a4b00}.credit{text-align:center;color:#555;font-size:10pt}';
+    const html = '<html><head><meta charset="utf-8"><style>' + css + '</style></head><body dir="rtl">' + window.renderScript(L) + '</body></html>';
+    download(safe(L.meta.title) + ' - سيناريو المعلم.doc', new Blob(['\ufeff' + html], { type: 'application/msword' }));
   };
 
   /* ---------- PowerPoint ---------- */
@@ -37,26 +42,39 @@
     await loadScript('vendor/pptxgen.bundle.js', 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
     const p = new window.PptxGenJS(); p.layout = 'LAYOUT_WIDE'; p.rtlMode = true;
     p.title = L.meta.title; p.author = window.CREDIT.author;
-    const BG = '0B1326', T1 = 'FFFFFF', T2 = 'FFD166', AC = '2CC4AC';
-    const base = (s) => { s.background = { color: BG }; s.addShape(p.ShapeType.rect, { x: 0, y: 7.2, w: 13.33, h: 0.3, fill: { color: '0F7B6C' } }); s.addText(window.CREDIT.line, { x: 0.3, y: 7.2, w: 12.7, h: 0.3, fontSize: 10, color: 'DDEEFF', align: 'center', fontFace: 'Tajawal' }); };
-    const txt = (s, t, o) => s.addText(t, Object.assign({ fontFace: 'Tajawal', color: T1, rtlMode: true, align: 'right', valign: 'top' }, o));
-    const S = window.buildSlides(L);
-    S.forEach(sl => {
-      const s = p.addSlide(); base(s);
-      const div = document.createElement('div'); div.innerHTML = sl.html;
-      const h = div.querySelector('h1,h2'); const title = h ? h.textContent : sl.title;
-      const kicker = div.querySelector('.kicker');
-      if (kicker && kicker !== div.querySelector('.kicker:last-child')) txt(s, kicker.textContent, { x: 0.6, y: 0.3, w: 12, h: 0.5, fontSize: 16, color: AC });
-      txt(s, title, { x: 0.6, y: 0.75, w: 12, h: 1, fontSize: sl.k === 'cover' ? 40 : 32, bold: true, color: sl.k === 'cover' ? T1 : T2 });
-      const items = Array.from(div.querySelectorAll('li, .box p, p:not(.kicker)')).map(e => e.textContent.trim()).filter(Boolean);
-      const uniq = Array.from(new Set(items)).slice(0, 8);
-      if (uniq.length) txt(s, uniq.map(t => ({ text: t, options: { bullet: { indent: 18 }, breakLine: true } })), { x: 0.8, y: 1.9, w: sl.k === 'quiz' ? 7.5 : 11.8, h: 5, fontSize: uniq.length > 5 ? 18 : 22, paraSpaceAfter: 8 });
-      if (sl.minutes) txt(s, '⏱️ ' + sl.minutes + ' دقيقة', { x: 0.3, y: 0.3, w: 2.5, h: 0.5, fontSize: 14, color: T2, align: 'left' });
+    const TH = { light: ['FBF6EE', '22244D'], teal: ['E9FBF6', '22244D'], violet: ['2B2160', 'FFFFFF'], dark: ['17163A', 'FFFFFF'], grad: ['7B3FE4', 'FFFFFF'] };
+    const PAL = ['FF6B9A', 'FFCF5A', '2CC4AC', '7B6CFF', '4AA3FF'];
+    const F = 'Tajawal';
+    window.buildSlides(L).forEach(sl => {
+      const th = TH[sl.theme] || TH.light, dark = th[1] === 'FFFFFF';
+      const s = p.addSlide(); s.background = { color: th[0] };
+      // أشكال زخرفية
+      s.addShape(p.ShapeType.ellipse, { x: -1.2, y: -1.2, w: 3.2, h: 3.2, fill: { color: PAL[sl.n % 5], transparency: 78 } });
+      s.addShape(p.ShapeType.roundRect, { x: 11.4, y: 5.6, w: 2.4, h: 2.4, rectRadius: 0.4, rotate: 20, fill: { color: PAL[(sl.n + 2) % 5], transparency: 75 } });
+      s.addShape(p.ShapeType.ellipse, { x: 12.2, y: 0.3, w: 0.7, h: 0.7, fill: { color: PAL[(sl.n + 1) % 5], transparency: 50 } });
+      const d = document.createElement('div'); d.innerHTML = sl.html;
+      const chip = d.querySelector('.chipTag');
+      if (chip) { s.addShape(p.ShapeType.roundRect, { x: 9.6, y: 0.35, w: 3.2, h: 0.42, rectRadius: 0.2, fill: { color: (sl.color || '#FF6B9A').replace('#', '') } }); s.addText(chip.textContent, { x: 9.6, y: 0.35, w: 3.2, h: 0.42, fontSize: 12, bold: true, color: 'FFFFFF', align: 'center', fontFace: F }); }
+      const h = d.querySelector('h1,h2');
+      s.addText(h ? h.textContent : sl.title, { x: 0.6, y: 0.85, w: 12.1, h: 1, fontSize: sl.k === 'cover' || sl.k === 'end' ? 40 : 30, bold: true, color: dark ? 'FFFFFF' : '22244D', align: 'right', rtlMode: true, fontFace: F });
+      const sel = '.sub,.hero b,.cardx,.qcard,.pts li,.excard,.hq,.ex,.step,.chk,.tl,.trow,.strip,.noteAr,.pill';
+      const items = Array.from(new Set(Array.from(d.querySelectorAll(sel)).map(e => e.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean))).slice(0, 7);
+      const formula = Array.from(d.querySelectorAll('.fchip,.op')).map(e => e.textContent).join('  ');
+      let y = 2.0;
+      if (formula) { s.addText(formula, { x: 0.8, y, w: 11.8, h: 0.9, fontSize: 28, bold: true, color: 'FFCF5A', align: 'center', fontFace: F }); y += 1.1; }
+      const w = sl.k === 'quiz' ? 7.6 : 12.1, hh = Math.min(0.78, (6.9 - y) / Math.max(1, items.length));
+      items.forEach((t, i) => {
+        s.addShape(p.ShapeType.roundRect, { x: 0.6 + (sl.k === 'quiz' ? 4.6 : 0), y, w, h: hh - 0.1, rectRadius: 0.12, fill: { color: dark ? 'FFFFFF' : 'FFFFFF', transparency: dark ? 88 : 0 }, line: { color: PAL[i % 5], width: 1.5 } });
+        s.addText(t, { x: 0.75 + (sl.k === 'quiz' ? 4.6 : 0), y, w: w - 0.3, h: hh - 0.1, fontSize: t.length > 90 ? 13 : 17, color: dark ? 'FFFFFF' : '22244D', align: 'right', rtlMode: true, valign: 'middle', fontFace: F });
+        y += hh;
+      });
       if (sl.k === 'quiz') {
         const c = document.createElement('div'); const src = window.makeQR(c, window.quizURL(L, null), 300);
-        if (src) s.addImage({ data: src.replace(/^data:/, ''), x: 8.9, y: 1.9, w: 3.8, h: 3.8 });
+        if (src) { s.addShape(p.ShapeType.roundRect, { x: 0.6, y: 2.0, w: 4.0, h: 4.0, rectRadius: 0.2, fill: { color: 'FFFFFF' } }); s.addImage({ data: src.replace(/^data:/, ''), x: 0.8, y: 2.2, w: 3.6, h: 3.6 }); }
       }
-      s.addNotes((L.phases || []).map(ph => ph.name + ': ' + ph.teacher).join('\n'));
+      s.addText('⏱️ ' + window.mmss(sl.sec) + '   ·   ' + sl.n, { x: 0.4, y: 7.0, w: 3, h: 0.35, fontSize: 11, color: dark ? 'CCCCEE' : '777799', align: 'left', fontFace: F });
+      s.addText(window.CREDIT.line, { x: 4, y: 7.0, w: 8.9, h: 0.35, fontSize: 10, color: dark ? 'CCCCEE' : '777799', align: 'right', fontFace: F });
+      const sc = sl.script || {}; s.addNotes(['⏱️ ' + window.mmss(sl.sec)].concat((sc.teacher || []).map(x => '🗣️ ' + x), (sc.students || []).map(x => '🙋 ' + x), (sc.actions || []).map(x => '🖱️ ' + x)).join('\n'));
     });
     await p.writeFile({ fileName: safe(L.meta.title) + '.pptx' });
   };

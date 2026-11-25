@@ -83,8 +83,18 @@
   $('#aiKey').onchange = () => S.set('le_key_' + $('#aiProvider').value, $('#aiKey').value.trim());
   $('#aiModel').onchange = () => S.set('le_model_' + $('#aiProvider').value, $('#aiModel').value.trim());
 
+  /* المرحلة والزمن */
+  function seg(id, key, def, cb) {
+    const el = $(id), v = S.get(key, def);
+    const set = val => { el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(val))); S.set(key, val); if (cb) cb(val); };
+    el.onclick = e => { const b = e.target.closest('button'); if (b) set(b.dataset.v); };
+    set(v);
+  }
+  seg('#segStage', 'le_stage', 'الثانوية');
+  seg('#segDur', 'le_dur', '45', v => { $('#fDuration').value = v; });
   function info() {
     return {
+      stage: S.get('le_stage', 'الثانوية'),
       subject: $('#fSubject').value.trim(), grade: $('#fGrade').value.trim(), title: $('#fTitle').value.trim(),
       duration: +$('#fDuration').value || 45, students: $('#fStudents').value.trim(), value: $('#fValue').value.trim(), notes: $('#fNotes').value.trim()
     };
@@ -165,10 +175,7 @@
         $('#offText').value = text.trim();
       } catch (e) { text = ''; }
     }
-    if (!inf.title) {
-      const first = (text.split('\n').map(s => s.trim()).find(s => s.length > 4 && s.length < 60)) || 'درس اليوم';
-      inf.title = first;
-    }
+    if (!inf.title) inf.title = window.detectLessonTitle(text) || 'درس اليوم';
     return window.buildOfflineLesson(Object.assign({}, inf, { text }));
   }
   $('#btnDemo').onclick = () => show(normalize(JSON.parse(JSON.stringify(window.DEMO_LESSON)), {}));
@@ -188,13 +195,16 @@
     L = L || {}; L.meta = L.meta || {};
     if (inf.title) L.meta.title = L.meta.title || inf.title;
     ['subject', 'grade'].forEach(k => { if (inf[k] && !L.meta[k]) L.meta[k] = inf[k]; });
-    L.meta.duration = +L.meta.duration || inf.duration || 45;
+    L.meta.duration = +inf.duration || +L.meta.duration || 45;
     if (inf.value && L.value) L.value.weekValue = inf.value;
     const fb = window.buildOfflineLesson({ title: L.meta.title || inf.title || 'درس اليوم', subject: L.meta.subject || inf.subject, grade: L.meta.grade || inf.grade, duration: L.meta.duration, text: [L.summary || ''].concat((L.explanation || []).map(e => (e.points || []).join('. '))).join('. '), value: inf.value });
     delete fb._offline;
     const off = L._offline;
     L = fill(L, fb);
     if (off) L._offline = true;
+    L.meta.stage = L.meta.stage || inf.stage || '';
+    const sc = window.buildScript(L); L.script = L.script || {};
+    Object.keys(sc).forEach(k => { const v = L.script[k]; if (!v || !v.teacher || !v.teacher.length) L.script[k] = sc[k]; else { v.students = v.students && v.students.length ? v.students : sc[k].students; v.actions = v.actions && v.actions.length ? v.actions : sc[k].actions; } });
     L.quiz = (L.quiz || []).filter(q => q && q.q && Array.isArray(q.options) && q.options.length >= 2).map(q => {
       q.options = q.options.slice(0, 4).map(String); while (q.options.length < 4) q.options.push('لا شيء مما سبق');
       q.correct = Math.max(0, Math.min(3, parseInt(q.correct, 10) || 0)); return q;
@@ -213,26 +223,26 @@
 
   /* ---------- عرض المخرجات ---------- */
   const TABS = [
-    ['plan', '📘 خطة الدرس'], ['ws', '📝 ورقة العمل'], ['cards', '🎫 البطاقات'], ['slides', '🖥️ العرض'],
-    ['tools', '🧰 أدوات الحصة'], ['integ', '🔗 أدوات خارجية'], ['report', '📊 التقرير والمؤشرات'], ['guide', '🧭 دليل المعلم']
+    ['slides', '🖥️ العرض'], ['script', '🗣️ سيناريو المعلم'], ['ws', '📝 ورقة العمل'], ['cards', '🎫 بطاقة الخروج'],
+    ['report', '📊 تقرير البطاقة'], ['plan', '📘 خطة الدرس'], ['tools', '🧰 أدوات الحصة'], ['integ', '🔗 أدوات خارجية'], ['guide', '🧭 دليل المعلم']
   ];
-  let TAB = 'plan';
+  let TAB = 'slides';
   function show(L) {
     window.CURRENT = L;
     $('#inputSection').classList.add('hide'); $('#out').classList.remove('hide');
     $('#outTitle').textContent = L.meta.title;
     $('#outMeta').textContent = [L.meta.subject, L.meta.grade, L.meta.duration + ' دقيقة', L._offline ? 'المحرك الذاتي — راجع المحتوى' : ''].filter(Boolean).join(' · ');
     $('#tabs').innerHTML = TABS.map(t => '<button data-tab="' + t[0] + '">' + t[1] + '</button>').join('');
-    tab('plan'); autosave(L); window.scrollTo(0, 0);
+    tab('slides'); autosave(L); window.scrollTo(0, 0);
   }
   window.showLesson = show;
   function tab(t) {
     TAB = t; const L = window.CURRENT;
     document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     const v = $('#views');
-    const R = { plan: window.renderPlan, ws: window.renderWorksheet, cards: window.renderCards, slides: window.renderSlidesTab, tools: window.renderTools, integ: window.renderIntegrations, report: window.renderReport, guide: window.renderGuide };
-    v.innerHTML = '<div class="' + (/plan|ws|cards|report|guide/.test(t) ? '' : 'card') + '" style="margin-top:10px">' + R[t](L) + '</div>';
-    if (/plan|ws|cards|report|guide/.test(t)) v.insertAdjacentHTML('afterbegin', '<p class="small muted noprint" style="margin:8px 0 0">✏️ يمكنك تعديل أي نص بالنقر عليه مباشرة قبل الطباعة.</p>');
+    const R = { script: window.renderScript, plan: window.renderPlan, ws: window.renderWorksheet, cards: window.renderCards, slides: window.renderSlidesTab, tools: window.renderTools, integ: window.renderIntegrations, report: window.renderReport, guide: window.renderGuide };
+    v.innerHTML = '<div class="' + (/plan|ws|cards|report|guide|script/.test(t) ? '' : 'card') + '" style="margin-top:10px">' + R[t](L) + '</div>';
+    if (/plan|ws|cards|report|guide|script/.test(t)) v.insertAdjacentHTML('afterbegin', '<p class="small muted noprint" style="margin:8px 0 0">✏️ يمكنك تعديل أي نص بالنقر عليه مباشرة قبل الطباعة.</p>');
     if (t === 'ws') {
       window.makeQR($('#wsQR'), window.quizURL(L, null), 140);
       $('#wsLarge').onchange = e => $('#wsDoc').classList.toggle('large', e.target.checked);
@@ -240,7 +250,9 @@
     }
     if (t === 'tools') window.bindTools(L);
     if (t === 'integ') window.bindIntegrations(L, v);
+    if (t === 'slides') { v.querySelectorAll('.thumb .tscale').forEach(ts => ts.style.setProperty('--sc', ts.clientWidth / 1280)); }
     if (t === 'slides') v.onclick = e => {
+      const th = e.target.closest('[data-goto]'); if (th) { window.startPresentation(L); window.remoteCmd('goto', +th.dataset.goto); return; }
       const b = e.target.closest('[data-act]'); if (!b) return;
       if (b.dataset.act === 'present') window.startPresentation(L);
       if (b.dataset.act === 'pptx') window.exportPPTX(L).catch(er => window.toast('⚠️ ' + er.message, 4000));
@@ -250,11 +262,12 @@
   $('#tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) tab(b.dataset.tab); };
   $('#btnPresent').onclick = () => window.startPresentation(window.CURRENT);
   $('#btnPrint').onclick = () => {
-    if (!/plan|ws|cards|report|guide/.test(TAB)) { tab('plan'); }
+    if (!/plan|ws|cards|report|guide|script/.test(TAB)) { tab('report'); }
     if (TAB === 'ws' && $('#wsAns') && $('#wsAns').checked) window.toast('الإجابات ظاهرة — ألغِ «إظهار الإجابات» لنسخة الطلاب', 3500);
     setTimeout(() => window.print(), 150);
   };
   $('#btnWord').onclick = () => window.exportWord(window.CURRENT);
+  $('#btnScriptWord').onclick = () => window.exportScriptWord(window.CURRENT);
   $('#btnSave').onclick = () => { autosave(window.CURRENT, true); window.toast('حُفظ الدرس في «دروسي»'); };
   $('#btnNew').onclick = () => { IMAGES.length = 0; drawThumbs(); $('#out').classList.add('hide'); $('#inputSection').classList.remove('hide'); $('#pasteJSON').value = ''; window.scrollTo(0, 0); };
 
