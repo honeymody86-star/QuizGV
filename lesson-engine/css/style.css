@@ -173,3 +173,4 @@ details.card>summary::-webkit-details-marker{display:none}
 .progress .st.done{color:var(--ok)}
 .progress .pb{height:8px;background:rgba(127,127,127,.2);border-radius:8px;overflow:hidden;margin-top:8px}
 .progress .pb i{display:block;height:100%;width:0;background:var(--brand);transition:width .6s}
+.adminbox{margin-top:12px;border:2px dashed var(--brand2);border-radius:12px;padding:12px;background:var(--surface)}

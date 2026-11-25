@@ -60,8 +60,26 @@
     $('#aiKey').value = S.get('le_key_' + k, '');
     $('#keyLink').href = v.keyUrl; $('#keyLink').textContent = v.free ? 'احصل عليه مجانًا ↗' : 'لوحة المفاتيح ↗';
   }
+  /* رابط المدرسة: يحمل مفتاح التفعيل فيُحفظ تلقائيًا عند المعلم */
+  (function () {
+    const h = new URLSearchParams(location.hash.slice(1));
+    const k = h.get('k');
+    if (k) {
+      const pv = P[h.get('p')] ? h.get('p') : 'gemini';
+      S.set('le_key_' + pv, k); S.set('le_provider', pv); S.set('le_mode2', 'auto'); MODE = 'auto';
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+      setTimeout(() => window.toast('✔ تم تفعيل المحرك — ضع صورة الدرس فقط', 4000), 300);
+    }
+  })();
   $('#aiProvider').value = S.get('le_provider', 'gemini'); provUI();
   $('#aiProvider').onchange = () => { S.set('le_provider', $('#aiProvider').value); provUI(); };
+  $('#btnSchoolLink').onclick = () => {
+    const pv = $('#aiProvider').value, key = $('#aiKey').value.trim();
+    if (!key) return window.toast('الصق مفتاح التفعيل أولًا', 3000);
+    S.set('le_key_' + pv, key);
+    window.copyText(window.appBase() + 'index.html#k=' + encodeURIComponent(key) + (pv !== 'gemini' ? '&p=' + pv : ''));
+    window.toast('✔ نُسخ رابط المعلمين — أرسله في القروب', 4000);
+  };
   $('#aiKey').onchange = () => S.set('le_key_' + $('#aiProvider').value, $('#aiKey').value.trim());
   $('#aiModel').onchange = () => S.set('le_model_' + $('#aiProvider').value, $('#aiModel').value.trim());
 

@@ -75,9 +75,17 @@
       <div class="grid g3">
         <div><label>المزود</label><select id="aiProvider"></select></div>
         <div><label>النموذج</label><input id="aiModel" list="aiModels"><datalist id="aiModels"></datalist></div>
-        <div><label>مفتاح API <a id="keyLink" target="_blank" rel="noopener" class="small">احصل عليه مجانًا</a></label><input id="aiKey" type="password" placeholder="يُحفظ في جهازك فقط"></div>
+        <div><label>مفتاح التفعيل (اختياري) <a id="keyLink" target="_blank" rel="noopener" class="small">احصل عليه مجانًا</a></label><input id="aiKey" type="password" placeholder="يُحفظ في جهازك فقط"></div>
       </div>
-      <p class="small muted" style="margin:6px 0 0">اختياري لجودة أعلى. 🔒 المفتاح يُحفظ في متصفحك فقط ويُرسل لمزوده مباشرة. للحصول على مفتاح Gemini مجاني: سجّل بحساب Google في AI Studio ← Get API key.</p>
+      <div class="adminbox">
+        <b>👨‍💼 لمسؤول المدرسة فقط (مرة واحدة)، والمعلمون لا يفعلون شيئًا:</b>
+        <ol class="small" style="margin:6px 0;padding-inline-start:20px">
+          <li>افتح <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">صفحة المفتاح المجاني من Google ↗</a> بحساب Gmail، واضغط <b>Create API key</b>، ثم انسخه.</li>
+          <li>الصقه في خانة «مفتاح التفعيل» أعلاه.</li>
+          <li>اضغط الزر بالأسفل، وأرسل الرابط في قروب المعلمين. من يفتحه يتفعل عنده كل شيء تلقائيًا.</li>
+        </ol>
+        <button class="primary" id="btnSchoolLink">🔗 إنشاء رابط المعلمين الجاهز</button>
+      </div>
     </div>
 
     <!-- bridge -->
