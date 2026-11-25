@@ -14,6 +14,7 @@ button{font:inherit;font-size:19px;font-weight:800;border:0;border-radius:16px;p
 button:active{transform:scale(.97)}
 .nav{background:#0f7b6c;font-size:26px;padding:34px 8px}
 .w{grid-column:1/-1}.y{background:#b47b00}.b{background:#1f4e9c}.r{background:#7a2b3b}
+.sc{margin-top:14px;background:#151f42;border-radius:16px;padding:14px;line-height:1.8;font-size:16px}.sc h4{margin:8px 0 2px;color:#ffcf5a}.sc ul{margin:0;padding-inline-start:20px}.muted2{opacity:.7;font-size:14px}
 .credit{text-align:center;font-size:12px;opacity:.6;margin-top:16px}
 </style>
 </head>
@@ -35,6 +36,7 @@ button:active{transform:scale(.97)}
     <button data-c="plus">＋1 دقيقة</button>
     <button class="r" data-c="hide">✕ إغلاق النافذة</button>
   </div>
+  <div id="sc" class="sc"><b>📝 سيناريو الشريحة</b><div class="muted2">يظهر هنا ما تقوله في كل جزء من الحصة.</div></div>
   <div class="credit">محرك الدروس المتميزة — من إعداد: أ. محمد عطية الزهراني — مدرسة عثمان بن عفان الثانوية</div>
 </div>
 <script src="vendor/peerjs.min.js"></script>
@@ -42,12 +44,15 @@ button:active{transform:scale(.97)}
 (function(){
   const P=new URLSearchParams(location.hash.slice(1)); const host=P.get('h'), pin=P.get('k');
   const st=document.getElementById('st'); let conn=null;
+  const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   if(!host){ st.textContent='⚠️ امسح رمز التحكم من شاشة اللابتوب.'; return; }
   function go(){
     const p=new Peer();
     p.on('open',()=>{ conn=p.connect(host,{reliable:true});
-      conn.on('open',()=>{ st.textContent='🟢 متصل — تحكّم في العرض'; });
-      conn.on('data',d=>{ if(d&&d.type==='ok') st.textContent='🟢 متصل · الشريحة '+(d.slide||''); if(d&&d.type==='err') st.textContent='⚠️ '+d.msg; });
+      conn.on('open',()=>{ st.textContent='🟢 متصل — تحكّم في العرض'; conn.send({type:'cmd',cmd:'hello',pin}); });
+      conn.on('data',d=>{ if(d&&d.type==='ok') st.textContent='🟢 متصل · الشريحة '+(d.slide||''); if(d&&d.type==='err') st.textContent='⚠️ '+d.msg;
+        if(d&&d.type==='slide'){ st.textContent='🟢 متصل · الشريحة '+d.n+' / '+d.total; const s=d.script||{}; const L=a=>(a||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
+          document.getElementById('sc').innerHTML='<b>📝 '+esc(d.title)+'</b><h4>🗣️ قل:</h4><ul>'+L(s.teacher)+'</ul><h4>🙋 المتوقع من الطلاب:</h4><ul>'+L(s.students)+'</ul><h4>🖱️ نفّذ:</h4><ul>'+L(s.actions)+'</ul>'; } });
       conn.on('close',()=>{ st.textContent='🔴 انقطع الاتصال — جارٍ إعادة المحاولة'; setTimeout(go,2000); });
     });
     p.on('error',e=>{ st.textContent='⚠️ تعذر الاتصال ('+e.type+'). تأكد أن وضع العرض مفتوح في اللابتوب.'; });

@@ -229,7 +229,7 @@
       const pct = ans.length ? Math.round(ok / ans.length * 100) : 0;
       return '<div class="lb"><span>س' + (i + 1) + '</span><span class="t"><i style="width:' + pct + '%;background:' + (pct < 50 ? '#ff6b6b' : '#2cc4ac') + '"></i></span><span>' + (ans.length ? pct + '%' : '—') + '</span></div>';
     }).join('') + (st.length ? '<p class="small">🏅 ' + st.sort((a, b) => b.score - a.score).slice(0, 5).map(s => esc(s.name) + ' (' + s.score + ')').join(' · ') + '</p>' : '');
-    ['#tLiveBars', '#liveBox'].forEach(s => { const e = $(s); if (e) e.innerHTML = html; });
+    ['#tLiveBars', '#pSlide #liveBox'].forEach(s => { const e = $(s); if (e) e.innerHTML = html; });
   }
 
   /* ---------- وضع العرض ---------- */
@@ -240,7 +240,7 @@
     const p = $('#present'); p.classList.remove('hide');
     p.innerHTML = '<div class="autobar"><i id="aBar"></i></div><div class="aclock" id="aClock"></div><div class="stage"><div class="slide" id="pSlide"></div></div><div class="credit">' + esc(window.CREDIT.line) + '</div>' +
       '<div class="pbar"><button data-p="prev">→ السابق</button><button data-p="play" id="pPlay" class="playbtn">⏸️ إيقاف</button><span class="count" id="pCount"></span><button data-p="next">التالي ←</button><button data-p="add">＋30ث</button>' +
-      '<button data-p="timer">⏱️ مؤقت</button><button data-p="pick">🎯 اختر طالبًا</button><button data-p="think">🤫 فكّر 5ث</button><button data-p="dice">🎲 نرد</button><button data-p="points">🏆 النقاط</button><button data-p="qr">📱 QR</button><button data-p="voice">🎙️ صوت</button><button data-p="remote">🕹️ جوال</button><button data-p="fs">⛶</button><button data-p="close">✕ خروج</button></div>';
+      '<button data-p="timer">⏱️ مؤقت</button><button data-p="pick">🎯 اختر طالبًا</button><button data-p="think">🤫 فكّر 5ث</button><button data-p="dice">🎲 نرد</button><button data-p="points">🏆 النقاط</button><button data-p="qr">📱 QR</button><button data-p="script">📝 السيناريو</button><button data-p="voice">🎙️ صوت</button><button data-p="remote">🕹️ جوال</button><button data-p="fs">⛶</button><button data-p="close">✕ خروج</button></div>';
     p.querySelector('.pbar').onclick = e => { const b = e.target.closest('[data-p]'); if (b) window.remoteCmd(b.dataset.p); };
     showSlide();
     setPlay(true);
@@ -276,6 +276,18 @@
     }
     updClock();
   }
+  function fitSlide() {
+    const st = document.querySelector('#present .stage'), el = $('#pSlide'); if (!st || !el) return;
+    const sc = Math.min(st.clientWidth / 1280, st.clientHeight / 720);
+    el.style.transform = 'translate(-50%,-50%) scale(' + sc + ')';
+  }
+  window.addEventListener('resize', fitSlide);
+  function renderScriptPanel() {
+    const s = PRES.S[PRES.i] || {}, sc = s.script || {};
+    let p = $('#scriptPanel'); if (!p) { p = document.createElement('div'); p.id = 'scriptPanel'; $('#present').appendChild(p); }
+    const L = a => (a || []).map(x => '<li>' + esc(x) + '</li>').join('');
+    p.innerHTML = '<b>📝 ' + esc(s.title) + '</b><h4>🗣️ قل:</h4><ul>' + L(sc.teacher) + '</ul><h4>🙋 المتوقع من الطلاب:</h4><ul>' + L(sc.students) + '</ul><h4>🖱️ نفّذ:</h4><ul>' + L(sc.actions) + '</ul>';
+  }
   function keyNav(e) {
     if ($('#present').classList.contains('hide')) return;
     if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
@@ -297,25 +309,27 @@
     const el = $('#pSlide'); el.innerHTML = s.html;
     $('#pCount').textContent = (PRES.i + 1) + ' / ' + PRES.S.length + ' · ' + window.mmss(s.sec);
     updClock();
-    const slot = el.querySelector('.imgslot');
-    if (slot) {
-      const pr = slot.dataset.prompt; const on = $('#optImages') ? $('#optImages').checked : true;
-      if (pr && on) {
-        const img = new Image(); img.className = 'ill'; img.alt = '';
-        img.src = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(pr + ', educational, high quality') + '?width=900&height=600&nologo=true&seed=' + (PRES.i + 3);
-        img.onerror = () => img.remove(); slot.appendChild(img);
-      }
+    el.querySelectorAll('.a').forEach((x, i) => x.style.setProperty('--i', i));
+    fitSlide();
+    const iw = el.querySelector('.imgwrap');
+    if (iw && iw.dataset.prompt && ($('#optImages') ? $('#optImages').checked : true)) {
+      const img = new Image(); img.alt = '';
+      img.onload = () => iw.appendChild(img);
+      img.src = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(iw.dataset.prompt + ', colorful flat educational illustration, no text') + '?width=800&height=720&nologo=true&seed=' + (PRES.i + 3);
     }
-    if (s.k === 'quiz') { const q = $('#slideQR'); if (q) window.makeQR(q, window.quizURL(window.CURRENT, LIVE.id), Math.min(360, window.innerHeight * 0.45)); renderLive(); }
+    if ($('#scriptPanel')) renderScriptPanel();
+    LIVE.conns.forEach(c => { try { if (c.open) c.send({ type: 'slide', n: PRES.i + 1, total: PRES.S.length, title: s.title, sec: s.sec, script: s.script }); } catch (e) {} });
+    if (s.k === 'quiz') { const q = el.querySelector('#slideQR'); if (q) window.makeQR(q, window.quizURL(window.CURRENT, LIVE.id), 330); renderLive(); }
     if (s.k === 'end') {
       const stars = Object.entries(CLS.counts || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
       const top = Object.values(LIVE.students).sort((a, b) => b.score - a.score).slice(0, 3).map(x => x.name);
-      const b = $('#starsBox'); if (b && (stars.length || top.length)) b.innerHTML = '<p>⭐ ' + esc(Array.from(new Set(top.concat(stars))).slice(0, 5).join(' · ')) + '</p>';
+      const b = el.querySelector('#starsBox'); if (b && (stars.length || top.length)) b.innerHTML = '⭐ ' + esc(Array.from(new Set(top.concat(stars))).slice(0, 5).join(' · '));
     }
   }
   window.remoteCmd = function (cmd, arg) {
     const s = PRES.S[PRES.i] || {};
     switch (cmd) {
+      case 'hello': if (PRES.S.length) showSlide(true); break;
       case 'next': if (PRES.i < PRES.S.length - 1) { PRES.i++; hideOverlay(); showSlide(); } break;
       case 'prev': if (PRES.i > 0) { PRES.i--; hideOverlay(); showSlide(); } break;
       case 'goto': PRES.i = Math.max(0, Math.min(PRES.S.length - 1, +arg || 0)); hideOverlay(); showSlide(); break;
@@ -332,6 +346,7 @@
       case 'qr': showOverlay('<div class="label">📱 امسح للكويز التفاعلي</div><div class="qr" id="ovQR"></div>'); window.makeQR($('#ovQR'), window.quizURL(window.CURRENT, LIVE.id), Math.min(440, window.innerHeight * 0.6)); break;
       case 'fs': try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) {} break;
       case 'voice': toggleVoice(); break;
+      case 'script': if ($('#scriptPanel')) $('#scriptPanel').remove(); else renderScriptPanel(); break;
       case 'remote': startLive(window.CURRENT).then(() => {
         showOverlay('<div class="label">🕹️ امسح بجوالك للتحكم في العرض</div><div class="qr" id="ovRQ"></div><div class="label">رمز الأمان: ' + LIVE.pin + '</div>');
         window.makeQR($('#ovRQ'), window.appBase() + 'remote.html#h=' + LIVE.id + '&k=' + LIVE.pin, 300);

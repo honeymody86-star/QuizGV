@@ -29,6 +29,10 @@
 <!-- ============ الإدخال ============ -->
 <section id="inputSection">
   <div class="card hero">
+    <div class="pickers">
+      <div class="seg" id="segStage"><span>المرحلة</span><button data-v="الثانوية">ثانوي</button><button data-v="المتوسطة">متوسط</button><button data-v="الابتدائية">ابتدائي</button></div>
+      <div class="seg" id="segDur"><span>زمن الحصة</span><button data-v="45">45 د</button><button data-v="40">40 د</button><button data-v="35">35 د</button></div>
+    </div>
     <div class="drop big" id="drop">
       <div style="font-size:64px;line-height:1">📷</div>
       <b style="font-size:clamp(20px,3vw,28px)">ضع صورة الدرس فقط</b>
@@ -129,7 +133,8 @@
       <div class="row">
         <button class="primary" id="btnPresent">▶️ ابدأ الحصة (وضع العرض)</button>
         <button id="btnPrint">🖨️ طباعة / PDF</button>
-        <button id="btnWord">📄 Word</button>
+        <button id="btnWord">📄 الدرس Word</button>
+        <button id="btnScriptWord">🗣️ السيناريو Word</button>
         <button id="btnSave">💾 حفظ</button>
         <button id="btnNew" class="ghost">＋ درس جديد</button>
       </div>
@@ -143,7 +148,7 @@
 
 <footer class="foot">
   محرك الدروس المتميزة — من إعداد: <b>أ. محمد عطية الزهراني</b> — مدرسة عثمان بن عفان الثانوية<br>
-  مبني على بطاقة الملاحظة الصفية (هيئة تقويم التعليم والتدريب) وخطة العمل الإجرائية للمعلم.
+  مبني على بطاقة الملاحظة الصفية (هيئة تقويم التعليم والتدريب).
 </footer>
 
 <div id="present" class="hide"></div>
@@ -158,6 +163,8 @@
 <script src="js/report.js"></script>
 <script src="js/demo.js"></script>
 <script src="js/render.js"></script>
+<script src="js/slides.js"></script>
+<script src="js/docs.js"></script>
 <script src="js/tools.js"></script>
 <script src="js/exports.js"></script>
 <script src="js/app.js"></script>
