@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>جهاز التحكم بالحصة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tajawal,system-ui,sans-serif;background:#0b1326;color:#fff;min-height:100vh;padding:14px}
+.wrap{max-width:480px;margin:0 auto}
+h1{font-size:20px;margin:4px 0}.st{font-size:14px;opacity:.8;margin-bottom:10px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;font-size:19px;font-weight:800;border:0;border-radius:16px;padding:20px 8px;color:#fff;background:#1d2a52;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97)}
+.nav{background:#0f7b6c;font-size:26px;padding:34px 8px}
+.w{grid-column:1/-1}.y{background:#b47b00}.b{background:#1f4e9c}.r{background:#7a2b3b}
+.credit{text-align:center;font-size:12px;opacity:.6;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🕹️ جهاز التحكم بالحصة</h1>
+  <div class="st" id="st">جارٍ الاتصال باللابتوب…</div>
+  <div class="g">
+    <button class="nav" data-c="prev">→ السابق</button>
+    <button class="nav" data-c="next">التالي ←</button>
+    <button class="y" data-c="timer">⏱️ مؤقت الشريحة</button>
+    <button class="y" data-c="pause">⏯️ إيقاف/متابعة</button>
+    <button class="b" data-c="pick">🎯 اختر طالبًا</button>
+    <button class="b" data-c="think">🤫 فكّر 5 ث</button>
+    <button data-c="dice">🎲 نرد</button>
+    <button data-c="dice4" >🔢 رؤوس مرقمة</button>
+    <button data-c="qr">📱 رمز الكويز</button>
+    <button data-c="points">🏆 النقاط</button>
+    <button data-c="plus">＋1 دقيقة</button>
+    <button class="r" data-c="hide">✕ إغلاق النافذة</button>
+  </div>
+  <div class="credit">محرك الدروس المتميزة — من إعداد: أ. محمد عطية الزهراني — مدرسة عثمان بن عفان الثانوية</div>
+</div>
+<script src="vendor/peerjs.min.js"></script>
+<script>
+(function(){
+  const P=new URLSearchParams(location.hash.slice(1)); const host=P.get('h'), pin=P.get('k');
+  const st=document.getElementById('st'); let conn=null;
+  if(!host){ st.textContent='⚠️ امسح رمز التحكم من شاشة اللابتوب.'; return; }
+  function go(){
+    const p=new Peer();
+    p.on('open',()=>{ conn=p.connect(host,{reliable:true});
+      conn.on('open',()=>{ st.textContent='🟢 متصل — تحكّم في العرض'; });
+      conn.on('data',d=>{ if(d&&d.type==='ok') st.textContent='🟢 متصل · الشريحة '+(d.slide||''); if(d&&d.type==='err') st.textContent='⚠️ '+d.msg; });
+      conn.on('close',()=>{ st.textContent='🔴 انقطع الاتصال — جارٍ إعادة المحاولة'; setTimeout(go,2000); });
+    });
+    p.on('error',e=>{ st.textContent='⚠️ تعذر الاتصال ('+e.type+'). تأكد أن وضع العرض مفتوح في اللابتوب.'; });
+  }
+  go();
+  document.querySelector('.g').onclick=e=>{
+    const b=e.target.closest('[data-c]'); if(!b||!conn||!conn.open) return;
+    let c=b.dataset.c, arg; if(c==='dice4'){ c='dice'; arg=4; }
+    conn.send({type:'cmd',cmd:c,arg,pin}); if(navigator.vibrate) navigator.vibrate(30);
+  };
+})();
+</script>
+</body>
+</html>
