@@ -14,8 +14,8 @@
   const pick = (csv, i) => csv.split(',')[i];
 
   /* أي ضمير يُسأل به وأي ضمير يجيب: أنا ← يُسأل «أنتَ» ويجيب «أنا» */
-  const Q_PRON = { i: 'you', you: 'you', he: 'he', she: 'she', we: 'youpl', they: 'they' };
-  const A_PRON = { i: 'i', you: 'i', he: 'he', she: 'she', we: 'we', they: 'they' };
+  const Q_PRON = { i: 'you', you: 'you', he: 'he', she: 'she', we: 'youpl', youpl: 'youpl', they: 'they' };
+  const A_PRON = { i: 'i', you: 'i', he: 'he', she: 'she', we: 'we', youpl: 'we', they: 'they' };
 
   /* ---------- التصريف ---------- */
   const EN = {

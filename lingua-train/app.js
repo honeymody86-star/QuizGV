@@ -158,8 +158,8 @@
     const t = $('#toast'); t.textContent = msg; t.hidden = false;
     clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, ms);
   }
-  function modal(html) { $('#sheet').innerHTML = html; $('#modal').hidden = false; }
-  function closeModal() { $('#modal').hidden = true; }
+  function modal(html, wide) { $('#sheet').classList.toggle('wide', !!wide); $('#sheet').innerHTML = html; $('#modal').hidden = false; }
+  function closeModal() { $('#modal').hidden = true; if ($('#sheet').classList.contains('wide')) { P.run++; hush(); } }
   $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
   /* زر 🔊 أمام أي جملة: ينطقها وحدها دون تشغيل اللوحة */
   document.addEventListener('click', (e) => {
@@ -344,6 +344,7 @@
           <select id="trSel"><option value="none">بدون</option><option value="ar">🇸🇦 العربية</option>${others.map(l => `<option value="${l.id}">${l.flag} ${l.ar}</option>`).join('')}</select>
         </label>
         <button class="toggle${SET.sayTrans ? ' on' : ''}" id="sayTrBtn" title="تُنطق الترجمة فقط إذا فعّلت هذا الزر">🔊 نطق الترجمة</button>
+        <button class="toggle" id="conjBtn" title="الجملة مع كل ضمائر الفاعل في الزمن الذي تختاره">👥 كل الضمائر</button>
         <button class="toggle${SET.pics ? ' on' : ''}" id="picBtn">🖼️ صور الصيغ</button>
         <div class="cmpchips"><span class="muted">⚖️ قارن مع:</span>${others.map(l => `<button class="cmpc${SET.compare.includes(l.id) ? ' on' : ''}" data-l="${l.id}" aria-pressed="${SET.compare.includes(l.id)}">${l.flag} ${l.ar}</button>`).join('')}</div>
       </div>
@@ -375,6 +376,7 @@
     $('#trSel').onchange = (e) => { SET.trans = e.target.value; saveSet(); rerender(); };
     $('#sayTrBtn').onclick = (e) => { SET.sayTrans = !SET.sayTrans; saveSet(); e.currentTarget.classList.toggle('on', SET.sayTrans); toast(SET.sayTrans ? '🔊 ستُنطق الترجمة بعد كل صيغة' : '🔇 الترجمة تظهر فقط دون نطق'); };
     $('#picBtn').onclick = () => { SET.pics = !SET.pics; saveSet(); rerender(); };
+    $('#conjBtn').onclick = () => { stopPlayback(); setGauge(0, -1); showConj(P.cells[P.order[P.i] || 0] ? P.cells[P.order[P.i] || 0].t : 0); };
     $$('.cmpc').forEach(b => b.onclick = () => {
       const id = b.dataset.l;
       SET.compare = SET.compare.includes(id) ? SET.compare.filter(x => x !== id) : [...SET.compare, id];
@@ -388,6 +390,58 @@
     voiceHint();
   }
   function rerender() { stopPlayback(); const y = window.scrollY; renderLesson(); window.scrollTo({ top: y }); }
+
+  /* ---------- 👥 كل الضمائر: الجملة نفسها مع ضمائر الفاعل السبعة في زمن واحد ---------- */
+  const ALL_PK = ['i', 'you', 'he', 'she', 'we', 'youpl', 'they'];
+  /* في الأسئلة يكون الضمير هو المسؤول عنه: «Did you…?» تأتي من جملة «أنا»، و«ألم…أنتم؟» من «نحن» */
+  const ASKED = [['you', 'i'], ['he', 'he'], ['she', 'she'], ['youpl', 'we'], ['they', 'they']];
+  const QUESTION_ROWS = ['yn', 'what', 'when', 'where', 'why', 'how', 'whose'];
+  function showConj(t0 = 0, r0 = 0) {
+    const { L } = NAV, S = NAV.S;
+    let t = t0, r = r0;
+    const trL = SET.trans && SET.trans !== 'none' && SET.trans !== L ? SET.trans : null;
+    const dirOf = (x) => isRTL(x) ? 'rtl' : 'ltr';
+    const draw = () => {
+      const rowId = LT.ROWS[r].id;
+      const list = QUESTION_ROWS.includes(rowId) ? ASKED.map(([shown, pk]) => ({ shown, pk })) : ALL_PK.map(pk => ({ shown: pk, pk }));
+      const items = list.map(x => ({ ...x, lines: G.build(L, S, x.pk, t)[r], tr: trL ? G.build(trL, S, x.pk, t)[r] : null }));
+      $('#sheet').innerHTML = `
+        <h2>👥 كل الضمائر · ${esc(S.ar)}</h2>
+        <div class="conjtop">
+          <div class="seg" id="conjT">${LT.TENSES.map((te, k) => `<button data-t="${k}" class="${k === t ? 'on' : ''}">${te.icon} ${te.ar}</button>`).join('')}</div>
+          <label class="ctl">الصيغة
+            <select id="conjR">${LT.ROWS.map((row, k) => row.id === 'pass' ? '' : `<option value="${k}"${k === r ? ' selected' : ''}>${row.icon} ${row.ar}</option>`).join('')}</select>
+          </label>
+          <button class="btn btn-main" id="conjPlay" style="padding:8px 14px;font-size:15px">🔊 استمع للكل</button>
+        </div>
+        ${QUESTION_ROWS.includes(rowId) ? '<div class="muted" style="font-size:13px">في الأسئلة يظهر الضمير المسؤول عنه، والجواب يأتي من صاحبه (أنتَ ← أنا، أنتم ← نحن).</div>' : ''}
+        <div class="conjlist" id="conjList">${items.map(x => `
+          <div class="conjrow">
+            <div class="pl"><span>${LT.PRON_EMOJI[x.shown]} ${LT.PRON_AR[x.shown]}</span><b lang="${L}">${esc(LT.PRON[L][x.shown][0])}</b></div>
+            <div class="txt"><div dir="${dirOf(L)}" lang="${L}">${x.lines.map((ln, k) => lineHTML(ln, k, { say: L })).join('')}</div>
+              ${x.tr ? `<div class="blk tr" dir="${dirOf(trL)}" lang="${trL}">${x.tr.map((ln, k) => lineHTML(ln, k, { say: trL })).join('')}</div>` : ''}</div>
+          </div>`).join('')}</div>
+        <button class="btn btn-ghost" id="conjClose">إغلاق</button>`;
+      $$('#conjT button').forEach(b => b.onclick = () => { P.run++; hush(); t = +b.dataset.t; draw(); });
+      $('#conjR').onchange = (e) => { P.run++; hush(); r = +e.target.value; draw(); };
+      $('#conjClose').onclick = closeModal;
+      $('#conjPlay').onclick = async () => {
+        hush();
+        const id = ++P.run;
+        for (const s of $$('#conjList > .conjrow > .txt > div:first-child .sent')) {
+          if (id !== P.run) return;
+          const b = $('.say', s);
+          s.classList.add('speaking');
+          s.scrollIntoView({ block: 'nearest' });
+          await speak(b.dataset.say, ladder(SET.passes).slice(-1)[0], L);
+          s.classList.remove('speaking');
+          await sleep(200);
+        }
+      };
+    };
+    modal('', true);
+    draw();
+  }
 
   /* طرق العرض الثلاث */
   const LAYOUTS = [
